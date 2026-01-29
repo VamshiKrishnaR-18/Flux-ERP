@@ -1,85 +1,64 @@
-import { useState } from 'react';
-import axios from 'axios';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { ClientSchema, type ClientType } from '@erp/types'; 
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import Register from './Register';
+import Login from './Login';
+import ProtectedLayout from './ProtectedLayout'; // <--- Import the Guard
 
-export default function App() {
-  const [message, setMessage] = useState('');
+// === THE NEW DASHBOARD ===
+function Dashboard() {
+  const navigate = useNavigate();
+  // Read user data from storage
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  // FIX: Removed <ClientType> generic. 
-  // We let the resolver infer the types automatically to handle the "Default Value" logic.
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(ClientSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      phoneNumber: '',
-      // FIX: Added 'as const' so TS knows this is strictly "active", not just any string
-      status: 'active' as const 
-    }
-  });
-
-  const onSubmit = async (data: ClientType) => {
-    try {
-      setMessage('Sending...');
-      const response = await axios.post('http://localhost:3000/clients', data);
-      setMessage(`✅ Success: Created client ${response.data.data.name}`);
-    } catch (error: any) {
-      if (error.response?.status === 409) {
-        setMessage('❌ Error: Email already exists');
-      } else {
-        setMessage('❌ Error: ' + (error.response?.data?.error || error.message));
-      }
-    }
+  const handleLogout = () => {
+    // 1. Destroy the Key
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    // 2. Redirect
+    navigate('/login');
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 font-sans">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border border-gray-200">
-        <h1 className="text-2xl font-bold mb-6 text-gray-900 text-center">Flux ERP</h1>
-        
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          
-          {/* NAME FIELD */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-            <input 
-              {...register("name")}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
-              placeholder="e.g. Tesla Inc."
-            />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message as string}</p>}
-          </div>
-
-          {/* EMAIL FIELD */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-            <input 
-              {...register("email")}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-              placeholder="contact@company.com" 
-            />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message as string}</p>}
-          </div>
-
-          {/* HIDDEN STATUS FIELD */}
-          <input type="hidden" {...register("status")} />
-
+    <div className="min-h-screen bg-gray-100 font-sans">
+      {/* Navbar */}
+      <nav className="bg-black text-white p-4 flex justify-between items-center shadow-md">
+        <h1 className="text-xl font-bold">Flux ERP</h1>
+        <div className="flex items-center gap-4">
+          <span className="text-gray-300">Welcome, {user.name || 'User'}</span>
           <button 
-            type="submit"
-            className="w-full bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800 transition font-medium"
+            onClick={handleLogout}
+            className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm transition"
           >
-            Create Client
+            Logout
           </button>
-        </form>
+        </div>
+      </nav>
 
-        {message && (
-          <div className={`mt-4 p-3 rounded text-center text-sm font-medium ${message.includes('Success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-            {message}
-          </div>
-        )}
+      {/* Main Content */}
+      <div className="p-8">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h2 className="text-2xl font-bold mb-4">Client Management</h2>
+          <p className="text-gray-600">This area is now secure. Only logged-in users can see this.</p>
+          {/* You can re-add your "Create Client" form here later! */}
+        </div>
       </div>
     </div>
+  );
+}
+
+// === THE APP ROUTING ===
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* PUBLIC ROUTES */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* PROTECTED ROUTES (The Guard Wrapper) */}
+        <Route element={<ProtectedLayout />}>
+          <Route path="/" element={<Dashboard />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
