@@ -1,8 +1,8 @@
 import mongoose, { Schema } from "mongoose";
-import {ClientType} from '@erp/types';
+import {Client} from '@erp/types';
 
 
-const ClientSchema = new Schema<ClientType>({
+const ClientSchema = new Schema<Client>({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     phoneNumber: {type: String},
@@ -12,4 +12,4 @@ const ClientSchema = new Schema<ClientType>({
 })
 
 
-export const ClientModel = mongoose.model<ClientType>('Client', ClientSchema);
+export const ClientModel = mongoose.model<Client>('Client', ClientSchema);

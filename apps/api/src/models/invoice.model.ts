@@ -1,58 +1,17 @@
 import mongoose, { Schema, Document } from 'mongoose';
+// 1. IMPORT from your shared package
+import { Invoice as IInvoiceDTO, InvoiceItem as IInvoiceItemDTO } from "@erp/types";
 
-// === INTERFACES ===
-export interface IInvoiceItem {
-  itemName: string;
-  description?: string;
-  quantity: number;
-  price: number;
-  total: number;
-}
+// 2. EXTEND the shared type
 
-export interface IInvoice extends Document {
-  // Identification
-  number: number;
-  year: number;
-  recurring: 'daily' | 'weekly' | 'monthly' | 'annually' | 'quarter' | 'none';
-  
-  // Dates
-  date: Date;
-  expiredDate: Date; // Due Date
-  
-  // Relations
-  clientId: mongoose.Types.ObjectId;
-  createdBy?: mongoose.Types.ObjectId; // Admin who created it
-  
-  // Conversion (Future Proofing for Quotes feature)
-  converted?: {
-    from: 'quote' | 'offer';
-    quoteId?: mongoose.Types.ObjectId;
-    offerId?: mongoose.Types.ObjectId;
-  };
-
-  // Content
-  items: IInvoiceItem[];
-  notes?: string;
-  
-  // Financials
-  currency: string;
-  subTotal: number;
-  taxRate: number;
-  taxTotal: number;
-  total: number;
-  credit: number;
-  discount: number;
-  
-  // Statuses
-  status: 'draft' | 'pending' | 'sent' | 'refunded' | 'cancelled' | 'on hold';
-  paymentStatus: 'unpaid' | 'paid' | 'partially';
-  
-  // System
-  pdf?: string; // Path to generated PDF
-  removed: boolean; // Soft delete flag
+export interface IInvoiceDocument extends Document, Omit<IInvoiceDTO, '_id' | 'createdAt' | 'updatedAt'> {
+  // We can add Mongoose-specific fields here if needed
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // === SCHEMA ===
+
 const InvoiceSchema: Schema = new Schema({
   // Identification
   number: { type: Number, required: true },
@@ -70,9 +29,8 @@ const InvoiceSchema: Schema = new Schema({
   // Relations
   clientId: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Client', // Links to your existing Client model
-    required: true,
-    autopopulate: true 
+    ref: 'Client',
+    required: true
   },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   
@@ -105,7 +63,7 @@ const InvoiceSchema: Schema = new Schema({
   // Statuses
   status: { 
     type: String, 
-    enum: ['draft', 'pending', 'sent', 'refunded', 'cancelled', 'on hold'], 
+    enum: ['draft', 'pending', 'sent', 'paid'], // Simplified to match Zod
     default: 'draft' 
   },
   paymentStatus: { 
@@ -116,12 +74,9 @@ const InvoiceSchema: Schema = new Schema({
   
   // System
   pdf: { type: String },
-  removed: { type: Boolean, default: false } // We use this instead of actually deleting data
+  removed: { type: Boolean, default: false }
 }, { 
   timestamps: true 
 });
 
-// Enable auto-population if needed (requires installing mongoose-autopopulate, or we handle it in controller)
-// InvoiceSchema.plugin(require('mongoose-autopopulate'));
-
-export const InvoiceModel = mongoose.model<IInvoice>('Invoice', InvoiceSchema);
+export const InvoiceModel = mongoose.model<IInvoiceDocument>('Invoice', InvoiceSchema);

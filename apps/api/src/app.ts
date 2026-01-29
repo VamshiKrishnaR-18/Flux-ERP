@@ -4,18 +4,18 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 
-// Imports from your new clean structure
 import { swaggerSpec } from './config/swagger';
 import authRoutes from './routes/auth.routes';
 import clientRoutes from './routes/client.routes';
+import invoiceRoutes from './routes/invoice.routes'; 
 
 const app = express();
 
-// 1. Security & Logging
+// Security & Logging
 app.use(helmet());
-app.use(morgan('dev')); // Logs requests to console
+app.use(morgan('dev')); 
 
-// 2. Dynamic CORS (Allows both Port 5173 and 5174)
+// CORS
 const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
 app.use(cors({
   origin: (origin, callback) => {
@@ -30,17 +30,24 @@ app.use(cors({
 
 app.use(express.json());
 
-// 3. Health Check
+// ✅ FIX: Disable Caching for all API requests
+// This ensures the frontend always gets fresh data after an update
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  next();
+});
+
+// Health Check
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: "Flux ERP API is Online", timestamp: new Date().toISOString() });
 });
 
-// 4. Documentation (Swagger) - FIXED TYPE ERROR
-// We use "...swaggerUi.serve" (spread) to fix the TypeScript error
+// Documentation
 app.use('/api-docs', ...swaggerUi.serve as any, swaggerUi.setup(swaggerSpec) as any); 
 
-// 5. Module Routes
-app.use('/auth', authRoutes);      // Handles /auth/login, /auth/register
-app.use('/clients', clientRoutes); // Handles /clients (Get/Create)
+// Module Routes
+app.use('/auth', authRoutes);      
+app.use('/clients', clientRoutes); 
+app.use('/invoices', invoiceRoutes); 
 
 export default app;

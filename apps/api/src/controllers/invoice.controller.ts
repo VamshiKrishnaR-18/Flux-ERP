@@ -1,19 +1,24 @@
 import { Request, Response } from 'express';
 import { InvoiceModel } from '../models/invoice.model';
-import { CreateInvoiceSchema, UpdateInvoiceSchema } from '../validators/invoice.validator'; // <--- Importing from new folder
 import { ClientModel } from '../models/client.model';
+// 1. IMPORT FROM SHARED PACKAGE 📦
+import { CreateInvoiceSchema } from '@erp/types'; 
+
 
 // HELPER: Generate next invoice number
 const generateInvoiceNumber = async () => {
   const lastInvoice = await InvoiceModel.findOne().sort({ number: -1 });
-  return lastInvoice ? lastInvoice.number + 1 : 1001; // Start at 1001
+  const lastNumber = lastInvoice?.number ?? 1000;
+
+  return lastNumber + 1;
 };
+
 
 export const InvoiceController = {
   // GET ALL
   getAll: async (req: Request, res: Response) => {
     try {
-      const invoices = await InvoiceModel.find()
+      const invoices = await InvoiceModel.find({removed: false})
         .populate('clientId', 'name email') // Join Client data
         .sort({ createdAt: -1 });
       res.json({ success: true, data: invoices });
@@ -24,8 +29,9 @@ export const InvoiceController = {
 
   // CREATE
   create: async (req: Request, res: Response) => {
-    // 1. Validate Input
+    // 2. USE SHARED VALIDATION 🛡️
     const validation = CreateInvoiceSchema.safeParse(req.body);
+    
     if (!validation.success) {
       return res.status(400).json({ success: false, error: validation.error.errors });
     }
@@ -33,21 +39,21 @@ export const InvoiceController = {
     try {
       const { clientId } = validation.data;
 
-      // 2. Check if Client Exists
+      // Check if Client Exists
       const clientExists = await ClientModel.findById(clientId);
       if (!clientExists) {
         return res.status(404).json({ success: false, message: "Client not found" });
       }
 
-      // 3. Auto-Generate Number if not provided (or overwrite it for safety)
+      // Auto-Generate Number
       const nextNumber = await generateInvoiceNumber();
 
-      // 4. Create Invoice
+      // Create Invoice
       const newInvoice = await InvoiceModel.create({
         ...validation.data,
         number: nextNumber,
-        year: new Date().getFullYear(), // Force current year
-        createdBy: req.user?.id // From Auth Middleware
+        year: new Date().getFullYear(),
+        createdBy: req.user?.id 
       });
 
       res.status(201).json({ success: true, message: "Invoice created", data: newInvoice });
@@ -69,10 +75,39 @@ export const InvoiceController = {
     }
   },
 
-  // DELETE (Soft Delete)
+  // UPDATE
+  update: async (req: Request, res: Response) => {
+    const validation = CreateInvoiceSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ success: false, error: validation.error.errors });
+    }
+
+    try {
+      const updatedInvoice = await InvoiceModel.findByIdAndUpdate(
+        req.params.id,
+        { 
+          ...validation.data,
+          // Ensure these are explicitly saved
+          subTotal: validation.data.subTotal,
+          taxTotal: validation.data.taxTotal,
+          total: validation.data.total
+        },
+        { new: true, runValidators: true } 
+      ).populate('clientId');
+
+      if (!updatedInvoice) {
+        return res.status(404).json({ success: false, message: "Invoice not found" });
+      }
+
+      res.json({ success: true, message: "Invoice updated", data: updatedInvoice });
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Failed to update invoice" });
+    }
+  }, // <--- ✅ FIX: ADDED COMMA HERE
+
+  // DELETE
   delete: async (req: Request, res: Response) => {
     try {
-      // We don't actually delete invoices (audit trail), we just mark them removed
       const invoice = await InvoiceModel.findByIdAndUpdate(
         req.params.id, 
         { removed: true }, 
@@ -86,3 +121,4 @@ export const InvoiceController = {
     }
   }
 };
+  
