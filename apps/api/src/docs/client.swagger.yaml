@@ -1,0 +1,52 @@
+tags:
+  name: Clients
+  description: CRM Client management
+
+paths:
+  /clients:
+    get:
+      summary: Retrieve a list of all clients
+      tags: [Clients]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: A list of clients
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: 
+                    type: boolean
+                  data: 
+                    type: array
+                    items: 
+                      type: object
+    post:
+      summary: Create a new client
+      tags: [Clients]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                companyName:
+                  type: string
+      responses:
+        201:
+          description: Client created successfully
+        409:
+          description: Client already exists
