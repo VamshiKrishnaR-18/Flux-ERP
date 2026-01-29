@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
-import Register from './Register';
-import Login from './Login';
-import ProtectedLayout from './ProtectedLayout'; // <--- Import the Guard
+import Register from './pages/Register';
+import Login from './pages/Login';
+import ProtectedLayout from './pages/ProtectedLayout'; // <--- Import the Guard
 
 // === THE NEW DASHBOARD ===
 function Dashboard() {
