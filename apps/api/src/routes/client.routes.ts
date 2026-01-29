@@ -5,43 +5,7 @@ import { authMiddleware } from '../middleware/index';
 
 const router = Router();
 
-/**
- * @swagger
- * tags:
- * name: Clients
- * description: CRM Client management
- */
-
-/**
- * @swagger
- * /clients:
- * get:
- * summary: Retrieve a list of all clients
- * tags: [Clients]
- * security:
- * - bearerAuth: []
- * responses:
- * 200:
- * description: A list of clients
- * content:
- * application/json:
- * schema:
- * type: object
- * properties:
- * success:
- * type: boolean
- * data:
- * type: array
- * items:
- * type: object
- * properties:
- * name:
- * type: string
- * email:
- * type: string
- * 401:
- * description: Unauthorized (Token missing or invalid)
- */
+// GET ALL CLIENTS
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const clients = await ClientModel.find().sort({ createdAt: -1 });
@@ -51,35 +15,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-/**
- * @swagger
- * /clients:
- * post:
- * summary: Create a new client
- * tags: [Clients]
- * security:
- * - bearerAuth: []
- * requestBody:
- * required: true
- * content:
- * application/json:
- * schema:
- * type: object
- * required: [name, email]
- * properties:
- * name:
- * type: string
- * email:
- * type: string
- * format: email
- * companyName:
- * type: string
- * responses:
- * 201:
- * description: Client created successfully
- * 409:
- * description: Client with this email already exists
- */
+// CREATE CLIENT
 router.post('/', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const validation = ClientSchema.safeParse(req.body);
   
@@ -100,6 +36,46 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
 
   } catch (error) {
     res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+});
+
+// UPDATE CLIENT (New)
+router.put('/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    
+    // { new: true } returns the updated document instead of the old one
+    const updatedClient = await ClientModel.findByIdAndUpdate(
+      id, 
+      req.body, 
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedClient) {
+      res.status(404).json({ success: false, message: "Client not found" });
+      return;
+    }
+
+    res.json({ success: true, message: "Client updated", data: updatedClient });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to update client" });
+  }
+});
+
+// DELETE CLIENT (New)
+router.delete('/:id', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const deletedClient = await ClientModel.findByIdAndDelete(id);
+
+    if (!deletedClient) {
+      res.status(404).json({ success: false, message: "Client not found" });
+      return;
+    }
+
+    res.json({ success: true, message: "Client deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to delete client" });
   }
 });
 
