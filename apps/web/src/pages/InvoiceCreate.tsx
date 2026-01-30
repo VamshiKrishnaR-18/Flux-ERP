@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import axios from 'axios';
-// 1. IMPORT TOAST
+import { api } from '../lib/axios'; // ✅ Use shared API
 import { toast } from 'sonner';
 
 // Import Shared Types
@@ -13,7 +12,8 @@ export default function InvoiceCreate() {
   const navigate = useNavigate();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const token = localStorage.getItem('token');
+  
+  // ❌ REMOVED: const token = ... (Handled by api interceptor)
 
   const { 
     register, 
@@ -50,6 +50,7 @@ export default function InvoiceCreate() {
   const taxRate = watch("taxRate");
   const discount = watch("discount");
 
+  // Calculation Logic (Kept same)
   useEffect(() => {
     const currentItems = items || [];
     const subTotal = currentItems.reduce((sum: number, item: any) => {
@@ -64,29 +65,26 @@ export default function InvoiceCreate() {
     setValue("total", total);
   }, [items, taxRate, discount, setValue]);
 
+  // Fetch Clients
   useEffect(() => {
-    axios.get('http://localhost:3000/clients', {
-      headers: { Authorization: `Bearer ${token}` }
-    }).then(res => setClients(res.data.data))
-    .catch(() => toast.error("Failed to load clients")); // Added toast here too
-  }, [token]);
+    // ✅ FIX: Clean API call
+    api.get('/clients')
+      .then(res => setClients(res.data.data))
+      .catch(() => toast.error("Failed to load clients"));
+  }, []);
 
   const onSubmit = async (data: CreateInvoiceDTO) => {
     setIsLoading(true);
-    // Optional: Show loading toast
     const toastId = toast.loading("Creating invoice..."); 
 
     try {
-      await axios.post('http://localhost:3000/invoices', data, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // ✅ FIX: Clean API call
+      await api.post('/invoices', data);
       
-      // 2. SUCCESS NOTIFICATION 🟢
       toast.success('Invoice created successfully!', { id: toastId });
-      navigate('/invoices'); // Redirect to list
+      navigate('/invoices');
     } catch (error: any) {
       console.error(error);
-      // 3. ERROR NOTIFICATION 🔴
       toast.error(error.response?.data?.message || 'Failed to create invoice', { id: toastId });
     } finally {
       setIsLoading(false);
@@ -95,12 +93,12 @@ export default function InvoiceCreate() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
-      
       <main className="max-w-4xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6">New Invoice</h1>
         
         <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-8 rounded-xl shadow-sm border">
           
+          {/* Client Selection */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
               <label className="block text-sm font-medium mb-1">Client</label>
@@ -123,6 +121,7 @@ export default function InvoiceCreate() {
             </div>
           </div>
 
+          {/* Items Section */}
           <div className="mb-8">
             <h3 className="font-bold mb-4">Items</h3>
             {fields.map((field, index) => (
@@ -158,6 +157,7 @@ export default function InvoiceCreate() {
             </button>
           </div>
 
+          {/* Totals Section */}
           <div className="flex justify-end border-t pt-4">
             <div className="w-64 space-y-2">
               <div className="flex justify-between">

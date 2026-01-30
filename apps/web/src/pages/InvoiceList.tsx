@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../lib/axios'; // ✅ Use shared API
 import type { Invoice } from '@erp/types';
 import { toast } from 'sonner';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -9,25 +9,26 @@ import { InvoicePDF } from '../components/InvoicePDF';
 export default function InvoiceList() {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [settings, setSettings] = useState<any>(null); // 1. Add Settings State
+  const [settings, setSettings] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const token = localStorage.getItem('token');
 
-  // Fetch Invoices AND Settings
+  // ❌ REMOVED: const token = ... (Handled by api interceptor)
+
+  // Fetch Data (Parallel)
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 2. Fetch Invoices
-        const invRes = await axios.get(`http://localhost:3000/invoices?t=${Date.now()}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const invData = invRes.data.data || invRes.data; 
+        // ✅ FIX: Parallel requests using shared API
+        const [invRes, setRes] = await Promise.all([
+          api.get(`/invoices?t=${Date.now()}`), // Cache buster
+          api.get('/settings')
+        ]);
+
+        // Handle Invoices
+        const invData = invRes.data.data || invRes.data;
         setInvoices(Array.isArray(invData) ? invData : []);
 
-        // 3. Fetch Settings (So PDF has company info)
-        const setRes = await axios.get('http://localhost:3000/settings', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // Handle Settings
         setSettings(setRes.data.data);
 
       } catch (error) {
@@ -38,16 +39,15 @@ export default function InvoiceList() {
       }
     };
     fetchData();
-  }, [token]);
+  }, []);
 
   // DELETE FUNCTION
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this invoice?')) return;
 
     try {
-      await axios.delete(`http://localhost:3000/invoices/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // ✅ FIX: Cleaner Delete Call
+      await api.delete(`/invoices/${id}`);
       
       setInvoices(prev => prev.filter(inv => inv._id !== id));
       toast.success('Invoice deleted successfully');
@@ -67,8 +67,6 @@ export default function InvoiceList() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      
-      
       <main className="max-w-6xl mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Invoices</h1>
@@ -128,7 +126,7 @@ export default function InvoiceList() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                           
-                          {/* ✅ 4. PASS SETTINGS TO PDF HERE */}
+                          {/* PDF Download Button */}
                           <PDFDownloadLink
                             document={<InvoicePDF invoice={invoice} settings={settings} />}
                             fileName={`invoice-${invoice.number}.pdf`}

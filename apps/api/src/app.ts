@@ -10,6 +10,7 @@ import clientRoutes from './routes/client.routes';
 import invoiceRoutes from './routes/invoice.routes'; 
 import dashboardRoutes from './routes/dashboard.routes';
 import settingsRoutes from './routes/settings.routes';
+import productRoutes from './routes/product.routes';
 
 const app = express();
 
@@ -52,5 +53,6 @@ app.use('/clients', clientRoutes);
 app.use('/invoices', invoiceRoutes); 
 app.use('/dashboard', dashboardRoutes);
 app.use('/settings', settingsRoutes);
+app.use('/products', productRoutes);
 
 export default app;

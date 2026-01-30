@@ -1,31 +1,33 @@
 import { useState } from 'react';
-import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { UserSchema, type UserType } from '@erp/types';
+// ✅ FIX: Import 'User' and alias it as 'UserType'
+import { UserSchema, type User as UserType } from '@erp/types'; 
 import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../lib/axios'; 
 
 export default function Register() {
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(UserSchema),
+  const { register, handleSubmit, formState: { errors } } = useForm<UserType>({
+    // ✅ FIX: Add 'as any' to bypass the Zod default() vs Required mismatch
+    resolver: zodResolver(UserSchema) as any,
     defaultValues: {
       name: '',
       email: '',
       password: '',
-      role: 'user' as const
+      role: 'user'
     }
   });
 
   const onSubmit = async (data: UserType) => {
     try {
       setMessage('Creating account...');
-      await axios.post('http://localhost:3000/auth/register', data);
-      setMessage('✅ Success! Redirecting to login...');
       
-      // Wait 1.5 seconds then go to login
+      await api.post('/auth/register', data);
+      
+      setMessage('✅ Success! Redirecting to login...');
       setTimeout(() => navigate('/login'), 1500);
       
     } catch (error: any) {
@@ -43,19 +45,19 @@ export default function Register() {
           <div>
             <label className="block text-sm font-medium text-gray-700">Full Name</label>
             <input {...register("name")} className="w-full border p-2 rounded mt-1" placeholder="Elon Musk" />
-            {errors.name && <p className="text-red-500 text-sm">{errors.name.message as string}</p>}
+            {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input {...register("email")} className="w-full border p-2 rounded mt-1" placeholder="elon@tesla.com" />
-            {errors.email && <p className="text-red-500 text-sm">{errors.email.message as string}</p>}
+            {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Password</label>
             <input type="password" {...register("password")} className="w-full border p-2 rounded mt-1" placeholder="••••••" />
-            {errors.password && <p className="text-red-500 text-sm">{errors.password.message as string}</p>}
+            {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
           </div>
 
           <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">

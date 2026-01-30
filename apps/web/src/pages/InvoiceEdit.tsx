@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import axios from 'axios';
+import { api } from '../lib/axios'; // ✅ Use shared API
 import { toast } from 'sonner';
 import { CreateInvoiceSchema, type CreateInvoiceDTO, type Client } from "@erp/types";
 
@@ -11,7 +11,8 @@ export default function InvoiceEdit() {
   const { id } = useParams();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const token = localStorage.getItem('token');
+  
+  // ❌ REMOVED: const token = ... (Handled by api interceptor)
 
   const { 
     register, 
@@ -37,8 +38,7 @@ export default function InvoiceEdit() {
   const taxRate = watch("taxRate");
   const discount = watch("discount");
 
-  // 2. INSTANT MATH (Derived State) ⚡
-  // We calculate these every time the component renders. No useEffect needed!
+  // 2. INSTANT MATH (Derived State)
   const currentItems = items || [];
   const calculatedSubTotal = currentItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.price || 0)), 0);
   const calculatedTaxTotal = (calculatedSubTotal * (taxRate || 0)) / 100;
@@ -48,21 +48,22 @@ export default function InvoiceEdit() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const clientsRes = await axios.get('http://localhost:3000/clients', {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        setClients(clientsRes.data.data);
+        // ✅ FIX: Parallel clean requests
+        const [clientsRes, invoiceRes] = await Promise.all([
+          api.get('/clients'),
+          api.get(`/invoices/${id}`)
+        ]);
 
-        const invoiceRes = await axios.get(`http://localhost:3000/invoices/${id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        setClients(clientsRes.data.data);
         
         const inv = invoiceRes.data.data;
 
+        // Populate Form
         reset({
             ...inv,
             date: new Date(inv.date).toISOString().split('T')[0],
             expiredDate: new Date(inv.expiredDate).toISOString().split('T')[0],
+            // Handle if backend returns object (populate) or string (ID)
             clientId: typeof inv.clientId === 'object' ? inv.clientId._id : inv.clientId,
         });
 
@@ -71,8 +72,8 @@ export default function InvoiceEdit() {
         navigate('/invoices');
       }
     };
-    loadData();
-  }, [id, token, reset, navigate]);
+    if (id) loadData();
+  }, [id, reset, navigate]);
 
   // Submit Handler
   const onSubmit = async (data: CreateInvoiceDTO) => {
@@ -80,7 +81,6 @@ export default function InvoiceEdit() {
     const toastId = toast.loading("Updating invoice...");
 
     // 3. RE-CALCULATE FOR SAVE
-    // We recalculate here to ensure the payload sent to the backend is perfect
     const finalItems = data.items || [];
     const subTotal = finalItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.price || 0)), 0);
     const taxTotal = (subTotal * (data.taxRate || 0)) / 100;
@@ -94,15 +94,14 @@ export default function InvoiceEdit() {
     };
 
     try {
-      const response = await axios.put(`http://localhost:3000/invoices/${id}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // ✅ FIX: Cleaner PUT call
+      await api.put(`/invoices/${id}`, payload);
 
-      if (response.data.success) {
-        toast.success('Invoice updated successfully!', { id: toastId });
-        navigate('/invoices');
-      }
+      toast.success('Invoice updated successfully!', { id: toastId });
+      navigate('/invoices');
+      
     } catch (error: any) {
+      console.error(error);
       toast.error('Update failed', { id: toastId });
     } finally {
       setIsLoading(false);
@@ -111,8 +110,6 @@ export default function InvoiceEdit() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
-      
-      
       <main className="max-w-4xl mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Edit Invoice</h1>
@@ -156,7 +153,7 @@ export default function InvoiceEdit() {
                 <input type="number" placeholder="Qty" {...register(`items.${index}.quantity`, { valueAsNumber: true })} className="w-20 border p-2 rounded text-right" />
                 <input type="number" placeholder="Price" {...register(`items.${index}.price`, { valueAsNumber: true })} className="w-32 border p-2 rounded text-right" />
                 
-                {/* 4. UPDATE ROW TOTAL DISPLAY */}
+                {/* Row Total */}
                 <div className="w-32 py-2 text-right font-bold text-gray-700">
                   ${((items?.[index]?.quantity || 0) * (items?.[index]?.price || 0)).toFixed(2)}
                 </div>
@@ -171,7 +168,6 @@ export default function InvoiceEdit() {
             <div className="w-64 space-y-2">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
-                {/* 5. USE CALCULATED VARIABLES HERE 👇 */}
                 <span>${calculatedSubTotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
@@ -184,7 +180,6 @@ export default function InvoiceEdit() {
               </div>
               <div className="flex justify-between font-bold text-lg border-t pt-2">
                 <span>Total:</span>
-                {/* 5. USE CALCULATED VARIABLES HERE 👇 */}
                 <span>${calculatedTotal.toFixed(2)}</span>
               </div>
             </div>
@@ -193,7 +188,7 @@ export default function InvoiceEdit() {
           <div className="mt-8 flex justify-end gap-3">
             <button type="button" onClick={() => navigate('/invoices')} className="px-6 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100">Cancel</button>
             <button type="submit" disabled={isLoading} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50">
-              {isLoading ? 'Saving...' : 'Update Invoice'}
+              {isLoading ? 'Update Invoice' : 'Update Invoice'}
             </button>
           </div>
 

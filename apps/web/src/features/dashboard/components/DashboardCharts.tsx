@@ -12,15 +12,30 @@ export const DashboardCharts = ({ revenueData, statusData, totalInvoices }: any)
           <h3 className="font-bold text-lg text-slate-800">Invoice Status</h3>
           <button className="p-2 hover:bg-slate-50 rounded-full transition-colors"><MoreHorizontal className="w-5 h-5 text-slate-400" /></button>
         </div>
-        <div className="flex-1 relative min-h-[250px]">
+        
+        {/* ✅ FIX: Changed 'flex-1 min-h-[250px]' to explicit 'h-[300px]' */}
+        {/* ResponsiveContainer needs a definite height to work properly */}
+        <div className="h-[300px] w-full relative">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={statusData} cx="50%" cy="50%" innerRadius={70} outerRadius={90} paddingAngle={5} dataKey="value" stroke="none">
-                {statusData.map((entry: any, index: number) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+              <Pie 
+                data={statusData} 
+                cx="50%" 
+                cy="50%" 
+                innerRadius={70} 
+                outerRadius={90} 
+                paddingAngle={5} 
+                dataKey="value" 
+                stroke="none"
+              >
+                {statusData.map((entry: any, index: number) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
               </Pie>
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
+          
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-4xl font-extrabold text-slate-900">{totalInvoices}</span>
             <span className="text-sm font-medium text-slate-400 uppercase tracking-wide mt-1">Total</span>
@@ -36,6 +51,7 @@ export const DashboardCharts = ({ revenueData, statusData, totalInvoices }: any)
             <p className="text-sm text-slate-500">Income vs Expenses over last 6 months</p>
           </div>
         </div>
+        {/* This one was already correct with h-[300px] */}
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>

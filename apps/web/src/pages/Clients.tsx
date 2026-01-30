@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { api } from '../lib/axios'; // ✅ Using shared API client
 import { toast } from 'sonner';
 
 // Define Client Interface
@@ -12,21 +12,18 @@ interface Client {
 }
 
 export default function Clients() {
-  // ❌ REMOVED: navigate, user, handleLogout (No longer needed)
-  
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
   
-  const token = localStorage.getItem('token');
+  // ❌ REMOVED: const token = ... (Handled by api interceptor automatically)
 
   // Fetch Clients
   const fetchClients = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/clients', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // ✅ FIX: Cleaner call
+      const response = await api.get('/clients');
       setClients(response.data.data);
     } catch (error) {
       toast.error("Failed to fetch clients");
@@ -37,15 +34,14 @@ export default function Clients() {
 
   useEffect(() => {
     fetchClients();
-  }, [token]);
+  }, []); // ✅ Empty dependency array
 
   // Create Client
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3000/clients', formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // ✅ FIX: Cleaner call
+      await api.post('/clients', formData);
       toast.success("Client added successfully");
       setShowModal(false);
       setFormData({ name: '', email: '', phone: '', address: '' });
@@ -59,9 +55,8 @@ export default function Clients() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this client?")) return;
     try {
-      await axios.delete(`http://localhost:3000/clients/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // ✅ FIX: Cleaner call
+      await api.delete(`/clients/${id}`);
       toast.success("Client deleted");
       fetchClients();
     } catch (error) {

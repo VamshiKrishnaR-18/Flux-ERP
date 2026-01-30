@@ -73,3 +73,20 @@ export interface Invoice extends CreateInvoiceDTO {
   createdAt: string;
   updatedAt: string;
 }
+
+// 4. Products / Inventory
+export const ProductSchema = z.object({
+  name: z.string().min(2, "Product name is required"),
+  description: z.string().optional(),
+  price: z.number().min(0, "Price cannot be negative"),
+  stock: z.number().int().default(0),
+  sku: z.string().optional(), // Stock Keeping Unit (Unique ID)
+});
+
+export type ProductDTO = z.infer<typeof ProductSchema>;
+
+export interface Product extends ProductDTO {
+  _id: string;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-
-import axios from 'axios'; // 1. Import Axios
+import { api } from '../lib/axios'; // ✅ Use shared API
 import { toast } from 'sonner';
 
 export default function Settings() {
-  const token = localStorage.getItem('token');
   const [isLoading, setIsLoading] = useState(false);
 
   // Default State
@@ -16,13 +14,12 @@ export default function Settings() {
     currency: 'USD',
   });
 
-  // 2. Load from API on mount ☁️
+  // Load from API on mount
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/settings', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // ✅ FIX: Clean API call
+        const response = await api.get('/settings');
         if (response.data.data) {
           setFormData(response.data.data);
         }
@@ -31,22 +28,21 @@ export default function Settings() {
       }
     };
     fetchSettings();
-  }, [token]);
+  }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // 3. Save to API ☁️
+  // Save to API
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     const toastId = toast.loading("Saving settings...");
 
     try {
-      await axios.put('http://localhost:3000/settings', formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // ✅ FIX: Clean API call
+      await api.put('/settings', formData);
       toast.success("Company settings saved!", { id: toastId });
     } catch (error) {
       toast.error("Failed to save settings", { id: toastId });
@@ -62,18 +58,71 @@ export default function Settings() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           <form onSubmit={handleSave} className="space-y-6">
             
-            {/* ... (Same inputs as before: Company Name, Email, Address, Tax ID) ... */}
-            {/* Example Input Reuse: */}
-             <div>
+            {/* Company Name */}
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
               <input
                 name="companyName"
                 value={formData.companyName}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2.5"
+                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="Acme Corp"
               />
             </div>
-            {/* (Repeat for other fields) */}
+
+            {/* Company Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Company Email</label>
+              <input
+                name="companyEmail"
+                type="email"
+                value={formData.companyEmail}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="billing@acme.com"
+              />
+            </div>
+
+            {/* Tax ID */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tax ID / VAT Number</label>
+              <input
+                name="taxId"
+                value={formData.taxId}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="US-123456789"
+              />
+            </div>
+
+            {/* Currency */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Default Currency</label>
+              <select
+                name="currency"
+                value={formData.currency}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="INR">INR (₹)</option>
+              </select>
+            </div>
+
+            {/* Address */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Company Address</label>
+              <textarea
+                name="companyAddress"
+                rows={3}
+                value={formData.companyAddress}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="123 Business St, Tech City..."
+              />
+            </div>
             
             <div className="pt-4 flex justify-end">
               <button

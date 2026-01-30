@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, type LoginType } from '@erp/types';
 import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../lib/axios'; // ✅ Use shared API
 
 export default function Login() {
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginType>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' }
   });
@@ -17,9 +17,11 @@ export default function Login() {
   const onSubmit = async (data: LoginType) => {
     try {
       setMessage('Verifying credentials...');
-      const response = await axios.post('http://localhost:3000/auth/login', data);
       
-      // SAVE THE TOKEN (The "Key")
+      // ✅ FIX: Use 'api.post' (Uses VITE_API_URL automatically)
+      const response = await api.post('/auth/login', data);
+      
+      // SAVE THE TOKEN
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
@@ -41,13 +43,13 @@ export default function Login() {
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input {...register("email")} className="w-full border p-2 rounded mt-1" />
-            {errors.email && <p className="text-red-500 text-sm">{errors.email.message as string}</p>}
+            {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Password</label>
             <input type="password" {...register("password")} className="w-full border p-2 rounded mt-1" />
-            {errors.password && <p className="text-red-500 text-sm">{errors.password.message as string}</p>}
+            {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
           </div>
 
           <button type="submit" className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition">
