@@ -2,7 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LoginSchema, type LoginType } from '@erp/types';
+import { loginSchema, type LoginType } from '@erp/types';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function Login() {
@@ -10,7 +10,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(LoginSchema),
+    resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' }
   });
 

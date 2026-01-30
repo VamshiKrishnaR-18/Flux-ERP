@@ -1,36 +1,46 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Navbar } from '../components/Navbar';
 import type { Invoice } from '@erp/types';
-import { toast } from 'sonner'; // 1. Import Toast
+import { toast } from 'sonner';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { InvoicePDF } from '../components/InvoicePDF';
 
 export default function InvoiceList() {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [settings, setSettings] = useState<any>(null); // 1. Add Settings State
   const [isLoading, setIsLoading] = useState(true);
   const token = localStorage.getItem('token');
 
-  // Fetch Invoices
+  // Fetch Invoices AND Settings
   useEffect(() => {
-    const fetchInvoices = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/invoices?t=${Date.now()}`, {
+        // 2. Fetch Invoices
+        const invRes = await axios.get(`http://localhost:3000/invoices?t=${Date.now()}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const data = response.data.data || response.data; 
-        setInvoices(Array.isArray(data) ? data : []);
+        const invData = invRes.data.data || invRes.data; 
+        setInvoices(Array.isArray(invData) ? invData : []);
+
+        // 3. Fetch Settings (So PDF has company info)
+        const setRes = await axios.get('http://localhost:3000/settings', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSettings(setRes.data.data);
+
       } catch (error) {
-        toast.error('Failed to load invoices');
+        toast.error('Failed to load data');
         console.error(error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchInvoices();
+    fetchData();
   }, [token]);
 
-  // 2. DELETE FUNCTION
+  // DELETE FUNCTION
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this invoice?')) return;
 
@@ -39,7 +49,6 @@ export default function InvoiceList() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Update UI immediately (Optimistic Update)
       setInvoices(prev => prev.filter(inv => inv._id !== id));
       toast.success('Invoice deleted successfully');
     } catch (error) {
@@ -58,7 +67,7 @@ export default function InvoiceList() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar userName="User" onLogout={() => navigate('/login')} />
+      
       
       <main className="max-w-6xl mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
@@ -118,14 +127,23 @@ export default function InvoiceList() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          
+                          {/* ✅ 4. PASS SETTINGS TO PDF HERE */}
+                          <PDFDownloadLink
+                            document={<InvoicePDF invoice={invoice} settings={settings} />}
+                            fileName={`invoice-${invoice.number}.pdf`}
+                            className="text-sm text-gray-500 hover:text-green-600 flex items-center gap-1"
+                          >
+                            {({ loading }) => (loading ? 'Loading...' : 'Download')}
+                          </PDFDownloadLink>
+
                           <button 
-                            onClick={() => navigate(`/invoices/${invoice._id}/edit`)} // <--- Add navigation
+                            onClick={() => navigate(`/invoices/${invoice._id}/edit`)}
                             className="text-sm text-gray-500 hover:text-blue-600"
                           >
                             Edit
                           </button>
                           
-                          {/* DELETE BUTTON */}
                           <button 
                             onClick={() => handleDelete(invoice._id)}
                             className="text-sm text-gray-500 hover:text-red-600"

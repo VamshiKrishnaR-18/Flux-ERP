@@ -8,6 +8,8 @@ import { swaggerSpec } from './config/swagger';
 import authRoutes from './routes/auth.routes';
 import clientRoutes from './routes/client.routes';
 import invoiceRoutes from './routes/invoice.routes'; 
+import dashboardRoutes from './routes/dashboard.routes';
+import settingsRoutes from './routes/settings.routes';
 
 const app = express();
 
@@ -30,8 +32,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// ✅ FIX: Disable Caching for all API requests
-// This ensures the frontend always gets fresh data after an update
+
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   next();
@@ -49,5 +50,7 @@ app.use('/api-docs', ...swaggerUi.serve as any, swaggerUi.setup(swaggerSpec) as 
 app.use('/auth', authRoutes);      
 app.use('/clients', clientRoutes); 
 app.use('/invoices', invoiceRoutes); 
+app.use('/dashboard', dashboardRoutes);
+app.use('/settings', settingsRoutes);
 
 export default app;

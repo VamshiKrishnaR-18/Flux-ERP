@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
-import { Navbar } from '../components/Navbar';
 // 1. IMPORT TOAST
 import { toast } from 'sonner';
 
@@ -96,7 +95,6 @@ export default function InvoiceCreate() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
-      <Navbar userName="User" onLogout={() => navigate('/login')} />
       
       <main className="max-w-4xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6">New Invoice</h1>

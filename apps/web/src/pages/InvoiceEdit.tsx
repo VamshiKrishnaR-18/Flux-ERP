@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
-import { Navbar } from '../components/Navbar';
 import { toast } from 'sonner';
 import { CreateInvoiceSchema, type CreateInvoiceDTO, type Client } from "@erp/types";
 
@@ -112,7 +111,7 @@ export default function InvoiceEdit() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
-      <Navbar userName="User" onLogout={() => navigate('/login')} />
+      
       
       <main className="max-w-4xl mx-auto p-6">
         <div className="flex justify-between items-center mb-6">

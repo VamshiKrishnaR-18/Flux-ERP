@@ -10,11 +10,11 @@ export const UserSchema = z.object({
 });
 export type User = z.infer<typeof UserSchema>;
 
-export const LoginSchema = z.object({
+export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
 });
-export type LoginPayload = z.infer<typeof LoginSchema>;
+export type LoginType = z.infer<typeof loginSchema>;
 
 // 2. Clients
 export const ClientSchema = z.object({
