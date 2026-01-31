@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 
 interface TokenPayload {
@@ -14,7 +14,8 @@ declare global {
   }
 }
 
-export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+// ✅ FIX: Explicitly type as 'RequestHandler' to satisfy app.use()
+export const authMiddleware: RequestHandler = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -22,7 +23,6 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
     return;
   }
 
-  // FIX 1: Explicitly handle the case where split returns undefined
   const token = authHeader.split(" ")[1];
   if (!token) {
     res.status(401).json({ success: false, message: "Access Denied: Malformed Token" });
@@ -30,7 +30,6 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
   }
 
   try {
-    // FIX 2: Use 'as unknown' to tell TypeScript we trust the structure
     const decoded = jwt.verify(
       token, 
       process.env.JWT_SECRET || "fallback-secret-key"

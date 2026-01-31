@@ -14,6 +14,9 @@ import productRoutes from './routes/product.routes';
 import expenseRoutes from './routes/expense.routes';
 import quoteRoutes from './routes/quote.routes';
 
+// ✅ FIX: Import from './middleware' (which reads index.ts) and alias it to 'authenticate'
+import { authMiddleware as authenticate } from './middleware'; 
+
 const app = express();
 
 // Security & Logging
@@ -35,7 +38,7 @@ app.use(cors({
 
 app.use(express.json());
 
-
+// Prevent Caching
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   next();
@@ -47,16 +50,19 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Documentation
-app.use('/api-docs', ...swaggerUi.serve as any, swaggerUi.setup(swaggerSpec) as any); 
+app.use('/api-docs', swaggerUi.serve as any, swaggerUi.setup(swaggerSpec) as any); 
 
 // Module Routes
 app.use('/auth', authRoutes);      
-app.use('/clients', clientRoutes); 
-app.use('/invoices', invoiceRoutes); 
-app.use('/dashboard', dashboardRoutes);
-app.use('/settings', settingsRoutes);
-app.use('/products', productRoutes);
-app.use('/api/expenses', expenseRoutes);
-app.use('/api/quotes', quoteRoutes);
+app.use('/clients', authenticate, clientRoutes); 
+app.use('/invoices', authenticate, invoiceRoutes); 
+app.use('/dashboard', authenticate, dashboardRoutes);
+app.use('/settings', authenticate, settingsRoutes);
+app.use('/products', authenticate, productRoutes);
+
+// ✅ Routes without '/api' prefix to match frontend
+app.use('/expenses', authenticate, expenseRoutes);
+app.use('/quotes', authenticate, quoteRoutes);
+
 
 export default app;

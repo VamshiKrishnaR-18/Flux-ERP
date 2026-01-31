@@ -1,11 +1,13 @@
 import nodemailer from 'nodemailer';
 
-// 1. Setup Transporter (Gmail, Outlook, or SMTP)
+// 1. Setup Transporter (Generic SMTP for Ethereal/Gmail)
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // or use 'host' and 'port' for custom SMTP
+  host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: false, // true for 465, false for other ports
   auth: {
-    user: process.env.SMTP_EMAIL, // e.g. yourcompany@gmail.com
-    pass: process.env.SMTP_PASSWORD // App Password (not login password)
+    user: process.env.SMTP_USER, // Defined in .env
+    pass: process.env.SMTP_PASS  // Defined in .env
   }
 });
 
@@ -15,7 +17,7 @@ export const EmailService = {
   sendInvoice: async (invoice: any, client: any) => {
     try {
       const info = await transporter.sendMail({
-        from: `"Flux ERP" <${process.env.SMTP_EMAIL}>`,
+        from: `"Flux ERP" <${process.env.SMTP_USER}>`, // Sender address
         to: client.email,
         subject: `Invoice #${invoice.number} from Flux ERP`,
         html: `
@@ -25,12 +27,16 @@ export const EmailService = {
             <p>Here is your invoice for <strong>$${invoice.total.toFixed(2)}</strong>.</p>
             <p><strong>Due Date:</strong> ${new Date(invoice.expiredDate).toDateString()}</p>
             <br />
-            <a href="${process.env.FRONTEND_URL}/invoices/${invoice._id}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a>
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/invoices/${invoice._id}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a>
             <p style="margin-top: 20px; color: #888; font-size: 12px;">Thank you for your business!</p>
           </div>
         `
       });
+
       console.log("✅ Email sent:", info.messageId);
+      // 🌟 MAGIC LINE: Logs the URL to view the email in browser
+      console.log("🔗 Preview URL:", nodemailer.getTestMessageUrl(info)); 
+      
       return true;
     } catch (error) {
       console.error("❌ Email failed:", error);
@@ -41,8 +47,8 @@ export const EmailService = {
   // 💬 Send Quote
   sendQuote: async (quote: any, client: any) => {
     try {
-      await transporter.sendMail({
-        from: `"Flux ERP" <${process.env.SMTP_EMAIL}>`,
+      const info = await transporter.sendMail({
+        from: `"Flux ERP" <${process.env.SMTP_USER}>`,
         to: client.email,
         subject: `Quote #${quote.number} - ${quote.title}`,
         html: `
@@ -54,10 +60,15 @@ export const EmailService = {
             <br />
             <p>Please reply to this email to approve or reject this quote.</p>
             <br />
-            <a href="${process.env.FRONTEND_URL}/quotes" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Quote</a>
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/quotes" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Quote</a>
           </div>
         `
       });
+
+      console.log("✅ Quote Email sent:", info.messageId);
+      // 🌟 MAGIC LINE
+      console.log("🔗 Preview URL:", nodemailer.getTestMessageUrl(info));
+
       return true;
     } catch (error) {
       console.error("❌ Email failed:", error);

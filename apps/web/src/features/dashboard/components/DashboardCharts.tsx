@@ -8,7 +8,6 @@ export const DashboardCharts = ({ revenueData, statusData, totalInvoices }: any)
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
       
       {/* --- INVOICE STATUS (DONUT CHART) --- */}
-      {/* Added 'min-w-0' to prevent grid collapse */}
       <div className="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col min-w-0">
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-bold text-lg text-slate-800">Invoice Status</h3>
@@ -17,9 +16,10 @@ export const DashboardCharts = ({ revenueData, statusData, totalInvoices }: any)
           </button>
         </div>
         
-        {/* WRAPPER DIV: Crucial for Recharts to know its size */}
-        <div className="relative w-full h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+        {/* WRAPPER DIV */}
+        <div className="relative w-full h-[300px]" style={{ minHeight: '300px' }}>
+          {/* ✅ FIX: Added minWidth={0} to prevent negative width errors */}
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <PieChart>
               <Pie 
                 data={statusData} 
@@ -56,8 +56,9 @@ export const DashboardCharts = ({ revenueData, statusData, totalInvoices }: any)
         </div>
 
         {/* WRAPPER DIV */}
-        <div className="w-full h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="w-full h-[300px]" style={{ minHeight: '300px' }}>
+          {/* ✅ FIX: Added minWidth={0} */}
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
