@@ -5,7 +5,7 @@ import type { Invoice } from '@erp/types';
 import { toast } from 'sonner';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvoicePDF } from '../components/InvoicePDF';
-import { Eye } from 'lucide-react'; // ✅ Import Eye Icon
+import { Eye, Send } from 'lucide-react'; // ✅ Import Send
 
 export default function InvoiceList() {
   const navigate = useNavigate();
@@ -52,6 +52,24 @@ export default function InvoiceList() {
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'overdue': return 'bg-red-100 text-red-800 border-red-200 font-bold';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const handleSend = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Stop the row click from firing
+    const toastId = toast.loading("Sending invoice...");
+    
+    try {
+      await api.post(`/invoices/${id}/send`);
+      
+      // Instant UI Update (Optimistic)
+      setInvoices(prev => prev.map(inv => 
+        inv._id === id ? { ...inv, status: 'sent' } : inv
+      ));
+      
+      toast.success("Invoice sent successfully!", { id: toastId });
+    } catch (error) {
+      toast.error("Failed to send invoice", { id: toastId });
     }
   };
 
@@ -116,7 +134,17 @@ export default function InvoiceList() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                           
-                          {/* ✅ View Details Button */}
+                          {/* ✅ NEW: SEND BUTTON (Only for Drafts) */}
+                          {invoice.status === 'draft' && (
+                            <button 
+                              onClick={(e) => handleSend(invoice._id, e)}
+                              className="text-blue-500 hover:text-blue-700 transition-colors"
+                              title="Mark as Sent"
+                            >
+                              <Send className="w-5 h-5" />
+                            </button>
+                          )}
+
                           <button 
                             onClick={() => navigate(`/invoices/${invoice._id}`)}
                             className="text-gray-400 hover:text-blue-600 transition-colors"

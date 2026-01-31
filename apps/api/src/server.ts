@@ -4,6 +4,8 @@ dotenv.config(); // Load .env file before anything else
 import app from './app';
 import mongoose from 'mongoose';
 
+import { startCronJobs } from './jobs/cron';
+
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -18,6 +20,8 @@ const startServer = async () => {
       serverSelectionTimeoutMS: 5000,
     });
     console.log("✅ Connected to MongoDB");
+
+    startCronJobs();
 
     app.listen(PORT, () => {
       console.log(`⚡️[server]: Server is running at http://localhost:${PORT}`);

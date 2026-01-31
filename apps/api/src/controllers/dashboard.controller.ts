@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { InvoiceModel } from '../models/invoice.model';
 import { ClientModel } from '../models/client.model';
+import { ExpenseModel } from '../models/expense.model';
 
 export const DashboardController = {
   getStats: async (req: Request, res: Response) => {
@@ -11,6 +12,15 @@ export const DashboardController = {
         { $group: { _id: null, total: { $sum: "$total" } } }
       ]);
       const totalRevenue = revenueResult[0]?.total || 0;
+
+      // ✅ NEW: Calculate Total Expenses
+      const expenseResult = await ExpenseModel.aggregate([
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]);
+      const totalExpenses = expenseResult[0]?.total || 0;
+
+      // ✅ NEW: Calculate Profit
+      const netProfit = totalRevenue - totalExpenses;
 
       // 2. Pending Amount (Everything that is NOT Draft AND NOT Paid)
       // This logic safely catches 'pending', 'sent', 'overdue', etc.
@@ -75,6 +85,8 @@ export const DashboardController = {
         success: true,
         data: { 
           totalRevenue, 
+          totalExpenses,
+          netProfit,
           totalInvoices, 
           pendingAmount, 
           totalClients, 

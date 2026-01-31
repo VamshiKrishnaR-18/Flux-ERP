@@ -11,6 +11,8 @@ import invoiceRoutes from './routes/invoice.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import settingsRoutes from './routes/settings.routes';
 import productRoutes from './routes/product.routes';
+import expenseRoutes from './routes/expense.routes';
+import quoteRoutes from './routes/quote.routes';
 
 const app = express();
 
@@ -54,5 +56,7 @@ app.use('/invoices', invoiceRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/settings', settingsRoutes);
 app.use('/products', productRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/quotes', quoteRoutes);
 
 export default app;

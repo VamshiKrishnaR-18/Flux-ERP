@@ -16,6 +16,9 @@ import InvoiceCreate from './pages/InvoiceCreate';
 import InvoiceEdit from './pages/InvoiceEdit';
 import Settings from './pages/Settings';
 import Products from './pages/Products';
+import Expenses from './pages/Expenses';
+import QuoteList from './pages/QuoteList';
+import QuoteCreate from './pages/QuoteCreate';
 
 export default function App() {
   return (
@@ -40,6 +43,11 @@ export default function App() {
             <Route path="/invoices/new" element={<InvoiceCreate />} />
             <Route path="/invoices/:id" element={<InvoiceView />} />
             <Route path="/invoices/:id/edit" element={<InvoiceEdit />} />
+
+            <Route path="/quotes" element={<QuoteList />} />
+            <Route path="/quotes/new" element={<QuoteCreate />} />
+
+            <Route path="/expenses" element={<Expenses />} />
             
             <Route path="/settings" element={<Settings />} />
             <Route path="/products" element={<Products />} />

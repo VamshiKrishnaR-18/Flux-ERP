@@ -1,66 +1,98 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema, type LoginType } from '@erp/types';
-import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../lib/axios'; // ✅ Use shared API
+import { Link} from 'react-router-dom';
+import { toast } from 'sonner';
+import { api } from '../lib/axios';
+// ✅ Import Types directly (No AuthContext)
+import { LoginSchema, type LoginDTO } from '@erp/types';
 
 export default function Login() {
-  const [message, setMessage] = useState('');
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginType>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginDTO>({
+    resolver: zodResolver(LoginSchema),
   });
 
-  const onSubmit = async (data: LoginType) => {
+  const onSubmit = async (data: LoginDTO) => {
+    setIsLoading(true);
     try {
-      setMessage('Verifying credentials...');
+      const res = await api.post('/auth/login', data);
       
-      // ✅ FIX: Use 'api.post' (Uses VITE_API_URL automatically)
-      const response = await api.post('/auth/login', data);
-      
-      // SAVE THE TOKEN
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      // ✅ 1. Store Token & User manually in LocalStorage
+      localStorage.setItem('token', res.data.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.data.user));
 
-      setMessage('✅ Success! Entering Flux ERP...');
-      setTimeout(() => navigate('/'), 1000); // Go to Dashboard
+      toast.success('Welcome back!');
+      
+      // ✅ 2. Navigate to Dashboard
+      // Using window.location.href ensures a full refresh to update the Sidebar state
+      window.location.href = '/'; 
       
     } catch (error: any) {
-      setMessage('❌ Error: ' + (error.response?.data?.message || "Login failed"));
+      toast.error(error.response?.data?.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-2 text-center text-gray-800">Welcome Back</h1>
-        <p className="text-center text-gray-500 mb-6">Login to Flux ERP</p>
-        
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-lg">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
+          <p className="text-gray-500 mt-2">Sign in to your account</p>
+        </div>
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <input {...register("email")} className="w-full border p-2 rounded mt-1" />
-            {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address
+            </label>
+            <input
+              {...register('email')}
+              type="email"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              placeholder="you@example.com"
+            />
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
-            <input type="password" {...register("password")} className="w-full border p-2 rounded mt-1" />
-            {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              {...register('password')}
+              type="password"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              placeholder="••••••••"
+            />
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+            )}
           </div>
 
-          <button type="submit" className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition">
-            Login
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+          >
+            {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        {message && <div className={`mt-4 text-center font-bold text-sm ${message.includes('Success') ? 'text-green-600' : 'text-red-600'}`}>{message}</div>}
-
-        <p className="mt-4 text-center text-sm text-gray-600">
-          New here? <Link to="/register" className="text-blue-600 hover:underline">Create Account</Link>
+        <p className="text-center mt-6 text-sm text-gray-600">
+          Don't have an account?{' '}
+          <Link to="/register" className="text-blue-600 font-semibold hover:underline">
+            Create account
+          </Link>
         </p>
       </div>
     </div>

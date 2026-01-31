@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 // Define the shape of our API response
 export interface DashboardStats {
   totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  
   totalInvoices: number;
   pendingInvoices: number;
   pendingAmount: number;
