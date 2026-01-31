@@ -3,11 +3,11 @@ import mongoose, { Schema, Document } from 'mongoose';
 import { Invoice as IInvoiceDTO, InvoiceItem as IInvoiceItemDTO } from "@erp/types";
 
 // 2. EXTEND the shared type
-
 export interface IInvoiceDocument extends Document, Omit<IInvoiceDTO, '_id' | 'createdAt' | 'updatedAt'> {
   // We can add Mongoose-specific fields here if needed
   createdAt: Date;
   updatedAt: Date;
+  amountPaid: number; // ✅ Ensure this is typed
 }
 
 // === SCHEMA ===
@@ -60,10 +60,14 @@ const InvoiceSchema: Schema = new Schema({
   credit: { type: Number, default: 0 },
   discount: { type: Number, default: 0 },
 
+  // ✅ NEW FIELD: Amount Paid
+  amountPaid: { type: Number, default: 0 }, 
+
   // Statuses
   status: { 
     type: String, 
-    enum: ['draft', 'pending', 'sent', 'paid'], // Simplified to match Zod
+    // ✅ UPDATE: Added 'overdue' to the list
+    enum: ['draft', 'pending', 'sent', 'paid', 'overdue'], 
     default: 'draft' 
   },
   paymentStatus: { 

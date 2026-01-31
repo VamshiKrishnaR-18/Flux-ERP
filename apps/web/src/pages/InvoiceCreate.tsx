@@ -2,18 +2,17 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { api } from '../lib/axios'; // ✅ Use shared API
+import { api } from '../lib/axios';
 import { toast } from 'sonner';
 
-// Import Shared Types
-import { CreateInvoiceSchema, type CreateInvoiceDTO, type Client } from "@erp/types";
+// Import Types
+import { CreateInvoiceSchema, type CreateInvoiceDTO, type Client, type Product } from "@erp/types";
 
 export default function InvoiceCreate() {
   const navigate = useNavigate();
   const [clients, setClients] = useState<Client[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // ❌ REMOVED: const token = ... (Handled by api interceptor)
 
   const { 
     register, 
@@ -46,41 +45,64 @@ export default function InvoiceCreate() {
     name: "items"
   });
 
+  // 1. WATCH INPUTS (This forces a re-render when they change)
   const items = watch("items");
   const taxRate = watch("taxRate");
   const discount = watch("discount");
 
-  // Calculation Logic (Kept same)
+  // 2. INSTANT MATH (Calculated on every render) ⚡
+  const currentItems = items || [];
+  const calculatedSubTotal = currentItems.reduce((sum: number, item: any) => {
+    return sum + ((item.quantity || 0) * (item.price || 0));
+  }, 0);
+
+  const calculatedTaxTotal = (calculatedSubTotal * (taxRate || 0)) / 100;
+  const calculatedTotal = (calculatedSubTotal + calculatedTaxTotal) - (discount || 0);
+
+  // Fetch Data
   useEffect(() => {
-    const currentItems = items || [];
-    const subTotal = currentItems.reduce((sum: number, item: any) => {
-      return sum + ((item.quantity || 0) * (item.price || 0));
-    }, 0);
-
-    const taxTotal = (subTotal * (taxRate || 0)) / 100;
-    const total = (subTotal + taxTotal) - (discount || 0);
-
-    setValue("subTotal", subTotal);
-    setValue("taxTotal", taxTotal);
-    setValue("total", total);
-  }, [items, taxRate, discount, setValue]);
-
-  // Fetch Clients
-  useEffect(() => {
-    // ✅ FIX: Clean API call
-    api.get('/clients')
-      .then(res => setClients(res.data.data))
-      .catch(() => toast.error("Failed to load clients"));
+    const loadData = async () => {
+        try {
+            const [clientsRes, productsRes] = await Promise.all([
+                api.get('/clients'),
+                api.get('/products')
+            ]);
+            setClients(clientsRes.data.data);
+            setProducts(productsRes.data.data);
+        } catch (error) {
+            toast.error("Failed to load data");
+        }
+    };
+    loadData();
   }, []);
+
+  // Auto-fill Product
+  const handleProductSelect = (index: number, productId: string) => {
+    const product = products.find(p => p._id === productId);
+    if (product) {
+        // We use setValue options to ensure the form knows it changed
+        const options = { shouldValidate: true, shouldDirty: true };
+        setValue(`items.${index}.itemName`, product.name, options);
+        setValue(`items.${index}.description`, product.description || '', options);
+        setValue(`items.${index}.price`, product.price, options);
+        setValue(`items.${index}.quantity`, 1, options);
+    }
+  };
 
   const onSubmit = async (data: CreateInvoiceDTO) => {
     setIsLoading(true);
     const toastId = toast.loading("Creating invoice..."); 
 
+    // 3. INJECT TOTALS ON SUBMIT
+    const payload = {
+        ...data,
+        subTotal: calculatedSubTotal,
+        taxTotal: calculatedTaxTotal,
+        total: calculatedTotal
+    };
+
     try {
-      // ✅ FIX: Clean API call
-      await api.post('/invoices', data);
-      
+      await api.post('/invoices', payload);
       toast.success('Invoice created successfully!', { id: toastId });
       navigate('/invoices');
     } catch (error: any) {
@@ -124,72 +146,117 @@ export default function InvoiceCreate() {
           {/* Items Section */}
           <div className="mb-8">
             <h3 className="font-bold mb-4">Items</h3>
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex gap-2 mb-2 items-start">
-                <div className="flex-1">
-                  <input 
-                    placeholder="Item Name" 
-                    {...register(`items.${index}.itemName`)} 
-                    className="w-full border p-2 rounded" 
-                  />
-                  {(errors.items as any)?.[index]?.itemName && (
-                    <p className="text-red-500 text-xs">Required</p>
-                  )}
+            
+            <div className="space-y-4">
+                {fields.map((field, index) => (
+                <div key={field.id} className="flex gap-2 items-start bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    
+                    <div className="flex-1 space-y-2">
+                        {/* Product Selector */}
+                        <select 
+                            className="w-full text-xs border border-blue-200 bg-blue-50 text-blue-800 p-1.5 rounded focus:ring-1 focus:ring-blue-500 outline-none"
+                            onChange={(e) => handleProductSelect(index, e.target.value)}
+                            defaultValue=""
+                        >
+                            <option value="" disabled>✨ Auto-fill from Inventory...</option>
+                            {products.map(p => (
+                                <option key={p._id} value={p._id}>{p.name} (${p.price})</option>
+                            ))}
+                        </select>
+
+                        <input 
+                            placeholder="Item Name" 
+                            {...register(`items.${index}.itemName`)} 
+                            className="w-full border p-2 rounded bg-white" 
+                        />
+                        {(errors.items as any)?.[index]?.itemName && (
+                            <p className="text-red-500 text-xs mt-1">Required</p>
+                        )}
+
+                        <input 
+                            placeholder="Description" 
+                            {...register(`items.${index}.description`)} 
+                            className="w-full border p-2 rounded text-sm text-gray-600 bg-white" 
+                        />
+                    </div>
+
+                    {/* Quantity */}
+                    <div className="w-20">
+                        <label className="text-xs text-gray-500 block mb-1">Qty</label>
+                        <input 
+                            type="number" 
+                            {...register(`items.${index}.quantity`, { valueAsNumber: true })} 
+                            className="w-full border p-2 rounded text-right" 
+                        />
+                    </div>
+
+                    {/* Price */}
+                    <div className="w-32">
+                        <label className="text-xs text-gray-500 block mb-1">Price</label>
+                        <input 
+                            type="number" 
+                            step="0.01"
+                            {...register(`items.${index}.price`, { valueAsNumber: true })} 
+                            className="w-full border p-2 rounded text-right" 
+                        />
+                    </div>
+
+                    {/* Row Total (Calculated Instantly) */}
+                    <div className="w-24 text-right pt-6 font-bold text-gray-700">
+                        ${((items?.[index]?.quantity || 0) * (items?.[index]?.price || 0)).toFixed(2)}
+                    </div>
+
+                    <button type="button" onClick={() => remove(index)} className="text-red-400 hover:text-red-600 px-2 pt-6">
+                        ✕
+                    </button>
                 </div>
-                <input 
-                  type="number" placeholder="Qty" 
-                  {...register(`items.${index}.quantity`, { valueAsNumber: true })} 
-                  className="w-20 border p-2 rounded text-right" 
-                />
-                <input 
-                  type="number" placeholder="Price" 
-                  {...register(`items.${index}.price`, { valueAsNumber: true })} 
-                  className="w-32 border p-2 rounded text-right" 
-                />
-                <div className="w-32 py-2 text-right font-bold text-gray-700">
-                  ${((items?.[index]?.quantity || 0) * (items?.[index]?.price || 0)).toFixed(2)}
-                </div>
-                <button type="button" onClick={() => remove(index)} className="text-red-500 px-2 py-2">✕</button>
-              </div>
-            ))}
-            <button type="button" onClick={() => append({ itemName: '', quantity: 1, price: 0, total: 0 })} className="text-blue-600 text-sm font-medium">
-              + Add Item
+                ))}
+            </div>
+
+            <button 
+                type="button" 
+                onClick={() => append({ itemName: '', description: '', quantity: 1, price: 0, total: 0 })} 
+                className="mt-4 text-blue-600 text-sm font-medium flex items-center gap-1 hover:underline"
+            >
+                + Add Another Item
             </button>
           </div>
 
           {/* Totals Section */}
           <div className="flex justify-end border-t pt-4">
             <div className="w-64 space-y-2">
-              <div className="flex justify-between">
+              <div className="flex justify-between text-gray-600">
                 <span>Subtotal:</span>
-                <span>${watch("subTotal")?.toFixed(2)}</span>
+                {/* ✅ Display Calculated Value */}
+                <span>${calculatedSubTotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Tax Rate (%):</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Tax Rate (%):</span>
                 <input 
                   type="number" 
                   {...register("taxRate", { valueAsNumber: true })} 
-                  className="w-16 border p-1 rounded text-right" 
+                  className="w-20 border p-1 rounded text-right text-sm" 
                 />
               </div>
-              <div className="flex justify-between">
-                <span>Discount:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Discount ($):</span>
                 <input 
                   type="number" 
                   {...register("discount", { valueAsNumber: true })} 
-                  className="w-16 border p-1 rounded text-right" 
+                  className="w-20 border p-1 rounded text-right text-sm" 
                 />
               </div>
-              <div className="flex justify-between font-bold text-lg border-t pt-2">
+              <div className="flex justify-between font-bold text-lg border-t pt-3 mt-2 text-gray-900">
                 <span>Total:</span>
-                <span>${watch("total")?.toFixed(2)}</span>
+                {/* ✅ Display Calculated Value */}
+                <span>${calculatedTotal.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
           <div className="mt-8 flex justify-end">
-            <button type="submit" disabled={isLoading} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50">
-              {isLoading ? 'Saving...' : 'Create Invoice'}
+            <button type="submit" disabled={isLoading} className="bg-black text-white px-8 py-3 rounded-lg font-bold hover:bg-gray-800 disabled:opacity-50 transition-colors">
+              {isLoading ? 'Creating...' : 'Create Invoice'}
             </button>
           </div>
 

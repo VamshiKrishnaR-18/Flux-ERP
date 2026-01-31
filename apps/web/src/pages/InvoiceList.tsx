@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../lib/axios'; // ✅ Use shared API
+import { api } from '../lib/axios'; 
 import type { Invoice } from '@erp/types';
 import { toast } from 'sonner';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvoicePDF } from '../components/InvoicePDF';
+import { Eye } from 'lucide-react'; // ✅ Import Eye Icon
 
 export default function InvoiceList() {
   const navigate = useNavigate();
@@ -12,28 +13,19 @@ export default function InvoiceList() {
   const [settings, setSettings] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ❌ REMOVED: const token = ... (Handled by api interceptor)
-
-  // Fetch Data (Parallel)
+  // Fetch Data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // ✅ FIX: Parallel requests using shared API
         const [invRes, setRes] = await Promise.all([
-          api.get(`/invoices?t=${Date.now()}`), // Cache buster
+          api.get(`/invoices?t=${Date.now()}`), 
           api.get('/settings')
         ]);
-
-        // Handle Invoices
         const invData = invRes.data.data || invRes.data;
         setInvoices(Array.isArray(invData) ? invData : []);
-
-        // Handle Settings
         setSettings(setRes.data.data);
-
       } catch (error) {
         toast.error('Failed to load data');
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -44,11 +36,8 @@ export default function InvoiceList() {
   // DELETE FUNCTION
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this invoice?')) return;
-
     try {
-      // ✅ FIX: Cleaner Delete Call
       await api.delete(`/invoices/${id}`);
-      
       setInvoices(prev => prev.filter(inv => inv._id !== id));
       toast.success('Invoice deleted successfully');
     } catch (error) {
@@ -61,6 +50,7 @@ export default function InvoiceList() {
       case 'paid': return 'bg-green-100 text-green-800 border-green-200';
       case 'sent': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'overdue': return 'bg-red-100 text-red-800 border-red-200 font-bold';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -126,7 +116,15 @@ export default function InvoiceList() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                           
-                          {/* PDF Download Button */}
+                          {/* ✅ View Details Button */}
+                          <button 
+                            onClick={() => navigate(`/invoices/${invoice._id}`)}
+                            className="text-gray-400 hover:text-blue-600 transition-colors"
+                            title="View Details"
+                          >
+                            <Eye className="w-5 h-5" />
+                          </button>
+
                           <PDFDownloadLink
                             document={<InvoicePDF invoice={invoice} settings={settings} />}
                             fileName={`invoice-${invoice.number}.pdf`}

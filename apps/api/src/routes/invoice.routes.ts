@@ -13,5 +13,6 @@ router.post('/', InvoiceController.create);
 router.get('/:id', InvoiceController.getOne);
 router.put('/:id', InvoiceController.update);
 router.delete('/:id', InvoiceController.delete);
+router.post('/:id/payment', InvoiceController.addPayment);
 
 export default router;

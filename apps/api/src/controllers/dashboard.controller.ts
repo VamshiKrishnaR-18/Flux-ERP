@@ -5,16 +5,22 @@ import { ClientModel } from '../models/client.model';
 export const DashboardController = {
   getStats: async (req: Request, res: Response) => {
     try {
-      // 1. Total Revenue (All Time)
+      // 1. Total Revenue (Everything except Drafts)
       const revenueResult = await InvoiceModel.aggregate([
         { $match: { status: { $ne: 'draft' }, removed: { $ne: true } } },
         { $group: { _id: null, total: { $sum: "$total" } } }
       ]);
       const totalRevenue = revenueResult[0]?.total || 0;
 
-      // 2. Pending Amount (Sum of Pending) - ✅ NEW
+      // 2. Pending Amount (Everything that is NOT Draft AND NOT Paid)
+      // This logic safely catches 'pending', 'sent', 'overdue', etc.
       const pendingResult = await InvoiceModel.aggregate([
-        { $match: { status: 'pending', removed: { $ne: true } } },
+        { 
+          $match: { 
+            status: { $nin: ['draft', 'paid'] }, 
+            removed: { $ne: true } 
+          } 
+        },
         { $group: { _id: null, total: { $sum: "$total" } } }
       ]);
       const pendingAmount = pendingResult[0]?.total || 0;
@@ -40,8 +46,8 @@ export const DashboardController = {
         }
       ]);
 
-      // 6. Calculate Trend (This Month vs Last Month) - ✅ NEW
-      const currentMonth = new Date().getMonth() + 1; // 1-12
+      // 6. Trend Calculation
+      const currentMonth = new Date().getMonth() + 1;
       const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
 
       const thisMonthIncome = monthlyRevenue.find(m => m._id === currentMonth)?.income || 0;
@@ -51,10 +57,10 @@ export const DashboardController = {
       if (lastMonthIncome > 0) {
         trendPercentage = ((thisMonthIncome - lastMonthIncome) / lastMonthIncome) * 100;
       } else if (thisMonthIncome > 0) {
-        trendPercentage = 100; // 100% growth if started from 0
+        trendPercentage = 100;
       }
 
-      // 7. Format Charts
+      // 7. Chart Data
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const chartData = months.map((name, index) => {
         const found = monthlyRevenue.find(item => item._id === index + 1);
@@ -70,11 +76,11 @@ export const DashboardController = {
         data: { 
           totalRevenue, 
           totalInvoices, 
-          pendingAmount, // ✅ Sending Amount, not Count
+          pendingAmount, 
           totalClients, 
           recentInvoices,
           chartData,
-          trendPercentage // ✅ Sending Real Trend
+          trendPercentage 
         }
       });
 

@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Clients from './pages/Clients';
 import InvoiceList from './pages/InvoiceList';
+import InvoiceView from './pages/InvoiceView';
 import InvoiceCreate from './pages/InvoiceCreate';
 import InvoiceEdit from './pages/InvoiceEdit';
 import Settings from './pages/Settings';
@@ -37,6 +38,7 @@ export default function App() {
             {/* Invoice Routes */}
             <Route path="/invoices" element={<InvoiceList />} />
             <Route path="/invoices/new" element={<InvoiceCreate />} />
+            <Route path="/invoices/:id" element={<InvoiceView />} />
             <Route path="/invoices/:id/edit" element={<InvoiceEdit />} />
             
             <Route path="/settings" element={<Settings />} />

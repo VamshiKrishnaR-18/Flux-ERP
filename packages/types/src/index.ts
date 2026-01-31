@@ -38,17 +38,22 @@ export const InvoiceItemSchema = z.object({
   total: z.number(), 
 });
 
+// ✅ FIX: Export the Type inferred from the Schema
+export type InvoiceItem = z.infer<typeof InvoiceItemSchema>;
+
+export const InvoiceStatusSchema = z.enum(['draft', 'pending', 'sent', 'paid', 'overdue']);
+
 export const CreateInvoiceSchema = z.object({
   // Backend Generated
   number: z.number().optional(), 
   year: z.number().optional(),   
   
-  // Enums - We use .default() to ensure they always have a value
+  // Enums
   recurring: z.enum(['daily', 'weekly', 'monthly', 'annually', 'quarter', 'none']).default('none'),
-  status: z.enum(['draft', 'pending', 'sent', 'paid']).default('draft'),
+  status: InvoiceStatusSchema.default('draft'),
   paymentStatus: z.enum(['unpaid', 'paid', 'partially']).default('unpaid'),
   
-  // Dates - Accept string (from JSON/Form) or Date
+  // Dates
   date: z.string().or(z.date()), 
   expiredDate: z.string().or(z.date()),
   
@@ -72,15 +77,26 @@ export interface Invoice extends CreateInvoiceDTO {
   _id: string;
   createdAt: string;
   updatedAt: string;
+  amountPaid?: number;
 }
 
-// 4. Products / Inventory
+// 4. Payments
+export const PaymentSchema = z.object({
+  amount: z.number().min(0.01, "Amount must be greater than 0"),
+  date: z.string().or(z.date()),
+  method: z.enum(['cash', 'bank_transfer', 'check', 'credit_card', 'other']),
+  notes: z.string().optional(),
+});
+
+export type PaymentDTO = z.infer<typeof PaymentSchema>;
+
+// 5. Products / Inventory
 export const ProductSchema = z.object({
   name: z.string().min(2, "Product name is required"),
   description: z.string().optional(),
   price: z.number().min(0, "Price cannot be negative"),
   stock: z.number().int().default(0),
-  sku: z.string().optional(), // Stock Keeping Unit (Unique ID)
+  sku: z.string().optional(), 
 });
 
 export type ProductDTO = z.infer<typeof ProductSchema>;
