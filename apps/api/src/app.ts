@@ -3,8 +3,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
-
 import { swaggerSpec } from './config/swagger';
+import { config } from './config/env'; // ✅ Use Config
+
+// ✅ Routes
 import authRoutes from './routes/auth.routes';
 import clientRoutes from './routes/client.routes';
 import invoiceRoutes from './routes/invoice.routes'; 
@@ -16,21 +18,21 @@ import quoteRoutes from './routes/quote.routes';
 import publicRoutes from './routes/public.routes';
 import repairRoutes from './routes/repair.routes';
 
-
-// ✅ FIX: Import from './middleware' (which reads index.ts) and alias it to 'authenticate'
-import { authMiddleware as authenticate } from './middleware'; 
+// ✅ Middleware (Import directly)
+import { authMiddleware } from './middleware/auth.middleware';
+import { errorHandler } from './middleware/error.middleware'; 
 
 const app = express();
 
-// Security & Logging
+// --- 1. Global Middleware ---
 app.use(helmet());
 app.use(morgan('dev')); 
+app.use(express.json());
 
 // CORS
-const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || config.corsOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -39,36 +41,36 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json());
-
 // Prevent Caching
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   next();
 });
 
-// Health Check
+// --- 2. Routes ---
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: "Flux ERP API is Online", timestamp: new Date().toISOString() });
 });
 
-// Documentation
 app.use('/api-docs', swaggerUi.serve as any, swaggerUi.setup(swaggerSpec) as any); 
 
-// Module Routes
+// Public
 app.use('/auth', authRoutes);      
-app.use('/clients', authenticate, clientRoutes); 
-app.use('/invoices', authenticate, invoiceRoutes); 
-app.use('/dashboard', authenticate, dashboardRoutes);
-app.use('/settings', authenticate, settingsRoutes);
-app.use('/products', authenticate, productRoutes);
 app.use('/public', publicRoutes);
 
-// ✅ Routes without '/api' prefix to match frontend
-app.use('/expenses', authenticate, expenseRoutes);
-app.use('/quotes', authenticate, quoteRoutes);
+// Protected Routes
+app.use('/clients', authMiddleware, clientRoutes); 
+app.use('/invoices', authMiddleware, invoiceRoutes); 
+app.use('/dashboard', authMiddleware, dashboardRoutes);
+app.use('/settings', authMiddleware, settingsRoutes);
+app.use('/products', authMiddleware, productRoutes);
+app.use('/expenses', authMiddleware, expenseRoutes);
+app.use('/quotes', authMiddleware, quoteRoutes);
 
+// Utilities
 app.use('/repair', repairRoutes);
 
+// --- 3. Global Error Handler (MUST BE LAST) ---
+app.use(errorHandler);
 
 export default app;

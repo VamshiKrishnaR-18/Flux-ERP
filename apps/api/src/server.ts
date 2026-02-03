@@ -1,36 +1,40 @@
-import dotenv from 'dotenv';
-dotenv.config(); // Load .env file before anything else
-
+import { config } from './config/env'; // ✅ Load Config FIRST
 import app from './app';
 import mongoose from 'mongoose';
-
+import { connectDB } from './config/db';
 import { startCronJobs } from './jobs/cron';
 
-const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI;
-
 const startServer = async () => {
-  try {
-    if (!MONGO_URI) {
-      throw new Error("❌ MONGO_URI is missing in .env file");
-    }
+  // 1. Connect DB
+  await connectDB();
+  
+  // 2. Start Jobs
+  startCronJobs();
 
-    console.log("Connecting to MongoDB...");
-    await mongoose.connect(MONGO_URI, {
-      serverSelectionTimeoutMS: 5000,
+  // 3. Start Listener
+  const server = app.listen(config.port, () => {
+    console.log(`⚡️[server]: Server is running at http://localhost:${config.port}`);
+  });
+
+  // ✅ Graceful Shutdown Logic
+  const shutdown = async () => {
+    console.log('🛑 SIGTERM/SIGINT received. Shutting down gracefully...');
+    
+    // Stop accepting new requests
+    server.close(() => {
+      console.log('✅ HTTP server closed.');
+      
+      // Close Database Connection
+      mongoose.connection.close(false).then(() => {
+        console.log('✅ MongoDB connection closed.');
+        process.exit(0);
+      });
     });
-    console.log("✅ Connected to MongoDB");
+  };
 
-    startCronJobs();
-
-    app.listen(PORT, () => {
-      console.log(`⚡️[server]: Server is running at http://localhost:${PORT}`);
-    });
-
-  } catch (error) {
-    console.error("❌ Failed to start server:", error);
-    process.exit(1);
-  }
-}
+  // Listen for kill signals (Ctrl+C, Docker stop, Deployment)
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+};
 
 startServer();
