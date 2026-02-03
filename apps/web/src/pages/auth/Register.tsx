@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RegisterSchema, type RegisterDTO } from '@erp/types'; 
 import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../lib/axios'; 
+import { api } from '../../lib/axios'; 
 import { toast } from 'sonner';
 
 export default function Register() {

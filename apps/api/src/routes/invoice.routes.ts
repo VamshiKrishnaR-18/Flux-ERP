@@ -1,19 +1,24 @@
 import { Router } from 'express';
 import { InvoiceController } from '../controllers/invoice.controller';
-// FIX: Correct Import Path and Name 👇
-import { authMiddleware } from '../middleware/index'; 
+import { authMiddleware } from '../middleware/index'; // ✅ Import this
 
 const router = Router();
 
-// Protect all invoice routes
-router.use(authMiddleware);
+// Apply authMiddleware to ALL invoice routes to be safe
+router.use(authMiddleware); 
 
+// Routes
 router.get('/', InvoiceController.getAll);
-router.post('/', InvoiceController.create);
 router.get('/:id', InvoiceController.getOne);
+
+// ✅ Create must be protected so 'req.user' exists
+router.post('/', InvoiceController.create); 
+
 router.put('/:id', InvoiceController.update);
 router.delete('/:id', InvoiceController.delete);
 router.post('/:id/payment', InvoiceController.addPayment);
+
+// Send Invoice (Mock Email)
 router.post('/:id/send', InvoiceController.send);
 
 export default router;

@@ -2,13 +2,26 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductSchema, type ProductDTO, type Product } from '@erp/types';
-import { Package, Plus, Pencil, Trash2 } from 'lucide-react';
-import { useProducts } from '../features/products/useProducts';
+import { Package, Plus, Pencil, Trash2, ArrowUpDown, Search } from 'lucide-react'; // ✅ Import Search
+import { useProducts } from '../features/products/hooks/useProducts';
+import { useSortableData } from '../hooks/useSortableData';
+import { useSearch } from '../hooks/useSearch'; // ✅ Import Hook
 
 export default function Products() {
   const { products, isLoading, addProduct, updateProduct, deleteProduct } = useProducts();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // 1️⃣ SEARCH: Filter the raw data
+  const { query, setQuery, filteredItems: filteredProducts } = useSearch(products, ['name', 'sku']);
+
+  // 2️⃣ SORT: Sort the FILTERED data
+  const { items: sortedProducts, requestSort, sortConfig } = useSortableData(filteredProducts);
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortConfig?.key !== column) return <ArrowUpDown className="w-3 h-3 text-gray-300 inline ml-1" />;
+    return <ArrowUpDown className={`w-3 h-3 inline ml-1 ${sortConfig.direction === 'ascending' ? 'text-blue-600 rotate-180' : 'text-blue-600'}`} />;
+  };
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ProductDTO>({
     resolver: zodResolver(ProductSchema) as any,
@@ -52,13 +65,28 @@ export default function Products() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <Package className="w-6 h-6" /> Inventory
         </h1>
-        <button onClick={openNewModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add Product
-        </button>
+        
+        <div className="flex items-center gap-3">
+             {/* ✅ SEARCH BAR */}
+             <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input 
+                    type="text" 
+                    placeholder="Search products..." 
+                    value={query} 
+                    onChange={e => setQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+             </div>
+             
+             <button onClick={openNewModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Add Product
+            </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -68,17 +96,26 @@ export default function Products() {
           <div className="p-12 text-center text-gray-500">No products found. Add one to get started.</div>
         ) : (
           <table className="w-full text-left">
-            <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-semibold">
+            <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-semibold cursor-pointer select-none">
               <tr>
-                <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">SKU</th>
-                <th className="px-6 py-4 text-right">Price</th>
-                <th className="px-6 py-4 text-right">Stock</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4 hover:bg-gray-100" onClick={() => requestSort('name')}>
+                    Name <SortIcon column="name" />
+                </th>
+                <th className="px-6 py-4 hover:bg-gray-100" onClick={() => requestSort('sku')}>
+                    SKU <SortIcon column="sku" />
+                </th>
+                <th className="px-6 py-4 text-right hover:bg-gray-100" onClick={() => requestSort('price')}>
+                    Price <SortIcon column="price" />
+                </th>
+                <th className="px-6 py-4 text-right hover:bg-gray-100" onClick={() => requestSort('stock')}>
+                    Stock <SortIcon column="stock" />
+                </th>
+                <th className="px-6 py-4 text-right cursor-default">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {products.map((p) => (
+              {/* ✅ Map Sorted Products (which are already filtered) */}
+              {sortedProducts.map((p) => (
                 <tr key={p._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-gray-900">
                     {p.name}
@@ -97,15 +134,19 @@ export default function Products() {
                   </td>
                 </tr>
               ))}
+              {sortedProducts.length === 0 && (
+                  <tr><td colSpan={5} className="p-8 text-center text-gray-500">No products found.</td></tr>
+               )}
             </tbody>
           </table>
         )}
       </div>
-
+      
+      {/* ... Modal Code (Unchanged) ... */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
-            <h2 className="text-xl font-bold mb-4">{editingId ? 'Edit Product' : 'New Product'}</h2>
+             <h2 className="text-xl font-bold mb-4">{editingId ? 'Edit Product' : 'New Product'}</h2>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Name</label>

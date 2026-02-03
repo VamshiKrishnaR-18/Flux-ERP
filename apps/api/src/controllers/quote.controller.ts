@@ -27,6 +27,16 @@ export const QuoteController = {
     }
   },
 
+  getOne: async (req: Request, res: Response) => {
+    try {
+      const quote = await QuoteModel.findById(req.params.id).populate('clientId');
+      if (!quote) return res.status(404).json({ success: false, message: "Quote not found" });
+      res.json({ success: true, data: quote });
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Error fetching quote" });
+    }
+  },
+
   // CREATE
   create: async (req: Request, res: Response) => {
     try {

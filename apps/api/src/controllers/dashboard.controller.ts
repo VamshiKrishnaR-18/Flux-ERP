@@ -13,17 +13,16 @@ export const DashboardController = {
       ]);
       const totalRevenue = revenueResult[0]?.total || 0;
 
-      // ✅ NEW: Calculate Total Expenses
+      // 2. Total Expenses
       const expenseResult = await ExpenseModel.aggregate([
         { $group: { _id: null, total: { $sum: "$amount" } } }
       ]);
       const totalExpenses = expenseResult[0]?.total || 0;
 
-      // ✅ NEW: Calculate Profit
+      // 3. Profit
       const netProfit = totalRevenue - totalExpenses;
 
-      // 2. Pending Amount (Everything that is NOT Draft AND NOT Paid)
-      // This logic safely catches 'pending', 'sent', 'overdue', etc.
+      // 4. Pending Amount (Not Draft, Not Paid)
       const pendingResult = await InvoiceModel.aggregate([
         { 
           $match: { 
@@ -35,17 +34,17 @@ export const DashboardController = {
       ]);
       const pendingAmount = pendingResult[0]?.total || 0;
 
-      // 3. Counts
+      // 5. Counts
       const totalInvoices = await InvoiceModel.countDocuments({ removed: { $ne: true } });
       const totalClients = await ClientModel.countDocuments({ status: 'active' });
       
-      // 4. Recent Invoices
+      // 6. Recent Invoices
       const recentInvoices = await InvoiceModel.find({ removed: { $ne: true } })
         .sort({ createdAt: -1 })
         .limit(5)
         .populate('clientId', 'name');
 
-      // 5. Monthly Aggregation
+      // 7. Monthly Aggregation (Revenue)
       const monthlyRevenue = await InvoiceModel.aggregate([
         { $match: { status: { $ne: 'draft' }, removed: { $ne: true } } },
         {
@@ -56,7 +55,17 @@ export const DashboardController = {
         }
       ]);
 
-      // 6. Trend Calculation
+      // ✅ 8. Monthly Aggregation (Expenses) - Added this so the chart isn't flat!
+      const monthlyExpenses = await ExpenseModel.aggregate([
+        {
+            $group: {
+                _id: { $month: "$date" },
+                expense: { $sum: "$amount" }
+            }
+        }
+      ]);
+
+      // 9. Trend Calculation (Revenue)
       const currentMonth = new Date().getMonth() + 1;
       const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
 
@@ -70,14 +79,15 @@ export const DashboardController = {
         trendPercentage = 100;
       }
 
-      // 7. Chart Data
+      // 10. Chart Data
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const chartData = months.map((name, index) => {
-        const found = monthlyRevenue.find(item => item._id === index + 1);
+        const incomeFound = monthlyRevenue.find(item => item._id === index + 1);
+        const expenseFound = monthlyExpenses.find(item => item._id === index + 1);
         return {
           name,
-          income: found ? found.income : 0,
-          expense: 0 
+          income: incomeFound ? incomeFound.income : 0,
+          expense: expenseFound ? expenseFound.expense : 0 
         };
       });
 
@@ -91,7 +101,7 @@ export const DashboardController = {
           pendingAmount, 
           totalClients, 
           recentInvoices,
-          chartData,
+          chartData, // ✅ Now contains both Income and Expense lines
           trendPercentage 
         }
       });

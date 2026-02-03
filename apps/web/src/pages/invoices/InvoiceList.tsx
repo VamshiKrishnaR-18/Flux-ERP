@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../lib/axios'; 
+import { api } from '../../lib/axios'; 
 import type { Invoice } from '@erp/types';
 import { toast } from 'sonner';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { InvoicePDF } from '../components/InvoicePDF';
-import { Eye, Send } from 'lucide-react'; // ✅ Import Send
+import { InvoicePDF } from '../../features/invoices/components/InvoicePDF';
+import { Eye, Send, Search } from 'lucide-react'; // ✅ Import Search
+import { useSearch } from '../../hooks/useSearch'; // ✅ Import Hook
 
 export default function InvoiceList() {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [settings, setSettings] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // ✅ SETUP SEARCH
+  // We search in: Invoice Number, Client Name, and Status
+  const { query, setQuery, filteredItems: filteredInvoices } = useSearch(invoices, ['number', 'clientId.name', 'status']);
 
   // Fetch Data
   useEffect(() => {
@@ -56,17 +61,13 @@ export default function InvoiceList() {
   };
 
   const handleSend = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Stop the row click from firing
+    e.stopPropagation();
     const toastId = toast.loading("Sending invoice...");
-    
     try {
       await api.post(`/invoices/${id}/send`);
-      
-      // Instant UI Update (Optimistic)
       setInvoices(prev => prev.map(inv => 
         inv._id === id ? { ...inv, status: 'sent' } : inv
       ));
-      
       toast.success("Invoice sent successfully!", { id: toastId });
     } catch (error) {
       toast.error("Failed to send invoice", { id: toastId });
@@ -76,14 +77,29 @@ export default function InvoiceList() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-6xl mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h1 className="text-2xl font-bold text-gray-800">Invoices</h1>
-          <button 
-            onClick={() => navigate('/invoices/new')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2"
-          >
-            <span>+</span> Create Invoice
-          </button>
+          
+          <div className="flex items-center gap-3 w-full md:w-auto">
+             {/* ✅ SEARCH BAR */}
+             <div className="relative flex-1 md:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input 
+                    type="text" 
+                    placeholder="Search invoices..." 
+                    value={query} 
+                    onChange={e => setQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+             </div>
+
+             <button 
+                onClick={() => navigate('/invoices/new')}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2 whitespace-nowrap"
+             >
+                <span>+</span> Create
+             </button>
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -93,7 +109,6 @@ export default function InvoiceList() {
             <div className="p-16 text-center">
               <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🧾</div>
               <h3 className="text-lg font-medium text-gray-900 mb-1">No invoices yet</h3>
-              <p className="text-gray-500 mb-6">Create your first invoice to get started.</p>
               <button onClick={() => navigate('/invoices/new')} className="text-blue-600 font-medium hover:underline">
                 Create Invoice
               </button>
@@ -112,7 +127,8 @@ export default function InvoiceList() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {invoices.map((invoice) => (
+                  {/* ✅ MAP OVER FILTERED ITEMS */}
+                  {filteredInvoices.map((invoice) => (
                     <tr key={invoice._id} className="hover:bg-gray-50 transition-colors group">
                       <td className="px-6 py-4 font-medium text-gray-900">
                         #{invoice.number}
@@ -134,7 +150,6 @@ export default function InvoiceList() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                           
-                          {/* ✅ NEW: SEND BUTTON (Only for Drafts) */}
                           {invoice.status === 'draft' && (
                             <button 
                               onClick={(e) => handleSend(invoice._id, e)}
@@ -161,17 +176,11 @@ export default function InvoiceList() {
                             {({ loading }) => (loading ? 'Loading...' : 'Download')}
                           </PDFDownloadLink>
 
-                          <button 
-                            onClick={() => navigate(`/invoices/${invoice._id}/edit`)}
-                            className="text-sm text-gray-500 hover:text-blue-600"
-                          >
+                          <button onClick={() => navigate(`/invoices/${invoice._id}/edit`)} className="text-sm text-gray-500 hover:text-blue-600">
                             Edit
                           </button>
                           
-                          <button 
-                            onClick={() => handleDelete(invoice._id)}
-                            className="text-sm text-gray-500 hover:text-red-600"
-                          >
+                          <button onClick={() => handleDelete(invoice._id)} className="text-sm text-gray-500 hover:text-red-600">
                             Delete
                           </button>
 
@@ -179,6 +188,9 @@ export default function InvoiceList() {
                       </td>
                     </tr>
                   ))}
+                  {filteredInvoices.length === 0 && (
+                      <tr><td colSpan={6} className="p-8 text-center text-gray-500">No invoices found matching "{query}"</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>

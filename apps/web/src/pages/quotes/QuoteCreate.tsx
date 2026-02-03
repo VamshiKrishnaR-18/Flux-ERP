@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { api } from '../lib/axios';
+import { api } from '../../lib/axios';
 import { toast } from 'sonner';
 
 export default function QuoteCreate() {

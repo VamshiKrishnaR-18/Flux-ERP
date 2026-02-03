@@ -1,17 +1,16 @@
 import mongoose, { Schema, Document } from 'mongoose';
-// 1. IMPORT from your shared package
-import { Invoice as IInvoiceDTO, InvoiceItem as IInvoiceItemDTO } from "@erp/types";
+import { Invoice as IInvoiceDTO } from "@erp/types";
 
-// 2. EXTEND the shared type
+// 1. Interface Definition
 export interface IInvoiceDocument extends Document, Omit<IInvoiceDTO, '_id' | 'createdAt' | 'updatedAt'> {
-  // We can add Mongoose-specific fields here if needed
   createdAt: Date;
   updatedAt: Date;
-  amountPaid: number; // ✅ Ensure this is typed
+  amountPaid: number;
+  removed: boolean;
+  createdBy: string;
 }
 
-// === SCHEMA ===
-
+// 2. Schema Definition
 const InvoiceSchema: Schema = new Schema({
   // Identification
   number: { type: Number, required: true },
@@ -32,17 +31,11 @@ const InvoiceSchema: Schema = new Schema({
     ref: 'Client',
     required: true
   },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  
-  // Conversion
-  converted: {
-    from: { type: String, enum: ['quote', 'offer'] },
-    quoteId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quote' },
-    offerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Offer' }
-  },
+  createdBy: { type: String, required: true },
 
   // Content
   items: [{
+    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
     itemName: { type: String, required: true },
     description: { type: String },
     quantity: { type: Number, required: true, default: 1 },
@@ -60,13 +53,10 @@ const InvoiceSchema: Schema = new Schema({
   credit: { type: Number, default: 0 },
   discount: { type: Number, default: 0 },
 
-  // ✅ NEW FIELD: Amount Paid
+  // Status & Payment
   amountPaid: { type: Number, default: 0 }, 
-
-  // Statuses
   status: { 
     type: String, 
-    // ✅ UPDATE: Added 'overdue' to the list
     enum: ['draft', 'pending', 'sent', 'paid', 'overdue'], 
     default: 'draft' 
   },
@@ -79,6 +69,7 @@ const InvoiceSchema: Schema = new Schema({
   // System
   pdf: { type: String },
   removed: { type: Boolean, default: false }
+
 }, { 
   timestamps: true 
 });

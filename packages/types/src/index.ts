@@ -34,6 +34,7 @@ export interface Client extends ClientDTO {
 
 // 3. INVOICES 🧾
 export const InvoiceItemSchema = z.object({
+  productId: z.string().optional(),
   itemName: z.string().min(1, "Item name is required"),
   description: z.string().optional(),
   quantity: z.number().min(1),
@@ -102,13 +103,16 @@ export interface Product extends ProductDTO {
 }
 
 
-// 6. EXPENSES 💸
+// ✅ 6. EXPENSES (Robust Fix)
 export const ExpenseSchema = z.object({
   description: z.string().min(2, "Description is required"),
-  amount: z.number().min(0.01, "Amount must be positive"),
-  category: z.enum(['office', 'software', 'marketing', 'travel', 'salary', 'utilities', 'other']).default('other'),
-  date: z.string().or(z.date()),
-  receipt: z.string().optional(), // URL to image
+  // ✅ FIX: Use z.coerce to auto-convert strings to numbers
+  amount: z.coerce.number().min(0.01, "Amount must be positive"), 
+  // ✅ FIX: Allow any string as category (or strict enum if you prefer)
+  category: z.string().default('Operational'),
+  // ✅ FIX: Auto-convert date strings to Date objects
+  date: z.coerce.date(), 
+  receipt: z.string().optional(),
 });
 
 export type CreateExpenseDTO = z.infer<typeof ExpenseSchema>;
@@ -136,3 +140,20 @@ export interface Quote extends CreateQuoteDTO {
   createdAt: string;
   updatedAt: string;
 }
+
+
+// ✅ 8. SETTINGS ⚙️
+export const SettingsSchema = z.object({
+  companyName: z.string().min(1, "Company Name is required"),
+  companyEmail: z.string().email("Invalid email").optional().or(z.literal('')),
+  companyPhone: z.string().optional(),
+  companyAddress: z.string().optional(),
+  companyWebsite: z.string().optional(),
+  currency: z.string().default('USD'),
+  taxRate: z.coerce.number().min(0).default(0), // Default tax rate for new invoices
+  invoicePrefix: z.string().default('INV-'),
+  defaultPaymentTerms: z.coerce.number().min(0).default(14), // Default 14 days
+  defaultNotes: z.string().optional().default('Thank you for your business!'),
+});
+
+export type SettingsDTO = z.infer<typeof SettingsSchema>;

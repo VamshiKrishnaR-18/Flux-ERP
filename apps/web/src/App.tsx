@@ -2,23 +2,27 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
 // Layouts
-import ProtectedLayout from './pages/ProtectedLayout';
-import { Layout } from './components/Layout';
+import ProtectedLayout from './layouts/ProtectedLayout';
+import { Layout } from './layouts/DashboardLayout';
 
 // Pages
 import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
 import Clients from './pages/Clients';
-import InvoiceList from './pages/InvoiceList';
-import InvoiceView from './pages/InvoiceView';
-import InvoiceCreate from './pages/InvoiceCreate';
-import InvoiceEdit from './pages/InvoiceEdit';
+import InvoiceList from './pages/invoices/InvoiceList';
+import InvoiceView from './pages/invoices/InvoiceView';
+import InvoiceCreate from './pages/invoices/InvoiceCreate';
+import InvoiceEdit from './pages/invoices/InvoiceEdit';
 import Settings from './pages/Settings';
 import Products from './pages/Products';
 import Expenses from './pages/Expenses';
-import QuoteList from './pages/QuoteList';
-import QuoteCreate from './pages/QuoteCreate';
+import QuoteList from './pages/quotes/QuoteList';
+import QuoteCreate from './pages/quotes/QuoteCreate';
+import QuoteView from './pages/quotes/QuoteView';
+
+import PublicLayout from './layouts/PublicLayout';
+import InvoicePublic from './pages/public/InvoicePublic';
 
 export default function App() {
   return (
@@ -27,6 +31,12 @@ export default function App() {
       <Toaster position="top-right" richColors />
 
       <Routes>
+
+        {/* 🔓 PUBLIC ROUTES (No Login Required) */}
+        <Route element={<PublicLayout />}>
+            <Route path="/p/invoice/:id" element={<InvoicePublic />} />
+        </Route>
+
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -46,6 +56,7 @@ export default function App() {
 
             <Route path="/quotes" element={<QuoteList />} />
             <Route path="/quotes/new" element={<QuoteCreate />} />
+            <Route path="/quotes/:id" element={<QuoteView />} />
 
             <Route path="/expenses" element={<Expenses />} />
             

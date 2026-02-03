@@ -13,6 +13,9 @@ import settingsRoutes from './routes/settings.routes';
 import productRoutes from './routes/product.routes';
 import expenseRoutes from './routes/expense.routes';
 import quoteRoutes from './routes/quote.routes';
+import publicRoutes from './routes/public.routes';
+import repairRoutes from './routes/repair.routes';
+
 
 // ✅ FIX: Import from './middleware' (which reads index.ts) and alias it to 'authenticate'
 import { authMiddleware as authenticate } from './middleware'; 
@@ -59,10 +62,13 @@ app.use('/invoices', authenticate, invoiceRoutes);
 app.use('/dashboard', authenticate, dashboardRoutes);
 app.use('/settings', authenticate, settingsRoutes);
 app.use('/products', authenticate, productRoutes);
+app.use('/public', publicRoutes);
 
 // ✅ Routes without '/api' prefix to match frontend
 app.use('/expenses', authenticate, expenseRoutes);
 app.use('/quotes', authenticate, quoteRoutes);
+
+app.use('/repair', repairRoutes);
 
 
 export default app;
