@@ -1,6 +1,6 @@
 import { Request, Response, CookieOptions } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken'; // 👈 Import SignOptions Type
 import { RegisterSchema, LoginSchema } from '@erp/types';
 import { UserModel } from '../models/user.model';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -8,18 +8,28 @@ import { config } from '../config/env';
 
 // ✅ Helper: Send Secure Cookie
 const sendTokenResponse = (user: any, statusCode: number, res: Response) => {
+  // 1. Generate Token
   const token = jwt.sign(
     { id: user._id, role: user.role },
     config.jwtSecret!,
-    { expiresIn: '1d' }
+    { 
+      // ✅ PROPER FIX: strictly cast to the library's expected type
+      // This is safer than 'as any' because it must still be a string or number
+      expiresIn: config.jwtExpiresIn as SignOptions['expiresIn'] 
+    }
+  );
+
+  // 2. Calculate Cookie Expiry
+  const cookieExpires = new Date(
+    Date.now() + config.cookieExpiresInHours * 60 * 60 * 1000
   );
 
   const options: CookieOptions = {
-    expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
+    expires: cookieExpires,
     httpOnly: true,
     secure: config.nodeEnv === 'production',
     sameSite: (config.nodeEnv === 'production' ? 'none' : 'lax') as 'none' | 'lax',
-    path: '/' // 👈 ADDED: Explicitly set path to root so Logout can find it
+    path: '/' 
   };
 
   res
@@ -27,7 +37,8 @@ const sendTokenResponse = (user: any, statusCode: number, res: Response) => {
     .cookie('token', token, options)
     .json({
       success: true,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      token 
     });
 };
 
@@ -79,16 +90,14 @@ export const AuthController = {
     sendTokenResponse(user, 200, res);
   }),
 
-  // ✅ LOGOUT (THE NUCLEAR OPTION)
+  // LOGOUT
   logout: asyncHandler(async (req: Request, res: Response) => {
-    // We overwrite the cookie with an empty string and expire it immediately.
-    // This is more reliable than clearCookie because it forces an update.
     res.cookie('token', '', {
       httpOnly: true,
       secure: config.nodeEnv === 'production', 
       sameSite: (config.nodeEnv === 'production' ? 'none' : 'lax') as 'none' | 'lax',
-      expires: new Date(0), // 💥 Set date to 1970 (immediately expired)
-      path: '/'             // 💥 Match the login path exactly
+      expires: new Date(0), 
+      path: '/'             
     });
 
     res.setHeader('Clear-Site-Data', '"cookies", "storage"');

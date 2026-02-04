@@ -1,21 +1,19 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, RequestHandler } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-
-import cookieParser from 'cookie-parser'; 
+import cookieParser from 'cookie-parser';
 import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
 import hpp from 'hpp';
-
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
-import { config } from './config/env'; 
+import { config } from './config/env';
 
 // Routes
 import authRoutes from './routes/auth.routes';
 import clientRoutes from './routes/client.routes';
-import invoiceRoutes from './routes/invoice.routes'; 
+import invoiceRoutes from './routes/invoice.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import settingsRoutes from './routes/settings.routes';
 import productRoutes from './routes/product.routes';
@@ -25,31 +23,32 @@ import publicRoutes from './routes/public.routes';
 
 // Middleware
 import { authMiddleware } from './middleware/auth.middleware';
-import { errorHandler } from './middleware/error.middleware'; 
+import { errorHandler } from './middleware/error.middleware';
 
 const app = express();
 
 // --- 1. Global Middleware ---
 app.use(helmet());
-app.use(morgan('dev')); 
+app.use(morgan('dev'));
 app.use(express.json());
 
-// ✅ FIX: Cast cookieParser to 'any' to fix the TypeScript error
-app.use(cookieParser() as any);
+// ✅ FIX: Type Bridge for Cookie Parser
+app.use(cookieParser() as unknown as RequestHandler);
 
-// ✅ FIX: Cast others to 'any' as well
-app.use(mongoSanitize() as any);
-app.use(hpp() as any);
+// Security Middleware
+// ✅ FIX: Type Bridge for Security libs
+app.use(mongoSanitize() as unknown as RequestHandler);
+app.use(hpp() as unknown as RequestHandler);
 
-// Rate Limiting (100 requests per 10 mins)
+// Rate Limiting
 const limiter = rateLimit({
-  windowMs: 10 * 60 * 1000, 
-  max: 100,
-  message: { success: false, message: "Too many requests, please try again later." }
+  windowMs: 10 * 60 * 1000,
+  limit: 100, // Use 'limit' (standard) instead of 'max' (deprecated)
+  message: "Too many requests, please try again later."
 });
 
-// ✅ FIX: Cast rate limiter to 'any'
-app.use(limiter as any); 
+// ✅ FIX: Type Bridge for Rate Limiter
+app.use(limiter as unknown as RequestHandler);
 
 // CORS
 app.use(cors({
@@ -74,15 +73,16 @@ app.get('/', (req: Request, res: Response) => {
   res.json({ message: "Flux ERP API is Online", timestamp: new Date().toISOString() });
 });
 
-app.use('/api-docs', swaggerUi.serve as any, swaggerUi.setup(swaggerSpec) as any); 
+// ✅ FIX: Spread Operator for Swagger
+app.use('/api-docs', ...(swaggerUi.serve as unknown as RequestHandler[]), swaggerUi.setup(swaggerSpec) as unknown as RequestHandler); 
 
 // Public
-app.use('/auth', authRoutes);      
+app.use('/auth', authRoutes);
 app.use('/public', publicRoutes);
 
 // Protected Routes
-app.use('/clients', authMiddleware, clientRoutes); 
-app.use('/invoices', authMiddleware, invoiceRoutes); 
+app.use('/clients', authMiddleware, clientRoutes);
+app.use('/invoices', authMiddleware, invoiceRoutes);
 app.use('/dashboard', authMiddleware, dashboardRoutes);
 app.use('/settings', authMiddleware, settingsRoutes);
 app.use('/products', authMiddleware, productRoutes);
