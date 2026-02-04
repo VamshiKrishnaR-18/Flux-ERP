@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { SettingsController } from '../controllers/settings.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { requireAdmin } from '../middleware/admin.middleware';
 
 const router = Router();
 
-router.use(authMiddleware); // Protect routes
+
 router.get('/', SettingsController.get);
-router.put('/', SettingsController.update);
+
+
+router.put('/', requireAdmin, SettingsController.update);
 
 export default router;

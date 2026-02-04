@@ -94,9 +94,21 @@ app.use('/dashboard', authMiddleware as unknown as RequestHandler, dashboardRout
 app.use('/products', authMiddleware as unknown as RequestHandler, productRoutes);
 app.use('/quotes', authMiddleware as unknown as RequestHandler, quoteRoutes);
 
-// 2. Add the middleware to these routes
-app.use('/settings', authMiddleware as unknown as RequestHandler, requireAdmin as unknown as RequestHandler, settingsRoutes);
-app.use('/expenses', authMiddleware as unknown as RequestHandler, requireAdmin as unknown as RequestHandler, expenseRoutes);
+// 🛡️ ADMIN ROUTES
+app.use('/expenses', 
+  authMiddleware as unknown as RequestHandler, 
+  requireAdmin as unknown as RequestHandler, 
+  expenseRoutes
+);
+
+
+// Remove 'requireAdmin' from here so GET requests can pass through
+app.use('/settings', 
+  authMiddleware as unknown as RequestHandler, 
+  // requireAdmin, ❌ REMOVED (Moved to routes file)
+  settingsRoutes
+);
+
 // --- 3. Global Error Handler (MUST BE LAST) ---
 app.use(errorHandler as unknown as RequestHandler);
 
