@@ -1,40 +1,28 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form'; // 👈 Import Resolver
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'sonner';
-import { api } from '../../lib/axios';
-import { LoginSchema, type LoginDTO } from '@erp/types';
+import { LoginSchema, type LoginDTO } from '@erp/types'; // 👈 Import DTO
 
 export default function Login() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginDTO>({
-    resolver: zodResolver(LoginSchema),
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginDTO>({
+    resolver: zodResolver(LoginSchema) as Resolver<LoginDTO> // ✅ STRICT TYPE FIX
   });
 
   const onSubmit = async (data: LoginDTO) => {
     setIsLoading(true);
     try {
-      const res = await api.post('/auth/login', data);
-      
-      // ✅ FIX: 'user' is at the root level, just like 'token'
-      // Backend response: { success: true, token: "...", user: {...} }
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user)); // <--- FIXED HERE
-
+      await login(data.email, data.password);
       toast.success('Welcome back!');
-      
-      // Navigate
-      window.location.href = '/'; 
-      
-    } catch (error: any) {
-      console.error("Login Error:", error);
-      toast.error(error.response?.data?.message || 'Login failed');
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error('Invalid credentials');
     } finally {
       setIsLoading(false);
     }
@@ -42,50 +30,37 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-lg">
-        {/* ... (Rest of your UI is fine) ... */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-500 mt-2">Sign in to your account</p>
-        </div>
-
+      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+        <h2 className="text-2xl font-bold mb-6 text-center text-gray-900">Sign In</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-            <input
-              {...register('email')}
-              type="email"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="you@example.com"
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input 
+              {...register('email')} 
+              type="email" 
+              className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
             />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              {...register('password')}
-              type="password"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="••••••••"
+            <input 
+              {...register('password')} 
+              type="password" 
+              className="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
             />
-            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+            {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
           </div>
-
-          <button
-            type="submit"
+          <button 
+            type="submit" 
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 mt-2"
+            className="w-full bg-black text-white py-2 rounded-lg font-bold hover:bg-gray-800 disabled:opacity-50"
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? 'Signing in...' : 'Login'}
           </button>
         </form>
-
-        <p className="text-center mt-6 text-sm text-gray-600">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-blue-600 font-semibold hover:underline">
-            Create account
-          </Link>
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Don't have an account? <Link to="/register" className="text-blue-600 hover:underline">Register</Link>
         </p>
       </div>
     </div>
