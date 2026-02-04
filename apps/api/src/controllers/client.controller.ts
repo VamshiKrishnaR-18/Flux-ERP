@@ -1,37 +1,35 @@
 import { Request, Response } from 'express';
 import { ClientModel } from '../models/client.model';
-import { ClientSchema } from '@erp/types';
 import { asyncHandler } from '../utils/asyncHandler';
+import { ClientSchema } from '@erp/types';
 
 export const ClientController = {
-  
-  // ✅ UPDATED: Search + Pagination
   getAll: asyncHandler(async (req: Request, res: Response) => {
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10;
-    const search = req.query.search as string || ''; // 👈 Get Search Term
+    // ✅ Pagination Logic
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
+    const search = req.query.search as string;
 
-    // Build Query
-    const query: any = { removed: { $ne: true } };
-
+    const query: any = { userId: req.user?.id, removed: false };
+    
     if (search) {
-      // Search in Name OR Email (Case-insensitive)
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } }
       ];
     }
 
-    const clients = await ClientModel.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    const [total, clients] = await Promise.all([
+      ClientModel.countDocuments(query),
+      ClientModel.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+    ]);
 
-    const total = await ClientModel.countDocuments(query); // 👈 Count filtered docs
-
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: clients,
       pagination: {
         total,
@@ -42,33 +40,35 @@ export const ClientController = {
     });
   }),
 
-  // ... (Keep create, update, delete unchanged)
+  // ... keep create, update, delete as they are
   create: asyncHandler(async (req: Request, res: Response) => {
     const validation = ClientSchema.safeParse(req.body);
     if (!validation.success) {
       res.status(400);
-      throw new Error(validation.error.errors[0]?.message || "Invalid Input");
+      throw new Error(validation.error.errors[0]?.message);
     }
-    const newClient = await ClientModel.create(validation.data);
-    res.status(201).json({ success: true, data: newClient });
+    const client = await ClientModel.create({ ...validation.data, userId: req.user?.id });
+    res.status(201).json({ success: true, data: client });
   }),
 
   update: asyncHandler(async (req: Request, res: Response) => {
-    const updatedClient = await ClientModel.findByIdAndUpdate(
-      req.params.id,
+    const client = await ClientModel.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user?.id },
       req.body,
       { new: true }
     );
-    if (!updatedClient) {
-      res.status(404);
-      throw new Error("Client not found");
-    }
-    res.json({ success: true, data: updatedClient });
+    if (!client) { res.status(404); throw new Error("Client not found"); }
+    res.json({ success: true, data: client });
   }),
 
   delete: asyncHandler(async (req: Request, res: Response) => {
-    // Soft Delete
-    await ClientModel.findByIdAndUpdate(req.params.id, { removed: true });
-    res.json({ success: true, message: "Client deleted successfully" });
+    // Soft delete
+    const client = await ClientModel.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user?.id },
+      { removed: true },
+      { new: true }
+    );
+    if (!client) { res.status(404); throw new Error("Client not found"); }
+    res.json({ success: true, message: "Client deleted" });
   })
 };
