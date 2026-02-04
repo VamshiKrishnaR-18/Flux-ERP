@@ -9,14 +9,24 @@ import {
   TrendingDown,
   MessageSquareQuote
 } from 'lucide-react';
+import { api } from '../lib/axios'; // 👈 IMPORT YOUR API CLIENT
 
 export const Sidebar = () => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
+  // ✅ UPDATED: Call Backend to Logout
+  const handleLogout = async () => {
+    try {
+      // 1. Tell Server to delete the HttpOnly Cookie
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      // 2. Clear any local non-sensitive user data
+      localStorage.removeItem('user'); 
+      // 3. Redirect to Login
+      navigate('/login');
+    }
   };
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>

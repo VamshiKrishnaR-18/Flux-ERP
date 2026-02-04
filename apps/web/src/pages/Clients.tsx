@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/axios';
 import { toast } from 'sonner';
-import { Search, ArrowUpDown, Trash2, Phone, Mail, MapPin, User } from 'lucide-react';
+import { Search, ArrowUpDown, Trash2, Phone, Mail, MapPin, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSearch } from '../hooks/useSearch';
-import { useSortableData } from '../hooks/useSortableData'; // ✅ Import Hook
+import { useSortableData } from '../hooks/useSortableData'; 
 
 interface Client {
   _id: string;
@@ -19,10 +19,15 @@ export default function Clients() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
 
-  // 1️⃣ SEARCH
+  // ✅ Pagination State
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const LIMIT = 10;
+
+  // 1️⃣ SEARCH (Filters the currently fetched page)
   const { query, setQuery, filteredItems: filteredClients } = useSearch(clients, ['name', 'email']);
 
-  // 2️⃣ SORT
+  // 2️⃣ SORT (Sorts the currently fetched page)
   const { items: sortedClients, requestSort, sortConfig } = useSortableData(filteredClients);
 
   const SortIcon = ({ column }: { column: string }) => {
@@ -30,10 +35,19 @@ export default function Clients() {
     return <ArrowUpDown className={`w-3 h-3 inline ml-1 ${sortConfig.direction === 'ascending' ? 'text-blue-600 rotate-180' : 'text-blue-600'}`} />;
   };
 
+  // ✅ Updated Fetch Logic
   const fetchClients = async () => {
+    setIsLoading(true);
     try {
-        const res = await api.get('/clients');
-        setClients(res.data.data);
+        // Pass page and limit to Backend
+        const res = await api.get(`/clients?page=${page}&limit=${LIMIT}`);
+        
+        // Handle response structure
+        const data = res.data.data || [];
+        const pagination = res.data.pagination || { totalPages: 1 };
+        
+        setClients(data);
+        setTotalPages(pagination.totalPages);
     } catch (err) {
         toast.error("Failed to load clients");
     } finally {
@@ -41,13 +55,14 @@ export default function Clients() {
     }
   };
   
-  useEffect(() => { fetchClients(); }, []);
+  // Re-fetch when page changes
+  useEffect(() => { fetchClients(); }, [page]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await api.post('/clients', formData);
-      setClients([res.data.data, ...clients]);
+      await api.post('/clients', formData);
+      fetchClients(); // Refresh list to show new item
       setShowModal(false);
       setFormData({ name: '', email: '', phone: '', address: '' });
       toast.success('Client added successfully');
@@ -60,8 +75,16 @@ export default function Clients() {
     if(!confirm("Delete this client?")) return;
     try {
         await api.delete(`/clients/${id}`);
+        // Optimistic update (remove from UI immediately)
         setClients(prev => prev.filter(c => c._id !== id));
         toast.success("Client deleted");
+        
+        // If page becomes empty, go back one page
+        if (clients.length === 1 && page > 1) {
+            setPage(prev => prev - 1);
+        } else {
+            fetchClients(); // Sync with server
+        }
     } catch (err) {
         toast.error("Failed to delete");
     }
@@ -81,7 +104,7 @@ export default function Clients() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input 
                     type="text" 
-                    placeholder="Search clients..." 
+                    placeholder="Search visible clients..." 
                     value={query} 
                     onChange={e => setQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
@@ -97,69 +120,93 @@ export default function Clients() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Table Container */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
         {isLoading ? (
           <div className="p-12 text-center text-gray-500">Loading clients...</div>
         ) : clients.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">No clients found. Add one to get started.</div>
+          <div className="p-12 text-center text-gray-500">No clients found.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-semibold cursor-pointer select-none">
-                <tr>
-                  <th className="px-6 py-4 hover:bg-gray-100" onClick={() => requestSort('name')}>
-                    Name <SortIcon column="name" />
-                  </th>
-                  <th className="px-6 py-4 hover:bg-gray-100" onClick={() => requestSort('email')}>
-                    Contact Info <SortIcon column="email" />
-                  </th>
-                  <th className="px-6 py-4">Address</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {/* ✅ Map Sorted */}
-                {sortedClients.map((client) => (
-                  <tr key={client._id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4">
-                        <p className="font-medium text-gray-900">{client.name}</p>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 text-sm">
-                        <div className="flex items-center gap-2 mb-1">
-                            <Mail className="w-3 h-3 text-gray-400" /> {client.email}
-                        </div>
-                        {client.phone && (
-                            <div className="flex items-center gap-2 text-gray-500">
-                                <Phone className="w-3 h-3 text-gray-400" /> {client.phone}
-                            </div>
-                        )}
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 text-sm">
-                        {client.address ? (
-                            <div className="flex items-start gap-2">
-                                <MapPin className="w-3 h-3 text-gray-400 mt-0.5" /> 
-                                <span className="max-w-[200px] truncate">{client.address}</span>
-                            </div>
-                        ) : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleDelete(client._id)}
-                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                        title="Delete Client"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-semibold cursor-pointer select-none">
+                  <tr>
+                    <th className="px-6 py-4 hover:bg-gray-100" onClick={() => requestSort('name')}>
+                      Name <SortIcon column="name" />
+                    </th>
+                    <th className="px-6 py-4 hover:bg-gray-100" onClick={() => requestSort('email')}>
+                      Contact Info <SortIcon column="email" />
+                    </th>
+                    <th className="px-6 py-4">Address</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
-                ))}
-                {sortedClients.length === 0 && (
-                  <tr><td colSpan={4} className="p-8 text-center text-gray-500">No clients match your search.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {sortedClients.map((client) => (
+                    <tr key={client._id} className="hover:bg-gray-50 transition">
+                      <td className="px-6 py-4">
+                          <p className="font-medium text-gray-900">{client.name}</p>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 text-sm">
+                          <div className="flex items-center gap-2 mb-1">
+                              <Mail className="w-3 h-3 text-gray-400" /> {client.email}
+                          </div>
+                          {client.phone && (
+                              <div className="flex items-center gap-2 text-gray-500">
+                                  <Phone className="w-3 h-3 text-gray-400" /> {client.phone}
+                              </div>
+                          )}
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 text-sm">
+                          {client.address ? (
+                              <div className="flex items-start gap-2">
+                                  <MapPin className="w-3 h-3 text-gray-400 mt-0.5" /> 
+                                  <span className="max-w-[200px] truncate">{client.address}</span>
+                              </div>
+                          ) : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => handleDelete(client._id)}
+                          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                          title="Delete Client"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {sortedClients.length === 0 && (
+                    <tr><td colSpan={4} className="p-8 text-center text-gray-500">No clients match your search.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* ✅ Pagination Controls */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                Page <span className="font-medium text-gray-900">{page}</span> of <span className="font-medium text-gray-900">{totalPages}</span>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setPage(p => Math.max(1, p - 1))} 
+                  disabled={page === 1} 
+                  className="px-3 py-1 text-sm border rounded hover:bg-white disabled:opacity-50 disabled:hover:bg-transparent flex items-center gap-1"
+                >
+                  <ChevronLeft className="w-4 h-4" /> Prev
+                </button>
+                <button 
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
+                  disabled={page === totalPages} 
+                  className="px-3 py-1 text-sm border rounded hover:bg-white disabled:opacity-50 disabled:hover:bg-transparent flex items-center gap-1"
+                >
+                  Next <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

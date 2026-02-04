@@ -90,6 +90,8 @@ export const AuthController = {
       expires: new Date(0), // 💥 Set date to 1970 (immediately expired)
       path: '/'             // 💥 Match the login path exactly
     });
+
+    res.setHeader('Clear-Site-Data', '"cookies", "storage"');
     
     res.status(200).json({ success: true, message: "Logged out successfully" });
   }),

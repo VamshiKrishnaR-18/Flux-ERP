@@ -2,32 +2,47 @@ import { Request, Response } from 'express';
 import { QuoteModel } from '../models/quote.model';
 import { InvoiceModel } from '../models/invoice.model';
 import { EmailService } from '../services/email.service';
-import { asyncHandler } from '../utils/asyncHandler'; // ✅ Import
-import { generateInvoiceNumber } from '../utils/generators'; // Reuse this!
+import { asyncHandler } from '../utils/asyncHandler';
+import { generateInvoiceNumber } from '../utils/generators';
 
-// Move Quote Generator logic to utils if you prefer, or keep here for now
 const generateQuoteNumber = async () => {
   const last = await QuoteModel.findOne().sort({ number: -1 });
   return ((last as any)?.number ?? 1000) + 1;
 };
 
 export const QuoteController = {
-  // GET ALL
+  // ✅ UPDATED: Pagination
   getAll: asyncHandler(async (req: Request, res: Response) => {
-    const quotes = await QuoteModel.find().populate('clientId').sort({ createdAt: -1 });
-    res.json({ success: true, data: quotes });
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const quotes = await QuoteModel.find()
+      .populate('clientId')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await QuoteModel.countDocuments();
+
+    res.json({ 
+      success: true, 
+      data: quotes,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   }),
 
   getOne: asyncHandler(async (req: Request, res: Response) => {
     const quote = await QuoteModel.findById(req.params.id).populate('clientId');
-    if (!quote) {
-        res.status(404);
-        throw new Error("Quote not found");
-    }
+    if (!quote) { res.status(404); throw new Error("Quote not found"); }
     res.json({ success: true, data: quote });
   }),
 
-  // CREATE
   create: asyncHandler(async (req: Request, res: Response) => {
     const nextNumber = await generateQuoteNumber();
     const newQuote = await QuoteModel.create({
@@ -38,18 +53,10 @@ export const QuoteController = {
     res.status(201).json({ success: true, data: newQuote });
   }),
 
-  // CONVERT TO INVOICE
   convertToInvoice: asyncHandler(async (req: Request, res: Response) => {
     const quote = await QuoteModel.findById(req.params.id);
-    if (!quote) {
-        res.status(404);
-        throw new Error("Quote not found");
-    }
-
-    if (quote.status === 'converted') {
-      res.status(400);
-      throw new Error("Already converted");
-    }
+    if (!quote) { res.status(404); throw new Error("Quote not found"); }
+    if (quote.status === 'converted') { res.status(400); throw new Error("Already converted"); }
 
     const nextInvNumber = await generateInvoiceNumber();
     const quoteData = quote as any; 
@@ -78,19 +85,14 @@ export const QuoteController = {
     res.json({ success: true, message: "Converted to Invoice", data: newInvoice });
   }),
   
-  // DELETE
   delete: asyncHandler(async (req: Request, res: Response) => {
     await QuoteModel.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: "Quote deleted" });
   }),
 
-  // SEND
   send: asyncHandler(async (req: Request, res: Response) => {
     const quote = await QuoteModel.findById(req.params.id).populate('clientId');
-    if (!quote) {
-        res.status(404);
-        throw new Error("Quote not found");
-    }
+    if (!quote) { res.status(404); throw new Error("Quote not found"); }
 
     const client = quote.clientId as any;
     if (client?.email) {

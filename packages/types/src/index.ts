@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// 1. AUTH 🔐 (Fixed names to match Backend)
+// 1. AUTH 🔐
 export const RegisterSchema = z.object({
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Invalid email address"),
@@ -8,7 +8,7 @@ export const RegisterSchema = z.object({
   role: z.enum(['admin', 'user']).default('user'),
 });
 
-export const LoginSchema = z.object({ // ✅ Renamed to Capital L to fix crash
+export const LoginSchema = z.object({ 
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
@@ -17,13 +17,14 @@ export type RegisterDTO = z.infer<typeof RegisterSchema>;
 export type LoginDTO = z.infer<typeof LoginSchema>;
 
 
-// 2. CLIENTS 👥
+// 2. CLIENTS 👥 (✅ FIXED: Added 'removed')
 export const ClientSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   phoneNumber: z.string().optional(),
   status: z.enum(['active', 'inactive']).default('active'),
-  address: z.string().optional(), // Added address as it is often used
+  address: z.string().optional(),
+  removed: z.boolean().optional().default(false), // 👈 Added for Soft Delete
 });
 export type ClientDTO = z.infer<typeof ClientSchema>;
 
@@ -32,7 +33,7 @@ export interface Client extends ClientDTO {
 }
 
 
-// 3. INVOICES 🧾
+// 3. INVOICES 🧾 (✅ FIXED: Added 'removed')
 export const InvoiceItemSchema = z.object({
   productId: z.string().optional(),
   itemName: z.string().min(1, "Item name is required"),
@@ -72,6 +73,7 @@ export interface Invoice extends CreateInvoiceDTO {
   createdAt: string;
   updatedAt: string;
   amountPaid?: number;
+  removed?: boolean; // 👈 Added for Soft Delete
 }
 
 
@@ -103,14 +105,11 @@ export interface Product extends ProductDTO {
 }
 
 
-// ✅ 6. EXPENSES (Robust Fix)
+// 6. EXPENSES 
 export const ExpenseSchema = z.object({
   description: z.string().min(2, "Description is required"),
-  // ✅ FIX: Use z.coerce to auto-convert strings to numbers
   amount: z.coerce.number().min(0.01, "Amount must be positive"), 
-  // ✅ FIX: Allow any string as category (or strict enum if you prefer)
   category: z.string().default('Operational'),
-  // ✅ FIX: Auto-convert date strings to Date objects
   date: z.coerce.date(), 
   receipt: z.string().optional(),
 });
@@ -127,7 +126,7 @@ export interface Expense extends CreateExpenseDTO {
 
 // 7. QUOTES 💬
 export const QuoteSchema = CreateInvoiceSchema.extend({
-  title: z.string().min(1, "Title is required"), // e.g. "Website Redesign"
+  title: z.string().min(1, "Title is required"), 
   status: z.enum(['draft', 'sent', 'accepted', 'rejected', 'converted']).default('draft'),
   convertedInvoiceId: z.string().optional(),
 });
@@ -142,7 +141,7 @@ export interface Quote extends CreateQuoteDTO {
 }
 
 
-// ✅ 8. SETTINGS ⚙️
+// 8. SETTINGS ⚙️
 export const SettingsSchema = z.object({
   companyName: z.string().min(1, "Company Name is required"),
   companyEmail: z.string().email("Invalid email").optional().or(z.literal('')),
@@ -150,9 +149,9 @@ export const SettingsSchema = z.object({
   companyAddress: z.string().optional(),
   companyWebsite: z.string().optional(),
   currency: z.string().default('USD'),
-  taxRate: z.coerce.number().min(0).default(0), // Default tax rate for new invoices
+  taxRate: z.coerce.number().min(0).default(0), 
   invoicePrefix: z.string().default('INV-'),
-  defaultPaymentTerms: z.coerce.number().min(0).default(14), // Default 14 days
+  defaultPaymentTerms: z.coerce.number().min(0).default(14), 
   defaultNotes: z.string().optional().default('Thank you for your business!'),
 });
 
