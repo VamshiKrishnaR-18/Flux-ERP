@@ -1,5 +1,5 @@
-import { ArrowUpRight, ArrowDownRight, TrendingUp, FileText, Clock, Users } from 'lucide-react';
-import type { DashboardStats } from '../useDashboard';
+import { ArrowUpRight, TrendingUp, FileText, Clock, Users } from 'lucide-react';
+import type { DashboardStats } from '../hooks/useDashboard';
 
 export const DashboardMetrics = ({ stats }: { stats: DashboardStats | null }) => {
   

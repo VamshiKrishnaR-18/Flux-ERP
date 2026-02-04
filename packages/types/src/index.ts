@@ -30,7 +30,20 @@ export type ClientDTO = z.infer<typeof ClientSchema>;
 
 export interface Client extends ClientDTO {
   _id: string;
+
 }
+
+
+// ✅ ADD: User Definition
+export const UserSchema = z.object({
+  id: z.string().optional(),
+  name: z.string(),
+  email: z.string().email(),
+  password: z.string().optional(), // Optional for sanitized returns
+  role: z.enum(['admin', 'user']).default('user'),
+  createdAt: z.date().optional(),
+});
+export type UserType = z.infer<typeof UserSchema>;
 
 
 // 3. INVOICES 🧾 (✅ FIXED: Added 'removed')

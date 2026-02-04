@@ -3,7 +3,7 @@ import { api } from '../lib/axios';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
 } from 'recharts';
-import { DollarSign, Users, FileText, TrendingUp, TrendingDown, ArrowRight, Activity } from 'lucide-react';
+import { DollarSign, FileText, TrendingUp, TrendingDown, ArrowRight, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {

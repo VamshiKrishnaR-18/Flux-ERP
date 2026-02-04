@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api } from '../../lib/axios'; // ✅ Using shared API
+import { api } from '../../../lib/axios'; // ✅ Using shared API
 import { toast } from 'sonner';
 
 // Define the shape of our API response

@@ -1,127 +1,121 @@
 import { Request, Response, CookieOptions } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt, { SignOptions } from 'jsonwebtoken'; // 👈 Import SignOptions Type
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { RegisterSchema, LoginSchema } from '@erp/types';
 import { UserModel } from '../models/user.model';
 import { asyncHandler } from '../utils/asyncHandler';
 import { config } from '../config/env';
 
-// ✅ Helper: Send Secure Cookie
-const sendTokenResponse = (user: any, statusCode: number, res: Response) => {
-  // 1. Generate Token
-  const token = jwt.sign(
-    { id: user._id, role: user.role },
-    config.jwtSecret!,
-    { 
-      // ✅ PROPER FIX: strictly cast to the library's expected type
-      // This is safer than 'as any' because it must still be a string or number
-      expiresIn: config.jwtExpiresIn as SignOptions['expiresIn'] 
-    }
-  );
+const generateToken = (id: string) => {
+  // ✅ FIX: Use 'jwtExpiresIn' and 'jwtSecret' (Flat structure)
+  const options: SignOptions = { expiresIn: config.jwtExpiresIn as any };
+  return jwt.sign({ id }, config.jwtSecret || 'default_secret', options);
+};
 
-  // 2. Calculate Cookie Expiry
-  const cookieExpires = new Date(
-    Date.now() + config.cookieExpiresInHours * 60 * 60 * 1000
-  );
-
-  const options: CookieOptions = {
-    expires: cookieExpires,
-    httpOnly: true,
-    secure: config.nodeEnv === 'production',
-    sameSite: (config.nodeEnv === 'production' ? 'none' : 'lax') as 'none' | 'lax',
-    path: '/' 
-  };
-
-  res
-    .status(statusCode)
-    .cookie('token', token, options)
-    .json({
-      success: true,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
-      token 
-    });
+const cookieOptions: CookieOptions = {
+  httpOnly: true,
+  // ✅ FIX: Use 'nodeEnv' instead of 'env'
+  secure: config.nodeEnv === 'production',
+  sameSite: 'strict',
+  maxAge: 24 * 60 * 60 * 1000 // 1 day
 };
 
 export const AuthController = {
-  // REGISTER
   register: asyncHandler(async (req: Request, res: Response) => {
     const validation = RegisterSchema.safeParse(req.body);
     if (!validation.success) {
       res.status(400);
-      throw new Error(validation.error.errors[0]?.message || "Validation Error");
+      throw new Error(validation.error.errors[0]?.message || "Invalid Data");
     }
 
-    const { name, email, password } = validation.data;
+    const { email, password, name, role } = validation.data;
     const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
-      res.status(409);
+      res.status(400);
       throw new Error("User already exists");
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = await UserModel.create({
+    const user = await UserModel.create({
       name,
       email,
       password: hashedPassword,
-      role: 'user'
+      role: role || 'user'
     });
 
-    sendTokenResponse(newUser, 201, res);
+    const token = generateToken(user.id);
+    res.cookie('token', token, cookieOptions);
+
+    res.status(201).json({
+      success: true,
+      data: { id: user.id, name: user.name, email: user.email, role: user.role },
+      token
+    });
   }),
 
-  // LOGIN
   login: asyncHandler(async (req: Request, res: Response) => {
     const validation = LoginSchema.safeParse(req.body);
     if (!validation.success) {
       res.status(400);
-      throw new Error(validation.error.errors[0]?.message || "Validation Error");
+      throw new Error("Invalid email or password format");
     }
 
     const { email, password } = validation.data;
-    const user = await UserModel.findOne({ email });
     
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    // Explicitly select password for comparison
+    const user = await UserModel.findOne({ email }).select('+password');
+
+    if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
       res.status(401);
-      throw new Error("Invalid email or password");
+      throw new Error("Invalid credentials");
     }
 
-    sendTokenResponse(user, 200, res);
-  }),
+    const token = generateToken(user.id);
+    res.cookie('token', token, cookieOptions);
 
-  // LOGOUT
-  logout: asyncHandler(async (req: Request, res: Response) => {
-    res.cookie('token', '', {
-      httpOnly: true,
-      secure: config.nodeEnv === 'production', 
-      sameSite: (config.nodeEnv === 'production' ? 'none' : 'lax') as 'none' | 'lax',
-      expires: new Date(0), 
-      path: '/'             
+    res.json({
+      success: true,
+      data: { id: user.id, name: user.name, email: user.email, role: user.role },
+      token
     });
-
-    res.setHeader('Clear-Site-Data', '"cookies", "storage"');
-    
-    res.status(200).json({ success: true, message: "Logged out successfully" });
   }),
 
-  // CHANGE PASSWORD
+  logout: asyncHandler(async (req: Request, res: Response) => {
+    res.cookie('token', '', { ...cookieOptions, maxAge: 0 });
+    res.json({ success: true, message: "Logged out" });
+  }),
+
+  getMe: asyncHandler(async (req: Request, res: Response) => {
+    const user = await UserModel.findById(req.user?.id).select('-password');
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+    res.json({ success: true, data: user });
+  }),
+
   changePassword: asyncHandler(async (req: Request, res: Response) => {
     const { currentPassword, newPassword } = req.body;
-    const userId = req.user?.id; 
+    
+    const user = await UserModel.findById(req.user?.id).select('+password');
 
-    if (!userId) { res.status(401); throw new Error("Unauthorized"); }
-
-    const user = await UserModel.findById(userId);
-    if (!user) { res.status(404); throw new Error("User not found"); }
+    if (!user || !user.password) {
+        res.status(404);
+        throw new Error("User not found");
+    }
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) { res.status(400); throw new Error("Incorrect current password"); }
+    if (!isMatch) {
+        res.status(400);
+        throw new Error("Incorrect current password");
+    }
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
 
-    res.json({ success: true, message: "Password updated successfully" });
+    res.json({ success: true, message: "Password updated" });
   })
 };
