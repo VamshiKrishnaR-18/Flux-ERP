@@ -158,3 +158,22 @@ export const SettingsSchema = z.object({
 });
 
 export type SettingsDTO = z.infer<typeof SettingsSchema>;
+
+// ✅ GLOBAL CONSTANTS
+export const CURRENCIES = [
+  { code: 'USD', symbol: '$', label: 'US Dollar ($)' },
+  { code: 'EUR', symbol: '€', label: 'Euro (€)' },
+  { code: 'GBP', symbol: '£', label: 'British Pound (£)' },
+  { code: 'INR', symbol: '₹', label: 'Indian Rupee (₹)' },
+  { code: 'AUD', symbol: 'A$', label: 'Australian Dollar (A$)' },
+  { code: 'CAD', symbol: 'C$', label: 'Canadian Dollar (C$)' },
+] as const;
+
+export const PAYMENT_TERMS = [
+  { value: 0, label: 'Due on Receipt' },
+  { value: 7, label: 'Net 7 Days' },
+  { value: 14, label: 'Net 14 Days' },
+  { value: 30, label: 'Net 30 Days' },
+  { value: 45, label: 'Net 45 Days' },
+  { value: 60, label: 'Net 60 Days' },
+] as const;
