@@ -5,9 +5,8 @@ import type { Invoice } from '@erp/types';
 import { toast } from 'sonner';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvoicePDF } from '../../features/invoices/components/InvoicePDF';
-import { Eye, Send, Search, ChevronLeft, ChevronRight } from 'lucide-react'; 
+import { Eye, Send, Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'; 
 import { useDebounce } from '../../hooks/useDebounce'; // ✅ Import Debounce
-
 
 export default function InvoiceList() {
   const navigate = useNavigate();
@@ -15,20 +14,20 @@ export default function InvoiceList() {
   const [settings, setSettings] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Pagination & Search State
+  // ✅ Pagination & Search State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [search, setSearch] = useState(''); // 👈 Raw input
-  const debouncedSearch = useDebounce(search, 500); // 👈 Debounced value
+  const [search, setSearch] = useState(''); // Raw input
+  const debouncedSearch = useDebounce(search, 500); // Wait 500ms
   const LIMIT = 10;
 
-  // ✅ Fetch Data (Triggered by Page OR Search changes)
+  // ✅ Fetch Data (Triggered by Page OR Search)
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
         const [invRes, setRes] = await Promise.all([
-          // ✅ Pass the search query to the backend
+          // Pass search param to backend
           api.get(`/invoices?page=${page}&limit=${LIMIT}&search=${debouncedSearch}`), 
           api.get('/settings')
         ]);
@@ -48,10 +47,9 @@ export default function InvoiceList() {
     fetchData();
   }, [page, debouncedSearch]); // 👈 Re-run when these change
 
-  // ✅ Reset page when user types
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
-      setPage(1); // Go back to page 1 on new search
+      setPage(1); // Reset to page 1 on new search
   };
 
   const handleDelete = async (id: string) => {
@@ -102,7 +100,7 @@ export default function InvoiceList() {
                     type="text" 
                     placeholder="Search Number, Client, Status..." 
                     value={search} 
-                    onChange={handleSearch}
+                    onChange={handleSearchChange}
                     className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 />
              </div>
@@ -118,7 +116,9 @@ export default function InvoiceList() {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
           {isLoading ? (
-            <div className="p-12 text-center text-gray-500">Loading invoices...</div>
+            <div className="p-12 text-center text-gray-500 flex items-center justify-center gap-2">
+                <Loader2 className="animate-spin w-5 h-5" /> Loading invoices...
+            </div>
           ) : invoices.length === 0 ? (
             <div className="p-16 text-center">
               <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🧾</div>
@@ -139,7 +139,7 @@ export default function InvoiceList() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {/* ✅ RENDER invoices DIRECTLY (Server already filtered them) */}
+                    {/* ✅ Server already returned filtered list, just map it */}
                     {invoices.map((invoice) => (
                       <tr key={invoice._id} className="hover:bg-gray-50 transition-colors group">
                         <td className="px-6 py-4 font-medium text-gray-900">#{invoice.number}</td>

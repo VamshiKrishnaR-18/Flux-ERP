@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/axios';
 import { toast } from 'sonner';
-import { Search, ArrowUpDown, Plus, DollarSign, Calendar, Tag, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useSearch } from '../hooks/useSearch';
+import { Search, ArrowUpDown, Plus, DollarSign, Calendar, Tag, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useSortableData } from '../hooks/useSortableData';
+import { useDebounce } from '../hooks/useDebounce'; // ✅ Import Debounce
 
 interface Expense {
   _id: string;
@@ -19,28 +19,43 @@ export default function Expenses() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ description: '', amount: '', date: new Date().toISOString().split('T')[0], category: 'Operational' });
 
-  // ✅ Pagination
+  // ✅ Pagination & Search State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500); // Wait 500ms
   const LIMIT = 10;
 
-  const { query, setQuery, filteredItems: filteredExpenses } = useSearch(expenses, ['description', 'category']);
-  const { items: sortedExpenses, requestSort, sortConfig } = useSortableData(filteredExpenses);
+  // Sorting (Client-side for current page)
+  const { items: sortedExpenses, requestSort, sortConfig } = useSortableData(expenses);
+  
   const SortIcon = ({ column }: { column: string }) => {
     if (sortConfig?.key !== column) return <ArrowUpDown className="w-3 h-3 text-gray-300 inline ml-1" />;
     return <ArrowUpDown className={`w-3 h-3 inline ml-1 ${sortConfig.direction === 'ascending' ? 'text-blue-600 rotate-180' : 'text-blue-600'}`} />;
   };
 
+  // ✅ Fetch Data (Triggered by Page or Search)
   const fetchExpenses = async () => {
     setIsLoading(true);
     try {
-        const res = await api.get(`/expenses?page=${page}&limit=${LIMIT}`);
+        // Pass search param to backend
+        const res = await api.get(`/expenses?page=${page}&limit=${LIMIT}&search=${debouncedSearch}`);
         setExpenses(res.data.data);
         setTotalPages(res.data.pagination?.totalPages || 1);
-    } catch (err) { console.error(err); } finally { setIsLoading(false); }
+    } catch (err) { 
+        console.error(err);
+        toast.error("Failed to load expenses");
+    } finally { 
+        setIsLoading(false); 
+    }
   };
   
-  useEffect(() => { fetchExpenses(); }, [page]);
+  useEffect(() => { fetchExpenses(); }, [page, debouncedSearch]); // 👈 Re-run on change
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearch(e.target.value);
+      setPage(1); // Reset to page 1
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +81,13 @@ export default function Expenses() {
         <div className="flex items-center gap-3">
              <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input type="text" placeholder="Search visible expenses..." value={query} onChange={e => setQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg outline-none" />
+                <input 
+                    type="text" 
+                    placeholder="Search expenses..." 
+                    value={search} 
+                    onChange={handleSearchChange} // 👈 Updated handler
+                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg outline-none" 
+                />
              </div>
             <button onClick={() => setShowModal(true)} className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition flex items-center gap-2"><Plus className="w-4 h-4" /> Add Expense</button>
         </div>
@@ -74,9 +95,11 @@ export default function Expenses() {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
         {isLoading ? (
-          <div className="p-12 text-center text-gray-500">Loading expenses...</div>
+          <div className="p-12 text-center text-gray-500 flex items-center justify-center gap-2">
+              <Loader2 className="animate-spin w-5 h-5" /> Loading expenses...
+          </div>
         ) : expenses.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">No expenses recorded.</div>
+          <div className="p-12 text-center text-gray-500">No expenses found.</div>
         ) : (
           <>
             <table className="w-full text-left">
@@ -102,7 +125,7 @@ export default function Expenses() {
               </tbody>
             </table>
 
-            {/* ✅ Pagination Controls */}
+            {/* Pagination Controls */}
             <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
               <div className="text-sm text-gray-500">Page <span className="font-medium text-gray-900">{page}</span> of <span className="font-medium text-gray-900">{totalPages}</span></div>
               <div className="flex gap-2">
@@ -114,7 +137,7 @@ export default function Expenses() {
         )}
       </div>
 
-      {/* Modal (Same as before) */}
+      {/* Modal (Unchanged) */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
