@@ -24,7 +24,7 @@ import publicRoutes from './routes/public.routes';
 // Middleware
 import { authMiddleware } from './middleware/auth.middleware';
 import { errorHandler } from './middleware/error.middleware';
-// import { requireAdmin } from './middleware/admin.middleware'; // Uncomment when RBAC is fully active
+import { requireAdmin } from './middleware/admin.middleware';
 
 const app = express();
 
@@ -94,10 +94,9 @@ app.use('/dashboard', authMiddleware as unknown as RequestHandler, dashboardRout
 app.use('/products', authMiddleware as unknown as RequestHandler, productRoutes);
 app.use('/quotes', authMiddleware as unknown as RequestHandler, quoteRoutes);
 
-// Admin Routes (Enable requireAdmin when ready)
-app.use('/settings', authMiddleware as unknown as RequestHandler, settingsRoutes);
-app.use('/expenses', authMiddleware as unknown as RequestHandler, expenseRoutes);
-
+// 2. Add the middleware to these routes
+app.use('/settings', authMiddleware as unknown as RequestHandler, requireAdmin as unknown as RequestHandler, settingsRoutes);
+app.use('/expenses', authMiddleware as unknown as RequestHandler, requireAdmin as unknown as RequestHandler, expenseRoutes);
 // --- 3. Global Error Handler (MUST BE LAST) ---
 app.use(errorHandler as unknown as RequestHandler);
 
