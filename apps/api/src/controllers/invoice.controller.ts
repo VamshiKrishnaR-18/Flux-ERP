@@ -90,7 +90,7 @@ export const InvoiceController = {
     const clientExists = await ClientModel.findById(clientId);
     if (!clientExists) { res.status(404); throw new Error("Client not found"); }
 
-    const nextNumber = await generateInvoiceNumber();
+    const nextNumber = await generateInvoiceNumber(req.user?.id);
     const newInvoice = await InvoiceModel.create({
       ...validation.data,
       number: nextNumber,

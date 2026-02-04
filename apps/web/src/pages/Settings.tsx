@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useForm, type Resolver } from 'react-hook-form'; // 👈 Import Resolver Type
+import { useForm, type Resolver } from 'react-hook-form'; 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SettingsSchema, type SettingsDTO } from '@erp/types';
 import { api } from '../lib/axios';
@@ -25,7 +25,6 @@ export default function Settings() {
     reset, 
     formState: { errors, isSubmitting } 
   } = useForm<SettingsDTO>({
-    // ✅ FIX: Strictly typed resolver (Removes 'as any' risk)
     resolver: zodResolver(SettingsSchema) as Resolver<SettingsDTO>,
   });
 
@@ -67,8 +66,6 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <main className="max-w-5xl mx-auto">
-        
-        {/* Header */}
         <div className="flex items-center gap-3 mb-8">
             <div className="bg-white p-2.5 rounded-xl shadow-sm border border-gray-100">
                 <SettingsIcon className="w-6 h-6 text-gray-700" />
@@ -80,7 +77,6 @@ export default function Settings() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-            {/* Sidebar */}
             <aside className="w-full lg:w-64 flex-shrink-0">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <nav className="p-2 space-y-1">
@@ -107,11 +103,10 @@ export default function Settings() {
                 </div>
             </aside>
 
-            {/* Content */}
             <div className="flex-1">
                 <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     
-                    {/* General Tab */}
+                    {/* --- GENERAL TAB --- */}
                     {activeTab === 'general' && (
                         <div className="animate-in fade-in duration-300 p-8 space-y-6">
                             <div>
@@ -155,31 +150,50 @@ export default function Settings() {
                         </div>
                     )}
 
-                    {/* Invoices Tab */}
+                    {/* --- INVOICES TAB --- */}
                     {activeTab === 'invoices' && (
                         <div className="animate-in fade-in duration-300 p-8 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Prefix</label>
-                                    <input {...register('invoicePrefix')} className="w-full px-4 py-2 border rounded-lg" />
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Prefix</label>
+                                    <div className="flex rounded-md shadow-sm">
+                                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">#</span>
+                                        <input {...register('invoicePrefix')} className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border focus:ring-blue-500 focus:border-blue-500" placeholder="INV-" />
+                                    </div>
                                 </div>
+                                
+                                {/* ✅ NEW FIELD: Start Number */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Next Invoice Number</label>
+                                    <input 
+                                        type="number" 
+                                        {...register('invoiceStartNumber', { valueAsNumber: true })} 
+                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
+                                        placeholder="1000"
+                                    />
+                                    <p className="text-[10px] text-gray-500 mt-1">Only applies if no invoices exist.</p>
+                                </div>
+
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Payment Terms</label>
                                     <select {...register('defaultPaymentTerms', { valueAsNumber: true })} className="w-full px-4 py-2 border rounded-lg bg-white">
                                         <option value={0}>Due on Receipt</option>
+                                        <option value={7}>Net 7 Days</option>
                                         <option value={14}>Net 14 Days</option>
                                         <option value={30}>Net 30 Days</option>
+                                        <option value={60}>Net 60 Days</option>
                                     </select>
                                 </div>
                             </div>
+
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Default Notes</label>
-                                <textarea {...register('defaultNotes')} rows={4} className="w-full px-4 py-2 border rounded-lg resize-none" />
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Default Footer Notes</label>
+                                <textarea {...register('defaultNotes')} rows={4} className="w-full px-4 py-2 border rounded-lg resize-none" placeholder="Thank you for your business..." />
                             </div>
                         </div>
                     )}
 
-                    {/* Security Tab */}
+                    {/* --- SECURITY TAB --- */}
                     {activeTab === 'security' && (
                         <div className="animate-in fade-in duration-300 p-12 text-center">
                             <div className="bg-gray-50 inline-block p-4 rounded-full mb-4">
@@ -193,7 +207,7 @@ export default function Settings() {
                         </div>
                     )}
 
-                    {/* Footer */}
+                    {/* Footer Actions */}
                     {activeTab !== 'security' && (
                         <div className="px-8 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
                             <button 
@@ -206,6 +220,7 @@ export default function Settings() {
                             </button>
                         </div>
                     )}
+
                 </form>
             </div>
         </div>

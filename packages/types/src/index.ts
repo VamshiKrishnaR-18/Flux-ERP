@@ -151,6 +151,8 @@ export const SettingsSchema = z.object({
   currency: z.string().default('USD'),
   taxRate: z.coerce.number().min(0).default(0), 
   invoicePrefix: z.string().default('INV-'),
+  // ✅ NEW: Add configuration for starting number
+  invoiceStartNumber: z.coerce.number().min(1).default(1000), 
   defaultPaymentTerms: z.coerce.number().min(0).default(14), 
   defaultNotes: z.string().optional().default('Thank you for your business!'),
 });

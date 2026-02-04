@@ -1,7 +1,8 @@
+// apps/api/src/models/settings.model.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ISettings extends Document {
-  userId: string; // If you want per-user settings
+  userId: string;
   companyName: string;
   companyEmail?: string;
   companyPhone?: string;
@@ -9,17 +10,25 @@ export interface ISettings extends Document {
   companyWebsite?: string;
   currency: string;
   taxRate: number;
+  invoicePrefix: string;
+  invoiceStartNumber: number; // 👈 Added
+  defaultPaymentTerms: number;
+  defaultNotes: string;
 }
 
 const SettingsSchema: Schema = new Schema({
-  userId: { type: String, required: true }, // Links settings to the logged-in user
+  userId: { type: String, required: true },
   companyName: { type: String, required: true, default: 'My Company' },
   companyEmail: { type: String },
   companyPhone: { type: String },
   companyAddress: { type: String },
   companyWebsite: { type: String },
   currency: { type: String, default: 'USD' },
-  taxRate: { type: Number, default: 0 }
+  taxRate: { type: Number, default: 0 },
+  invoicePrefix: { type: String, default: 'INV-' },
+  invoiceStartNumber: { type: Number, default: 1000 }, // 👈 Added with default
+  defaultPaymentTerms: { type: Number, default: 14 },
+  defaultNotes: { type: String }
 }, { timestamps: true });
 
 export const SettingsModel = mongoose.model<ISettings>('Settings', SettingsSchema);
