@@ -1,7 +1,17 @@
 import axios from 'axios';
 
+// ✅ Fix: Strict environment check
+const isProduction = import.meta.env.PROD;
+const apiUrl = import.meta.env.VITE_API_URL;
+
+if (isProduction && !apiUrl) {
+  // Fail fast: Prevent the app from deploying/running with broken networking
+  throw new Error('⚠️ CRITICAL: VITE_API_URL environment variable is missing. API connections will fail.');
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  // Only default to localhost in development mode
+  baseURL: apiUrl || 'http://localhost:3000',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -12,10 +22,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // ❌ REMOVED: window.location.href = '/login'; 
-      // (This was causing the data loss)
-      
-      // ✅ ADDED: Dispatch event so React can show a modal without refreshing
+      // Dispatch event for SessionExpiryModal
       window.dispatchEvent(new CustomEvent('session-expired'));
     }
     return Promise.reject(error);
