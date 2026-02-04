@@ -1,25 +1,34 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { Request, Response, NextFunction, RequestHandler } from "express";
+import jwt from "jsonwebtoken";
+import { config } from '../config/env';
 
-// Extend Express Request type to include 'user'
-export interface AuthRequest extends Request {
-  user?: any;
+interface TokenPayload {
+  id: string;
+  role: string;
 }
 
-export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+export const authMiddleware: RequestHandler = (req, res, next) => {
+  let token;
+
+  // 1. Check Header (Bearer token)
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    token = req.headers.authorization.split(" ")[1];
+  } 
+  // 2. Check Cookie (New Secure Way)
+  else if (req.cookies.token) {
+    token = req.cookies.token;
+  }
 
   if (!token) {
-    return res.status(401).json({ success: false, message: 'Access Denied. No token provided.' });
+    res.status(401).json({ success: false, message: "Access Denied: No Token" });
+    return;
   }
 
   try {
-    // Make sure JWT_SECRET matches your .env file
-    const secret = process.env.JWT_SECRET || 'supersecretkey';
-    const verified = jwt.verify(token, secret);
-    req.user = verified;
+    const decoded = jwt.verify(token, config.jwtSecret!) as TokenPayload;
+    req.user = decoded;
     next();
   } catch (error) {
-    res.status(400).json({ success: false, message: 'Invalid Token' });
+    res.status(403).json({ success: false, message: "Invalid Token" });
   }
 };

@@ -6,13 +6,17 @@ export const config = {
   mongoUri: process.env.MONGO_URI,
   jwtSecret: process.env.JWT_SECRET,
   nodeEnv: process.env.NODE_ENV || 'development',
-  corsOrigins: ["http://localhost:5173", "http://localhost:5174"]
+  // ✅ Allow comma-separated origins from .env, or default to localhost
+  corsOrigins: process.env.CORS_ORIGIN 
+    ? process.env.CORS_ORIGIN.split(',') 
+    : ["http://localhost:5173", "http://localhost:5174"] 
 };
 
-// 🛡️ Fail Fast: Stop server immediately if critical keys are missing
+// 🛡️ SECURITY CHECKS (Fail Fast)
 if (!config.mongoUri) {
   throw new Error("❌ FATAL: MONGO_URI is missing in .env file");
 }
 if (!config.jwtSecret) {
-  console.warn("⚠️ WARNING: JWT_SECRET is missing. Using unsafe default.");
+  // 🛑 STOP SERVER: Never run with a fallback secret in production
+  throw new Error("❌ FATAL: JWT_SECRET is missing. Cannot start securely.");
 }

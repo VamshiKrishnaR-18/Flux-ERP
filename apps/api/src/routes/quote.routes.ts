@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { QuoteController } from '../controllers/quote.controller';
-import { authMiddleware } from '../middleware';
+import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
 

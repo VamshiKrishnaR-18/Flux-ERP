@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api } from '../../lib/axios';
+import { api } from '../../../lib/axios';
 import { toast } from 'sonner';
 // ✅ FIX: Use 'import type'
 import type { ProductDTO, Product } from '@erp/types';

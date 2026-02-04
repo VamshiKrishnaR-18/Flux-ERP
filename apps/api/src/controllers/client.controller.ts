@@ -1,14 +1,32 @@
 import { Request, Response } from 'express';
 import { ClientModel } from '../models/client.model';
 import { ClientSchema } from '@erp/types';
-import { asyncHandler } from '../utils/asyncHandler'; // ✅ Import
+import { asyncHandler } from '../utils/asyncHandler';
 
 export const ClientController = {
   
   getAll: asyncHandler(async (req: Request, res: Response) => {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const clients = await ClientModel.find({ removed: { $ne: true } })
-      .sort({ createdAt: -1 });
-    res.json({ success: true, data: clients });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await ClientModel.countDocuments({ removed: { $ne: true } });
+
+    res.json({ 
+      success: true, 
+      data: clients,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {

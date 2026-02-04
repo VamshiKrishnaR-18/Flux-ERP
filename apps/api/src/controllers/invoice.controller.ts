@@ -4,12 +4,17 @@ import { ClientModel } from '../models/client.model';
 import { CreateInvoiceSchema, PaymentSchema } from '@erp/types'; 
 import { ProductService } from '../services/product.service'; 
 import { generateInvoiceNumber } from '../utils/generators';
-import { asyncHandler } from '../utils/asyncHandler'; // ✅ Import
+import { asyncHandler } from '../utils/asyncHandler';
 
 export const InvoiceController = {
   
-  // 1. Get All
+  // 1. Get All (Now with Pagination 🚀)
   getAll: asyncHandler(async (req: Request, res: Response) => {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Auto-overdue logic (Run silently)
     const today = new Date();
     await InvoiceModel.updateMany(
       { 
@@ -20,19 +25,33 @@ export const InvoiceController = {
       { $set: { status: 'overdue' } }
     );
 
+    // Fetch Data
     const invoices = await InvoiceModel.find({ removed: false })
       .populate('clientId', 'name email')
-      .sort({ createdAt: -1 });
-      
-    res.json({ success: true, data: invoices });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    // Get Total Count (for frontend "Page 1 of X")
+    const total = await InvoiceModel.countDocuments({ removed: false });
+
+    res.json({ 
+      success: true, 
+      data: invoices,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   }),
 
   // 2. Create
   create: asyncHandler(async (req: Request, res: Response) => {
     const validation = CreateInvoiceSchema.safeParse(req.body);
     if (!validation.success) {
-      // Throwing error triggers Global Error Handler
-      res.status(400); 
+      res.status(400);
       throw new Error(validation.error.errors[0]?.message || "Invalid Input");
     }
 
