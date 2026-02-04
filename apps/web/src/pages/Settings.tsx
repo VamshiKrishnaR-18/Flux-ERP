@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form'; // 👈 Import Resolver Type
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SettingsSchema, type SettingsDTO } from '@erp/types';
 import { api } from '../lib/axios';
 import { toast } from 'sonner';
 import { 
     Settings as SettingsIcon, Save, Building, FileText, Lock, 
-    ChevronRight 
+    ChevronRight, Loader2 
 } from 'lucide-react';
 
-// Tabs Configuration
 const TABS = [
     { id: 'general', label: 'General', icon: Building },
     { id: 'invoices', label: 'Invoices', icon: FileText },
@@ -20,12 +19,16 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState('general');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Form Setup
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<SettingsDTO>({
-    resolver: zodResolver(SettingsSchema) as any,
+  const { 
+    register, 
+    handleSubmit, 
+    reset, 
+    formState: { errors, isSubmitting } 
+  } = useForm<SettingsDTO>({
+    // ✅ FIX: Strictly typed resolver (Removes 'as any' risk)
+    resolver: zodResolver(SettingsSchema) as Resolver<SettingsDTO>,
   });
 
-  // Load Settings
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -42,7 +45,6 @@ export default function Settings() {
     fetchSettings();
   }, [reset]);
 
-  // Save Handler
   const onSubmit = async (data: SettingsDTO) => {
     try {
       await api.put('/settings', data);
@@ -52,7 +54,15 @@ export default function Settings() {
     }
   };
 
-  if (isLoading) return <div className="p-10 text-center text-gray-500">Loading settings...</div>;
+  if (isLoading) {
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+            <div className="flex items-center gap-2 text-gray-500">
+                <Loader2 className="animate-spin w-5 h-5" /> Loading settings...
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -70,8 +80,7 @@ export default function Settings() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-            
-            {/* LEFT SIDEBAR (Tabs) */}
+            {/* Sidebar */}
             <aside className="w-full lg:w-64 flex-shrink-0">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <nav className="p-2 space-y-1">
@@ -98,119 +107,93 @@ export default function Settings() {
                 </div>
             </aside>
 
-            {/* RIGHT CONTENT (Forms) */}
+            {/* Content */}
             <div className="flex-1">
                 <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     
-                    {/* --- GENERAL TAB --- */}
+                    {/* General Tab */}
                     {activeTab === 'general' && (
-                        <div className="animate-in fade-in duration-300">
-                            <div className="p-6 border-b border-gray-100">
-                                <h2 className="text-lg font-semibold text-gray-900">Company Profile</h2>
-                                <p className="text-sm text-gray-500">Update your company details and address.</p>
+                        <div className="animate-in fade-in duration-300 p-8 space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                                <input {...register('companyName')} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                {errors.companyName && <p className="text-red-500 text-xs mt-1">{errors.companyName.message}</p>}
                             </div>
-                            <div className="p-8 space-y-6">
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-                                    <input {...register('companyName')} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Acme Inc." />
-                                    {errors.companyName && <p className="text-red-500 text-xs mt-1">{errors.companyName.message}</p>}
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input {...register('companyEmail')} className="w-full px-4 py-2 border rounded-lg" />
+                                    {errors.companyEmail && <p className="text-red-500 text-xs mt-1">{errors.companyEmail.message}</p>}
                                 </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                        <input {...register('companyEmail')} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                                        <input {...register('companyPhone')} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                                    </div>
-                                </div>
-
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Office Address</label>
-                                    <textarea {...register('companyAddress')} rows={3} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                    <input {...register('companyPhone')} className="w-full px-4 py-2 border rounded-lg" />
                                 </div>
+                            </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                                        <select {...register('currency')} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                                            <option value="USD">🇺🇸 USD ($)</option>
-                                            <option value="EUR">🇪🇺 EUR (€)</option>
-                                            <option value="GBP">🇬🇧 GBP (£)</option>
-                                            <option value="INR">🇮🇳 INR (₹)</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Default Tax Rate (%)</label>
-                                        <input type="number" step="0.01" {...register('taxRate', { valueAsNumber: true })} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                                    </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                <textarea {...register('companyAddress')} rows={3} className="w-full px-4 py-2 border rounded-lg resize-none" />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                                    <select {...register('currency')} className="w-full px-4 py-2 border rounded-lg bg-white">
+                                        <option value="USD">USD ($)</option>
+                                        <option value="EUR">EUR (€)</option>
+                                        <option value="GBP">GBP (£)</option>
+                                        <option value="INR">INR (₹)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Tax Rate (%)</label>
+                                    <input type="number" step="0.01" {...register('taxRate', { valueAsNumber: true })} className="w-full px-4 py-2 border rounded-lg" />
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* --- INVOICES TAB --- */}
+                    {/* Invoices Tab */}
                     {activeTab === 'invoices' && (
-                        <div className="animate-in fade-in duration-300">
-                            <div className="p-6 border-b border-gray-100">
-                                <h2 className="text-lg font-semibold text-gray-900">Invoice Settings</h2>
-                                <p className="text-sm text-gray-500">Configure default behavior for new invoices.</p>
-                            </div>
-                            <div className="p-8 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Prefix</label>
-                                        <div className="flex rounded-md shadow-sm">
-                                            <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">#</span>
-                                            <input {...register('invoicePrefix')} className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border focus:ring-blue-500 focus:border-blue-500" placeholder="INV-" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Default Payment Terms</label>
-                                        <select {...register('defaultPaymentTerms', { valueAsNumber: true })} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                                            <option value={0}>Due on Receipt</option>
-                                            <option value={7}>Net 7 Days</option>
-                                            <option value={14}>Net 14 Days</option>
-                                            <option value={30}>Net 30 Days</option>
-                                            <option value={60}>Net 60 Days</option>
-                                        </select>
-                                    </div>
-                                </div>
-
+                        <div className="animate-in fade-in duration-300 p-8 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Default Footer Notes</label>
-                                    <textarea {...register('defaultNotes')} rows={4} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Thank you for your business..." />
-                                    <p className="mt-2 text-xs text-gray-500">This text will appear at the bottom of every new invoice PDF.</p>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Prefix</label>
+                                    <input {...register('invoicePrefix')} className="w-full px-4 py-2 border rounded-lg" />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Terms</label>
+                                    <select {...register('defaultPaymentTerms', { valueAsNumber: true })} className="w-full px-4 py-2 border rounded-lg bg-white">
+                                        <option value={0}>Due on Receipt</option>
+                                        <option value={14}>Net 14 Days</option>
+                                        <option value={30}>Net 30 Days</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Default Notes</label>
+                                <textarea {...register('defaultNotes')} rows={4} className="w-full px-4 py-2 border rounded-lg resize-none" />
                             </div>
                         </div>
                     )}
 
-                    {/* --- SECURITY TAB (Placeholder for now) --- */}
+                    {/* Security Tab */}
                     {activeTab === 'security' && (
-                        <div className="animate-in fade-in duration-300">
-                             <div className="p-6 border-b border-gray-100">
-                                <h2 className="text-lg font-semibold text-gray-900">Security</h2>
-                                <p className="text-sm text-gray-500">Manage your password and access.</p>
+                        <div className="animate-in fade-in duration-300 p-12 text-center">
+                            <div className="bg-gray-50 inline-block p-4 rounded-full mb-4">
+                                <Lock className="w-8 h-8 text-gray-400" />
                             </div>
-                            <div className="p-12 text-center">
-                                <div className="bg-gray-50 inline-block p-4 rounded-full mb-4">
-                                    <Lock className="w-8 h-8 text-gray-400" />
-                                </div>
-                                <h3 className="text-gray-900 font-medium mb-1">Change Password</h3>
-                                <p className="text-gray-500 text-sm max-w-sm mx-auto mb-6">
-                                    Secure your account by updating your password regularly. This feature requires backend API updates.
-                                </p>
-                                <button type="button" className="text-blue-600 hover:text-blue-800 font-medium text-sm border border-blue-200 bg-blue-50 px-4 py-2 rounded-lg">
-                                    Update Password (Coming Soon)
-                                </button>
-                            </div>
+                            <h3 className="text-gray-900 font-medium mb-1">Change Password</h3>
+                            <p className="text-gray-500 text-sm max-w-sm mx-auto mb-6">Secure your account by updating your password regularly.</p>
+                            <button type="button" className="text-blue-600 hover:text-blue-800 font-medium text-sm border border-blue-200 bg-blue-50 px-4 py-2 rounded-lg">
+                                Update Password (Coming Soon)
+                            </button>
                         </div>
                     )}
 
-                    {/* Footer Actions */}
+                    {/* Footer */}
                     {activeTab !== 'security' && (
                         <div className="px-8 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
                             <button 
@@ -218,12 +201,11 @@ export default function Settings() {
                                 disabled={isSubmitting}
                                 className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 transition shadow-sm disabled:opacity-50 flex items-center gap-2"
                             >
-                                <Save className="w-4 h-4" />
+                                {isSubmitting ? <Loader2 className="animate-spin w-4 h-4" /> : <Save className="w-4 h-4" />}
                                 {isSubmitting ? 'Saving...' : 'Save Changes'}
                             </button>
                         </div>
                     )}
-
                 </form>
             </div>
         </div>

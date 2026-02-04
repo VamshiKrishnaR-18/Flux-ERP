@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useForm, type Resolver } from 'react-hook-form'; // 👈 Import Resolver
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'sonner';
-import { LoginSchema, type LoginDTO } from '@erp/types'; // 👈 Import DTO
+import { LoginSchema, type LoginDTO } from '@erp/types';
 
 export default function Login() {
   const navigate = useNavigate();

@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, type ReactNode } from 'react'; // ✅ Fixed: Added 'type' modifier
+import { createContext, useState, useEffect, type ReactNode } from 'react';
 import { api } from '../lib/axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -24,12 +24,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Check for existing session on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const storedUser = localStorage.getItem('flux_user');
-        if (storedUser) {
+        const token = localStorage.getItem('token');
+        if (storedUser && token) {
             setUser(JSON.parse(storedUser));
         }
       } catch (error) {
@@ -45,18 +45,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await api.post('/auth/login', { email, password });
     if (data.success) {
       setUser(data.user);
+      // ✅ CRITICAL FIX: Save token so axios interceptor works
+      localStorage.setItem('token', data.token); 
       localStorage.setItem('flux_user', JSON.stringify(data.user)); 
     }
   };
 
   const logout = async () => {
-    try {
-        await api.post('/auth/logout');
-    } catch(e) {
-        console.error(e);
-    }
+    try { await api.post('/auth/logout'); } catch(e) { console.error(e); }
     setUser(null);
     localStorage.removeItem('flux_user');
+    localStorage.removeItem('token'); // ✅ Clear token
     navigate('/login');
   };
 
