@@ -1,106 +1,66 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  Users, 
-  Package, 
-  FileText, 
-  Settings, 
-  LogOut, 
-  TrendingDown,
-  MessageSquareQuote
+  LayoutDashboard, Users, FileText, Package, 
+  Receipt, Settings, LogOut, FileCode 
 } from 'lucide-react';
-import { api } from '../lib/axios'; // 👈 IMPORT YOUR API CLIENT
+import { useAuth } from '../hooks/useAuth';
 
-export const Sidebar = () => {
-  const navigate = useNavigate();
+export default function Sidebar() {
+  const { logout, user } = useAuth(); // 👈 Get user from hook
 
-  // ✅ UPDATED: Call Backend to Logout
-  const handleLogout = async () => {
-    try {
-      // 1. Tell Server to delete the HttpOnly Cookie
-      await api.post('/auth/logout');
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      // 2. Clear any local non-sensitive user data
-      localStorage.removeItem('user'); 
-      // 3. Redirect to Login
-      navigate('/login');
-    }
-  };
-
-  const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-      isActive
-        ? 'bg-blue-50 text-blue-600'
-        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-    }`;
+  const LINKS = [
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/clients', label: 'Clients', icon: Users },
+    { to: '/products', label: 'Products', icon: Package },
+    { to: '/invoices', label: 'Invoices', icon: FileText },
+    { to: '/quotes', label: 'Quotes', icon: FileCode },
+    // 🛡️ Hide these from non-admins
+    ...(user?.role === 'admin' ? [
+        { to: '/expenses', label: 'Expenses', icon: Receipt },
+        { to: '/settings', label: 'Settings', icon: Settings },
+    ] : [])
+  ];
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0 flex flex-col z-10">
-      {/* Logo Area */}
+    <aside className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0">
       <div className="p-6 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-            F
-          </div>
-          <span className="text-xl font-bold text-gray-900">Flux ERP</span>
-        </div>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          Flux ERP
+        </h1>
+        {/* Optional: Show role badge */}
+        <span className="text-xs uppercase font-bold text-gray-400 tracking-wider">
+            {user?.role} Workspace
+        </span>
       </div>
 
-      {/* Navigation Links */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-2">
-          Overview
-        </p>
-        <NavLink to="/" className={linkClass}>
-            <LayoutDashboard className="w-5 h-5" />
-            <span>Dashboard</span>
-        </NavLink>
-
-        <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">
-          Management
-        </p>
-        <NavLink to="/clients" className={linkClass}>
-            <Users className="w-5 h-5" />
-            <span>Clients</span>
-        </NavLink>
-        <NavLink to="/products" className={linkClass}>
-            <Package className="w-5 h-5" />
-            <span>Products</span>
-        </NavLink>
-        <NavLink to="/quotes" className={linkClass}>
-            <MessageSquareQuote className="w-5 h-5" />
-            <span>Quotes</span>
-        </NavLink>
-        <NavLink to="/invoices" className={linkClass}>
-            <FileText className="w-5 h-5" />
-            <span>Invoices</span>
-        </NavLink>
-        <NavLink to="/expenses" className={linkClass}>
-            <TrendingDown className="w-5 h-5" />
-            <span>Expenses</span>
-        </NavLink>
-
-        <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">
-          System
-        </p>
-        <NavLink to="/settings" className={linkClass}>
-            <Settings className="w-5 h-5" />
-            <span>Settings</span>
-        </NavLink>
+        {LINKS.map((link) => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                isActive 
+                  ? 'bg-blue-50 text-blue-600 font-medium shadow-sm' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`
+            }
+          >
+            <link.icon className="w-5 h-5" />
+            {link.label}
+          </NavLink>
+        ))}
       </nav>
 
-      {/* Footer / Logout */}
       <div className="p-4 border-t border-gray-100">
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 w-full transition-colors"
+        <button 
+          onClick={logout}
+          className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl w-full transition-colors font-medium"
         >
           <LogOut className="w-5 h-5" />
-          <span>Logout</span>
+          Logout
         </button>
       </div>
     </aside>
   );
-};
+}

@@ -1,14 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './context/AuthContext'; // 👈 Import
+import { AuthProvider } from './context/AuthContext';
+// 👇 Import the new modal
+import { SessionExpiryModal } from './components/SessionExpiryModal';
 
-// Layouts
-import {Layout} from './layouts/DashboardLayout';
+// ... (Keep existing Layout and Page imports) ...
+import {Layout as DashboardLayout} from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
 import ProtectedLayout from './layouts/ProtectedLayout';
+import AdminRoute from './components/AdminRoute';
 
-// Pages
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Dashboard from './pages/Dashboard';
@@ -19,11 +21,11 @@ import InvoiceCreate from './pages/invoices/InvoiceCreate';
 import InvoiceEdit from './pages/invoices/InvoiceEdit';
 import InvoiceView from './pages/invoices/InvoiceView';
 import InvoicePublic from './pages/public/InvoicePublic';
-import Expenses from './pages/Expenses';
-import Settings from './pages/Settings';
 import QuoteList from './pages/quotes/QuoteList';
 import QuoteCreate from './pages/quotes/QuoteCreate';
 import QuoteView from './pages/quotes/QuoteView';
+import Expenses from './pages/Expenses';
+import Settings from './pages/Settings';
 
 const queryClient = new QueryClient();
 
@@ -39,7 +41,7 @@ function AppRoutes() {
 
       {/* Protected Routes */}
       <Route element={<ProtectedLayout />}>
-        <Route element={<Layout />}>
+        <Route element={<DashboardLayout />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           
@@ -55,8 +57,11 @@ function AppRoutes() {
           <Route path="/quotes/new" element={<QuoteCreate />} />
           <Route path="/quotes/:id" element={<QuoteView />} />
 
-          <Route path="/expenses" element={<Expenses />} />
-          <Route path="/settings" element={<Settings />} />
+          {/* Admin Routes */}
+          <Route element={<AdminRoute />}>
+             <Route path="/expenses" element={<Expenses />} />
+             <Route path="/settings" element={<Settings />} />
+          </Route>
         </Route>
       </Route>
 
@@ -69,8 +74,10 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        {/* ✅ AuthProvider must be inside BrowserRouter because it uses useNavigate */}
         <AuthProvider>
+          {/* ✅ PLACE MODAL HERE: It must be inside AuthProvider but outside Routes */}
+          <SessionExpiryModal />
+          
           <AppRoutes />
           <Toaster position="top-right" richColors />
         </AuthProvider>

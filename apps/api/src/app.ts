@@ -24,45 +24,52 @@ import publicRoutes from './routes/public.routes';
 // Middleware
 import { authMiddleware } from './middleware/auth.middleware';
 import { errorHandler } from './middleware/error.middleware';
+// import { requireAdmin } from './middleware/admin.middleware'; // Uncomment when RBAC is fully active
 
 const app = express();
 
 // --- 1. Global Middleware ---
+
+// ✅ SECURITY HEADERS (Always First)
 app.use(helmet());
+
+// ✅ LOGGING
 app.use(morgan('dev'));
-app.use(express.json());
 
-// ✅ FIX: Type Bridge for Cookie Parser
-app.use(cookieParser() as unknown as RequestHandler);
-
-// Security Middleware
-// ✅ FIX: Type Bridge for Security libs
-app.use(mongoSanitize() as unknown as RequestHandler);
-app.use(hpp() as unknown as RequestHandler);
-
-// Rate Limiting
-const limiter = rateLimit({
-  windowMs: 10 * 60 * 1000,
-  limit: 100, // Use 'limit' (standard) instead of 'max' (deprecated)
-  message: "Too many requests, please try again later."
-});
-
-// ✅ FIX: Type Bridge for Rate Limiter
-app.use(limiter as unknown as RequestHandler);
-
-// CORS
+// ✅ CORS (MOVED UP: Must be before Rate Limit and Parsing)
+// This ensures OPTIONS/Preflight requests are handled before they can be blocked
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || config.corsOrigins.includes(origin)) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (config.corsOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.error(`Blocked by CORS: ${origin}`); // Log blocked origins for debugging
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true
 }));
 
-// Prevent Caching
+// ✅ BODY PARSING
+app.use(express.json());
+app.use(cookieParser() as unknown as RequestHandler);
+
+// ✅ SECURITY SANITIZATION
+app.use(mongoSanitize() as unknown as RequestHandler);
+app.use(hpp() as unknown as RequestHandler);
+
+// ✅ RATE LIMITING (Now safe to be here)
+const limiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 100, 
+  message: "Too many requests, please try again later."
+});
+app.use(limiter as unknown as RequestHandler);
+
+// ✅ CACHE CONTROL
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   next();
@@ -73,23 +80,25 @@ app.get('/', (req: Request, res: Response) => {
   res.json({ message: "Flux ERP API is Online", timestamp: new Date().toISOString() });
 });
 
-// ✅ FIX: Spread Operator for Swagger
+// Swagger Docs
 app.use('/api-docs', ...(swaggerUi.serve as unknown as RequestHandler[]), swaggerUi.setup(swaggerSpec) as unknown as RequestHandler); 
 
-// Public
+// Public Routes
 app.use('/auth', authRoutes);
-app.use('/public', publicRoutes);
+app.use('/public', publicRoutes); // Public Invoice Links
 
 // Protected Routes
-app.use('/clients', authMiddleware, clientRoutes);
-app.use('/invoices', authMiddleware, invoiceRoutes);
-app.use('/dashboard', authMiddleware, dashboardRoutes);
-app.use('/settings', authMiddleware, settingsRoutes);
-app.use('/products', authMiddleware, productRoutes);
-app.use('/expenses', authMiddleware, expenseRoutes);
-app.use('/quotes', authMiddleware, quoteRoutes);
+app.use('/clients', authMiddleware as unknown as RequestHandler, clientRoutes);
+app.use('/invoices', authMiddleware as unknown as RequestHandler, invoiceRoutes);
+app.use('/dashboard', authMiddleware as unknown as RequestHandler, dashboardRoutes);
+app.use('/products', authMiddleware as unknown as RequestHandler, productRoutes);
+app.use('/quotes', authMiddleware as unknown as RequestHandler, quoteRoutes);
+
+// Admin Routes (Enable requireAdmin when ready)
+app.use('/settings', authMiddleware as unknown as RequestHandler, settingsRoutes);
+app.use('/expenses', authMiddleware as unknown as RequestHandler, expenseRoutes);
 
 // --- 3. Global Error Handler (MUST BE LAST) ---
-app.use(errorHandler);
+app.use(errorHandler as unknown as RequestHandler);
 
 export default app;
