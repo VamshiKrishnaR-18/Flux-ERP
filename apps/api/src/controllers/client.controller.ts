@@ -4,22 +4,26 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { ClientSchema } from '@erp/types';
 
 export const ClientController = {
+  // ✅ FIX: Added Pagination & Server-Side Search
   getAll: asyncHandler(async (req: Request, res: Response) => {
-    // ✅ Pagination Logic
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
     const search = req.query.search as string;
 
+    // Base query: Only my clients, not deleted ones
     const query: any = { userId: req.user?.id, removed: false };
-    
+
+    // Add Search Logic
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { email: { $regex: search, $options: 'i' } },
+        { phoneNumber: { $regex: search, $options: 'i' } }
       ];
     }
 
+    // Execute queries in parallel for performance
     const [total, clients] = await Promise.all([
       ClientModel.countDocuments(query),
       ClientModel.find(query)
@@ -40,12 +44,17 @@ export const ClientController = {
     });
   }),
 
-  // ... keep create, update, delete as they are
+  getOne: asyncHandler(async (req: Request, res: Response) => {
+    const client = await ClientModel.findOne({ _id: req.params.id, userId: req.user?.id, removed: false });
+    if (!client) { res.status(404); throw new Error("Client not found"); }
+    res.json({ success: true, data: client });
+  }),
+
   create: asyncHandler(async (req: Request, res: Response) => {
     const validation = ClientSchema.safeParse(req.body);
     if (!validation.success) {
       res.status(400);
-      throw new Error(validation.error.errors[0]?.message);
+      throw new Error(validation.error.errors[0]?.message || "Invalid Data");
     }
     const client = await ClientModel.create({ ...validation.data, userId: req.user?.id });
     res.status(201).json({ success: true, data: client });
@@ -62,7 +71,7 @@ export const ClientController = {
   }),
 
   delete: asyncHandler(async (req: Request, res: Response) => {
-    // Soft delete
+    // ✅ Soft Delete implementation
     const client = await ClientModel.findOneAndUpdate(
       { _id: req.params.id, userId: req.user?.id },
       { removed: true },

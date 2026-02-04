@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../lib/axios';
 import { toast } from 'sonner';
 import { Search, User, Plus } from 'lucide-react';
-import { useDebounce } from '../hooks/useDebounce'; // ✅ Helper hook
+import { useDebounce } from '../hooks/useDebounce'; 
 import { ClientTable } from '../features/clients/components/ClientTable';
 import { ClientModal } from '../features/clients/components/ClientModal';
 import type { Client } from '../features/clients/types';
@@ -11,7 +11,7 @@ export default function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Pagination & Search State
+  // ✅ Pagination & Search State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
@@ -26,7 +26,7 @@ export default function Clients() {
   const fetchClients = async () => {
     setIsLoading(true);
     try {
-        // ✅ FIX: Pass 'search' to backend
+        // ✅ Server-side Pagination & Search
         const url = `/clients?page=${page}&limit=10&search=${debouncedSearch}`;
         const { data } = await api.get(url);
         
@@ -81,7 +81,7 @@ export default function Clients() {
                             setSearch(e.target.value);
                             setPage(1); // Reset to page 1 on new search
                         }}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm transition-all"
                     />
                 </div>
                 <button 
@@ -93,7 +93,7 @@ export default function Clients() {
             </div>
         </div>
 
-        {/* ✅ Usage of clean Table Component */}
+        {/* Client Table with Pagination */}
         <ClientTable 
             clients={clients}
             loading={isLoading}

@@ -1,17 +1,24 @@
-import { ChevronLeft, ChevronRight, Edit, Trash2, Mail, Phone, MapPin } from 'lucide-react';
 import type { Client } from '../types';
+import { ChevronLeft, ChevronRight, Edit, Trash2, Mail, Phone, MapPin } from 'lucide-react';
 
 interface ClientTableProps {
   clients: Client[];
   loading: boolean;
+  // ✅ Pagination Props
   page: number;
   totalPages: number;
   onPageChange: (newPage: number) => void;
+  // Actions
   onEdit: (client: Client) => void;
   onDelete: (id: string) => void;
 }
 
-export function ClientTable({ clients, loading, page, totalPages, onPageChange, onEdit, onDelete }: ClientTableProps) {
+export function ClientTable({ 
+  clients, loading, 
+  page, totalPages, onPageChange,
+  onEdit, onDelete 
+}: ClientTableProps) {
+  
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 flex justify-center">
@@ -87,7 +94,7 @@ export function ClientTable({ clients, loading, page, totalPages, onPageChange, 
         </table>
       </div>
 
-      {/* Pagination Footer */}
+      {/* ✅ Pagination Footer */}
       {totalPages > 1 && (
         <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
             <span className="text-sm text-gray-500">
