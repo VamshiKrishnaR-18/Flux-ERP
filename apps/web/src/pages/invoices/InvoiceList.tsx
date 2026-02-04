@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvoicePDF } from '../../features/invoices/components/InvoicePDF';
 import { Eye, Send, Search, ChevronLeft, ChevronRight } from 'lucide-react'; 
-import { useSearch } from '../../hooks/useSearch'; 
+import { useDebounce } from '../../hooks/useDebounce'; // ✅ Import Debounce
+
 
 export default function InvoiceList() {
   const navigate = useNavigate();
@@ -14,22 +15,21 @@ export default function InvoiceList() {
   const [settings, setSettings] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ✅ Pagination State
+  // Pagination & Search State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState(''); // 👈 Raw input
+  const debouncedSearch = useDebounce(search, 500); // 👈 Debounced value
   const LIMIT = 10;
 
-  // Search Logic (Note: Currently filters only the visible page)
-  const { query, setQuery, filteredItems: filteredInvoices } = useSearch(invoices, ['number', 'clientId.name', 'status']);
-
-  // ✅ Fetch Data with Pagination
+  // ✅ Fetch Data (Triggered by Page OR Search changes)
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
         const [invRes, setRes] = await Promise.all([
-          // Pass page & limit parameters
-          api.get(`/invoices?page=${page}&limit=${LIMIT}&t=${Date.now()}`), 
+          // ✅ Pass the search query to the backend
+          api.get(`/invoices?page=${page}&limit=${LIMIT}&search=${debouncedSearch}`), 
           api.get('/settings')
         ]);
         
@@ -46,7 +46,13 @@ export default function InvoiceList() {
       }
     };
     fetchData();
-  }, [page]); // 👈 Re-run when page changes
+  }, [page, debouncedSearch]); // 👈 Re-run when these change
+
+  // ✅ Reset page when user types
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearch(e.target.value);
+      setPage(1); // Go back to page 1 on new search
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this invoice?')) return;
@@ -94,9 +100,9 @@ export default function InvoiceList() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input 
                     type="text" 
-                    placeholder="Search visible invoices..." 
-                    value={query} 
-                    onChange={e => setQuery(e.target.value)}
+                    placeholder="Search Number, Client, Status..." 
+                    value={search} 
+                    onChange={handleSearch}
                     className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 />
              </div>
@@ -133,7 +139,8 @@ export default function InvoiceList() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {filteredInvoices.map((invoice) => (
+                    {/* ✅ RENDER invoices DIRECTLY (Server already filtered them) */}
+                    {invoices.map((invoice) => (
                       <tr key={invoice._id} className="hover:bg-gray-50 transition-colors group">
                         <td className="px-6 py-4 font-medium text-gray-900">#{invoice.number}</td>
                         <td className="px-6 py-4 text-gray-600">

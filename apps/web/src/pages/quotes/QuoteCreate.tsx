@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { api } from '../../lib/axios';
 import { toast } from 'sonner';
+import { AsyncSelect } from '../../components/AsyncSelect'; // 👈 Import
 
 export default function QuoteCreate() {
   const navigate = useNavigate();
-  const [clients, setClients] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { register, control, handleSubmit, watch, setValue } = useForm({
     defaultValues: {
@@ -20,33 +20,33 @@ export default function QuoteCreate() {
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
-
-  // Math Logic
   const items = watch("items");
   const subTotal = items?.reduce((acc, item) => acc + (item.quantity * item.price), 0) || 0;
-  
-  // Load Data
-  useEffect(() => {
-    api.get('/clients').then(res => setClients(res.data.data));
-    api.get('/products').then(res => setProducts(res.data.data));
-  }, []);
 
-  const handleProductSelect = (index: number, id: string) => {
-    const p = products.find(x => x._id === id);
-    if(p) {
+  // ✅ FETCHERS
+  const fetchClients = async (q: string) => (await api.get(`/clients?search=${q}&limit=20`)).data.data;
+  const fetchProducts = async (q: string) => (await api.get(`/products?search=${q}&limit=20`)).data.data;
+
+  // ✅ ON-DEMAND PRODUCT LOAD
+  const handleProductSelect = async (index: number, id: string) => {
+    if (!id) return;
+    try {
+        const { data } = await api.get(`/products/${id}`);
+        const p = data.data;
         setValue(`items.${index}.itemName`, p.name);
         setValue(`items.${index}.price`, p.price);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const onSubmit = async (data: any) => {
+    setIsLoading(true);
     try {
-      await api.post('/quotes', { ...data, subTotal, total: subTotal }); // Simplified math for demo
+      await api.post('/quotes', { ...data, subTotal, total: subTotal });
       toast.success("Quote created!");
       navigate('/quotes');
     } catch (error) {
       toast.error("Failed to create quote");
-    }
+    } finally { setIsLoading(false); }
   };
 
   return (
@@ -61,11 +61,14 @@ export default function QuoteCreate() {
                         <input {...register("title")} className="w-full border p-2 rounded" placeholder="e.g. Website Redesign" required />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1">Client</label>
-                        <select {...register("clientId")} className="w-full border p-2 rounded" required>
-                            <option value="">Select Client...</option>
-                            {clients.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                        </select>
+                        {/* ✅ ASYNC CLIENT SELECT */}
+                        <AsyncSelect
+                            label="Client"
+                            fetcher={fetchClients}
+                            renderOption={(c) => c.name}
+                            onChange={(id) => setValue('clientId', id)}
+                            placeholder="Search Client..."
+                        />
                     </div>
                 </div>
 
@@ -74,18 +77,20 @@ export default function QuoteCreate() {
                     {fields.map((field, index) => (
                         <div key={field.id} className="flex gap-2 items-end">
                             <div className="flex-1">
-                                <select onChange={(e) => handleProductSelect(index, e.target.value)} className="w-full text-xs mb-1 text-blue-600 bg-blue-50 p-1 rounded">
-                                    <option value="">+ Auto-fill Product</option>
-                                    {products.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
-                                </select>
+                                {/* ✅ ASYNC PRODUCT SELECT */}
+                                <div className="mb-1">
+                                    <AsyncSelect
+                                        label=""
+                                        fetcher={fetchProducts}
+                                        renderOption={(p) => p.name}
+                                        onChange={(id) => handleProductSelect(index, id)}
+                                        placeholder="+ Auto-fill Product"
+                                    />
+                                </div>
                                 <input {...register(`items.${index}.itemName`)} className="w-full border p-2 rounded" placeholder="Item Name" required />
                             </div>
-                            <div className="w-20">
-                                <input type="number" {...register(`items.${index}.quantity`)} className="w-full border p-2 rounded" placeholder="Qty" />
-                            </div>
-                            <div className="w-32">
-                                <input type="number" step="0.01" {...register(`items.${index}.price`)} className="w-full border p-2 rounded" placeholder="Price" />
-                            </div>
+                            <div className="w-20"><input type="number" {...register(`items.${index}.quantity`)} className="w-full border p-2 rounded" placeholder="Qty" /></div>
+                            <div className="w-32"><input type="number" step="0.01" {...register(`items.${index}.price`)} className="w-full border p-2 rounded" placeholder="Price" /></div>
                             <button type="button" onClick={() => remove(index)} className="text-red-500 p-2">✕</button>
                         </div>
                     ))}
@@ -94,7 +99,9 @@ export default function QuoteCreate() {
 
                 <div className="pt-4 border-t flex justify-between items-center">
                     <div className="text-xl font-bold">Total: ${subTotal.toFixed(2)}</div>
-                    <button type="submit" className="bg-black text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800">Save Quote</button>
+                    <button type="submit" disabled={isLoading} className="bg-black text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800">
+                        {isLoading ? "Saving..." : "Save Quote"}
+                    </button>
                 </div>
             </form>
         </main>

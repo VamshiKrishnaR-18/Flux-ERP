@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { InvoiceModel } from '../models/invoice.model';
-import { ClientModel } from '../models/client.model';
+import { ClientModel } from '../models/client.model'; // ✅ Ensure this is imported
 import { CreateInvoiceSchema, PaymentSchema } from '@erp/types'; 
 import { ProductService } from '../services/product.service'; 
 import { generateInvoiceNumber } from '../utils/generators';
@@ -8,13 +8,14 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 export const InvoiceController = {
   
-  // 1. Get All (Now with Pagination 🚀)
+  // 1. Get All with Smart Search 🧠
   getAll: asyncHandler(async (req: Request, res: Response) => {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
+    const search = req.query.search as string || ''; // 👈 Get search param
     const skip = (page - 1) * limit;
 
-    // Auto-overdue logic (Run silently)
+    // Auto-overdue logic
     const today = new Date();
     await InvoiceModel.updateMany(
       { 
@@ -25,15 +26,46 @@ export const InvoiceController = {
       { $set: { status: 'overdue' } }
     );
 
-    // Fetch Data
-    const invoices = await InvoiceModel.find({ removed: false })
+    // ✅ Build Query Object
+    const query: any = { removed: false };
+
+    if (search) {
+      const searchNum = Number(search);
+      if (!isNaN(searchNum)) {
+        // 1. Direct Invoice Number Match
+        query.number = searchNum;
+      } else {
+        // 2. Status Match?
+        const statuses = ['draft', 'pending', 'sent', 'paid', 'overdue'];
+        if (statuses.includes(search.toLowerCase())) {
+           query.status = search.toLowerCase();
+        } else {
+           // 3. Client Name Search (The heavy lifting)
+           // Find clients matching the name first
+           const clients = await ClientModel.find({ 
+               name: { $regex: search, $options: 'i' } 
+           }).select('_id');
+           
+           const clientIds = clients.map(c => c._id);
+           
+           if (clientIds.length > 0) {
+               query.clientId = { $in: clientIds };
+           } else {
+               // If not a number, not a status, and no client found -> Return nothing
+               query._id = null; 
+           }
+        }
+      }
+    }
+
+    // Fetch Data with the new query
+    const invoices = await InvoiceModel.find(query)
       .populate('clientId', 'name email')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    // Get Total Count (for frontend "Page 1 of X")
-    const total = await InvoiceModel.countDocuments({ removed: false });
+    const total = await InvoiceModel.countDocuments(query); // 👈 Count filtered docs
 
     res.json({ 
       success: true, 
@@ -47,7 +79,7 @@ export const InvoiceController = {
     });
   }),
 
-  // 2. Create
+  // ... (keep the rest of the controller unchanged: create, getOne, etc.)
   create: asyncHandler(async (req: Request, res: Response) => {
     const validation = CreateInvoiceSchema.safeParse(req.body);
     if (!validation.success) {
@@ -77,7 +109,6 @@ export const InvoiceController = {
     res.status(201).json({ success: true, message: "Invoice created", data: newInvoice });
   }),
 
-  // 3. Get One
   getOne: asyncHandler(async (req: Request, res: Response) => {
     const invoice = await InvoiceModel.findById(req.params.id).populate('clientId');
     if (!invoice) {
@@ -87,7 +118,6 @@ export const InvoiceController = {
     res.json({ success: true, data: invoice });
   }),
 
-  // 4. Update
   update: asyncHandler(async (req: Request, res: Response) => {
     const validation = CreateInvoiceSchema.safeParse(req.body);
     if (!validation.success) {
@@ -109,7 +139,6 @@ export const InvoiceController = {
     res.json({ success: true, message: "Invoice updated", data: updatedInvoice });
   }),
 
-  // 5. Delete
   delete: asyncHandler(async (req: Request, res: Response) => {
     const invoice = await InvoiceModel.findById(req.params.id);
     if (!invoice) {
@@ -125,7 +154,6 @@ export const InvoiceController = {
     res.json({ success: true, message: "Invoice deleted & Stock restored" });
   }),
 
-  // 6. Add Payment
   addPayment: asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const payment = PaymentSchema.parse(req.body); 
@@ -163,7 +191,6 @@ export const InvoiceController = {
     res.json({ success: true, message: "Payment recorded", data: updatedInvoice });
   }),
 
-  // 7. Send
   send: asyncHandler(async (req: Request, res: Response) => {
     const invoice = await InvoiceModel.findByIdAndUpdate(
       req.params.id,
