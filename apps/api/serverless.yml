@@ -12,9 +12,13 @@ provider:
     JWT_SECRET: ${param:JWT_SECRET}
     CORS_ORIGIN: 'https://flux-erp-web.vercel.app'
 
+
+build:
+  esbuild: false
+
 functions:
   api:
-    handler: src/lambda.handler # Point directly to TS source! Esbuild handles the rest.
+    handler: src/lambda.handler
     events:
       - http:
           path: /
@@ -25,13 +29,13 @@ functions:
 
 plugins:
   - serverless-offline
-  - serverless-esbuild  # ✅ ADDED: The Magic Bundler
+  - serverless-esbuild 
 
 custom:
   esbuild:
     bundle: true
-    minify: true       # Minifies code to make it smaller/faster
-    sourcemap: true    # Helps with debugging errors
+    minify: true
+    sourcemap: true
     target: 'node20'
-    packager: 'npm'    # Uses npm to pack external modules
+    packager: 'npm'
     exclude: ['aws-sdk']
