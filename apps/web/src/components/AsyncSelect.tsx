@@ -2,18 +2,19 @@ import { useState, useEffect, useRef } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import { Loader2, Search, X, ChevronDown } from 'lucide-react';
 
-interface AsyncSelectProps {
+interface AsyncSelectProps<T> {
   label: string;
   value?: string;
   onChange: (value: string) => void;
-  fetcher: (query: string) => Promise<any[]>;
-  renderOption: (item: any) => React.ReactNode;
+  fetcher: (query: string) => Promise<T[]>;
+  renderOption: (item: T) => React.ReactNode;
   placeholder?: string;
   error?: string;
   initialLabel?: string; // To show the name if we already have an ID selected
+  getOptionLabel: (item: T) => string;
 }
 
-export function AsyncSelect({ 
+export function AsyncSelect<T extends { _id: string }>({ 
   label, 
   value, 
   onChange, 
@@ -21,11 +22,12 @@ export function AsyncSelect({
   renderOption,
   placeholder = "Search...",
   error,
-  initialLabel
-}: AsyncSelectProps) {
+  initialLabel,
+  getOptionLabel
+}: AsyncSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [options, setOptions] = useState<any[]>([]);
+  const [options, setOptions] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState(initialLabel || '');
   
@@ -65,9 +67,9 @@ export function AsyncSelect({
     return () => { active = false; };
   }, [debouncedQuery, isOpen, fetcher]);
 
-  const handleSelect = (item: any, labelText: string) => {
+  const handleSelect = (item: T) => {
     onChange(item._id);
-    setSelectedLabel(labelText);
+    setSelectedLabel(getOptionLabel(item));
     setIsOpen(false);
     setQuery('');
   };
@@ -137,7 +139,7 @@ export function AsyncSelect({
               options.map((item) => (
                 <div
                   key={item._id}
-                  onClick={() => handleSelect(item, renderOption(item) as string)}
+                  onClick={() => handleSelect(item)}
                   className="px-3 py-2.5 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-50 last:border-0 transition-colors"
                 >
                   {renderOption(item)}

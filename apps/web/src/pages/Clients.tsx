@@ -36,7 +36,7 @@ export default function Clients() {
         if (data.pagination) {
             setTotalPages(data.pagination.totalPages);
         }
-    } catch (err) {
+    } catch {
         toast.error("Failed to load clients");
     } finally {
         setIsLoading(false);
@@ -81,8 +81,8 @@ export default function Clients() {
       window.URL.revokeObjectURL(url);
 
       toast.success('CSV exported');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to export CSV');
+    } catch {
+      toast.error('Failed to export CSV');
     } finally {
       setIsExporting(false);
     }

@@ -35,7 +35,7 @@ export default function Settings() {
         if (res.data.data) {
             reset(res.data.data);
         }
-      } catch (error) {
+      } catch {
         toast.error("Failed to load settings");
       } finally {
         setIsLoading(false);
@@ -48,7 +48,7 @@ export default function Settings() {
     try {
       await api.put('/settings', data);
       toast.success("Settings saved successfully!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to save settings");
     }
   };
@@ -68,8 +68,8 @@ export default function Settings() {
         await api.post('/auth/change-password', passData);
         toast.success("Password updated successfully");
         setPassData({ oldPassword: '', newPassword: '' });
-    } catch (error: any) {
-        toast.error(error.response?.data?.message || "Failed to update password");
+    } catch {
+        toast.error("Failed to update password");
     } finally {
         setPassLoading(false);
     }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 import { api } from '../../lib/axios';
 import { toast } from 'sonner';
 import { Plus, FileOutput, ArrowRightLeft, Send, ArrowUpDown, Search, ChevronLeft, ChevronRight, Loader2, Check, X, Download } from 'lucide-react';
@@ -34,7 +35,7 @@ export default function QuoteList() {
         const res = await api.get(`/quotes?page=${page}&limit=${LIMIT}&search=${debouncedSearch}`);
         setQuotes(res.data.data);
         setTotalPages(res.data.pagination?.totalPages || 1);
-      } catch (error) {
+      } catch {
         toast.error("Failed to load quotes");
       } finally {
         setIsLoading(false);
@@ -54,8 +55,9 @@ export default function QuoteList() {
       const res = await api.post(`/quotes/${id}/convert`);
       toast.success("Converted successfully!");
       navigate(`/invoices/${res.data.data._id}`);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Conversion failed");
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) ? error.response?.data?.message : "Conversion failed";
+      toast.error(message || "Conversion failed");
     }
   };
 
@@ -65,8 +67,9 @@ export default function QuoteList() {
       toast.success(`Marked as ${status}`);
       const res = await api.get(`/quotes?page=${page}&limit=${LIMIT}&search=${debouncedSearch}`);
       setQuotes(res.data.data);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update status');
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) ? error.response?.data?.message : 'Failed to update status';
+      toast.error(message || 'Failed to update status');
     }
   };
 
@@ -77,7 +80,7 @@ export default function QuoteList() {
       // Refresh data to show new status
       const res = await api.get(`/quotes?page=${page}&limit=${LIMIT}&search=${debouncedSearch}`);
       setQuotes(res.data.data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to send");
     }
   };
@@ -104,8 +107,9 @@ export default function QuoteList() {
       window.URL.revokeObjectURL(url);
 
       toast.success('CSV exported');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to export CSV');
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) ? error.response?.data?.message : 'Failed to export CSV';
+      toast.error(message || 'Failed to export CSV');
     } finally {
       setIsExporting(false);
     }
@@ -173,11 +177,11 @@ export default function QuoteList() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {sortedQuotes.map((quote) => (
+                            {sortedQuotes.map((quote: Quote) => (
                                 <tr key={quote._id} className="hover:bg-gray-50 group">
                                     <td className="px-6 py-4 font-medium"><Link to={`/quotes/${quote._id}`} className="text-blue-600 hover:underline">#{quote.number}</Link></td>
                                     <td className="px-6 py-4 text-gray-600">{quote.title}</td>
-                                    <td className="px-6 py-4 text-gray-600">{typeof quote.clientId === 'object' ? (quote.clientId as any).name : '...'}</td>
+                                    <td className="px-6 py-4 text-gray-600">{typeof quote.clientId === 'object' ? (quote.clientId as unknown as { name: string }).name : '...'}</td>
                                     <td className="px-6 py-4 text-right font-medium">${quote.total.toFixed(2)}</td>
 									<td className="px-6 py-4 text-center"><span className={`px-2 py-1 rounded-full text-xs font-bold border ${getStatusColor(quote.status)}`}>{quote.status}</span></td>
                                     <td className="px-6 py-4 text-right">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductSchema, type ProductDTO, type Product } from '@erp/types';
@@ -28,17 +28,17 @@ export default function Products() {
   }, [search]);
 
   // 2️⃣ Fetch
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await api.get(`/products?page=${page}&limit=${LIMIT}&search=${debouncedSearch}`);
       setProducts(res.data.data);
       setTotalPages(res.data.pagination?.totalPages || 1);
-    } catch (err) { toast.error("Failed to load products"); } 
+    } catch { toast.error("Failed to load products"); } 
     finally { setIsLoading(false); }
-  };
+  }, [page, LIMIT, debouncedSearch]);
 
-  useEffect(() => { fetchProducts(); }, [page, debouncedSearch]);
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   // Sort
   const { items: sortedProducts, requestSort, sortConfig } = useSortableData(products);
@@ -49,7 +49,7 @@ export default function Products() {
 
   // Forms
   const { register, handleSubmit, reset  } = useForm<ProductDTO>({
-    resolver: zodResolver(ProductSchema) as any,
+    resolver: zodResolver(ProductSchema),
     defaultValues: { name: '', price: 0, stock: 0, description: '', sku: '' }
   });
 
@@ -58,13 +58,13 @@ export default function Products() {
       if (editingId) { await api.put(`/products/${editingId}`, data); toast.success("Updated"); } 
       else { await api.post('/products', data); toast.success("Added"); }
       setIsModalOpen(false); reset(); setEditingId(null); fetchProducts();
-    } catch (err) { toast.error("Failed"); }
+    } catch { toast.error("Failed"); }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm("Delete?")) {
       try { await api.delete(`/products/${id}`); toast.success("Deleted"); fetchProducts(); } 
-      catch (err) { toast.error("Failed"); }
+      catch { toast.error("Failed"); }
     }
   };
 

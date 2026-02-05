@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/axios';
 import { toast } from 'sonner';
+import axios from 'axios';
 
 // Validation Schema
 const ResetPasswordSchema = z.object({
@@ -37,8 +38,11 @@ export default function ResetPassword() {
       await api.put(`/auth/resetpassword/${token}`, { password: data.password });
       toast.success('Password reset successfully');
       navigate('/login');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to reset password');
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) 
+        ? error.response?.data?.message 
+        : 'Failed to reset password';
+      toast.error(message || 'Failed to reset password');
     } finally {
       setIsLoading(false);
     }

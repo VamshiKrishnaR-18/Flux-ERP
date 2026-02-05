@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/axios';
 import { toast } from 'sonner';
+import axios from 'axios';
 
 // Validation Schema
 const ForgotPasswordSchema = z.object({
@@ -27,8 +28,11 @@ export default function ForgotPassword() {
       await api.post('/auth/forgotpassword', data);
       setIsSent(true);
       toast.success('Reset link sent to your email');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to send reset link');
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) 
+        ? error.response?.data?.message 
+        : 'Failed to send reset link';
+      toast.error(message || 'Failed to send reset link');
     } finally {
       setIsLoading(false);
     }

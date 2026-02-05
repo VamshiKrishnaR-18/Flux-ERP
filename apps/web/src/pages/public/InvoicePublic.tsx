@@ -3,10 +3,11 @@ import { useParams } from 'react-router-dom';
 import { api } from '../../lib/axios'; // Make sure this axios instance handles public URLs
 import { format } from 'date-fns';
 import { Printer } from 'lucide-react';
+import type { Invoice, SettingsDTO } from '@erp/types';
 
 export default function InvoicePublic() {
   const { id } = useParams();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<{ invoice: Invoice, settings: SettingsDTO } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -16,7 +17,7 @@ export default function InvoicePublic() {
         // We use the public endpoint we just created
         const res = await api.get(`/public/invoices/${id}`);
         setData(res.data.data);
-      } catch (err) {
+      } catch {
         setError("This invoice does not exist or has been removed.");
       } finally {
         setLoading(false);
@@ -26,10 +27,10 @@ export default function InvoicePublic() {
   }, [id]);
 
   if (loading) return <div className="p-10 text-center">Loading Invoice...</div>;
-  if (error) return <div className="p-10 text-center text-red-500 font-bold">{error}</div>;
+  if (error || !data) return <div className="p-10 text-center text-red-500 font-bold">{error || "Data not found"}</div>;
 
   const { invoice, settings } = data;
-  const client = invoice.clientId;
+  const client = invoice.clientId as unknown as { name: string, email: string, phoneNumber?: string, address?: string };
 
   return (
     <div className="bg-white text-gray-800">
@@ -66,7 +67,7 @@ export default function InvoicePublic() {
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Billed To</h3>
                 <p className="font-bold text-lg text-slate-900">{client?.name}</p>
                 <p className="text-gray-500">{client?.email}</p>
-                <p className="text-gray-500">{client?.phone}</p>
+                <p className="text-gray-500">{client?.phoneNumber}</p>
                 <p className="text-gray-500 whitespace-pre-line">{client?.address}</p>
             </div>
             <div className="text-right space-y-2">
@@ -92,7 +93,7 @@ export default function InvoicePublic() {
                 </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-                {invoice.items.map((item: any, i: number) => (
+                {invoice.items.map((item, i: number) => (
                     <tr key={i}>
                         <td className="py-4 px-4">
                             <p className="font-medium text-slate-900">{item.itemName}</p>

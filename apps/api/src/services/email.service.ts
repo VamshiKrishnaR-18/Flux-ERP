@@ -17,7 +17,7 @@ export const EmailService = {
   sendInvoice: async (invoice: any, client: any) => {
     try {
       const info = await transporter.sendMail({
-        from: `"Flux ERP" <${process.env.SMTP_USER}>`, // Sender address
+        from: `"Flux ERP" <${env.SMTP_USER}>`, // Sender address
         to: client.email,
         subject: `Invoice #${invoice.number} from Flux ERP`,
         html: `
@@ -27,7 +27,7 @@ export const EmailService = {
             <p>Here is your invoice for <strong>$${invoice.total.toFixed(2)}</strong>.</p>
             <p><strong>Due Date:</strong> ${new Date(invoice.expiredDate).toDateString()}</p>
             <br />
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/invoices/${invoice._id}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a>
+            <a href="${env.FRONTEND_URL}/invoices/${invoice._id}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a>
             <p style="margin-top: 20px; color: #888; font-size: 12px;">Thank you for your business!</p>
           </div>
         `
@@ -60,7 +60,7 @@ export const EmailService = {
             <br />
             <p>Please reply to this email to approve or reject this quote.</p>
             <br />
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/quotes" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Quote</a>
+            <a href="${env.FRONTEND_URL}/quotes" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Quote</a>
           </div>
         `
       });

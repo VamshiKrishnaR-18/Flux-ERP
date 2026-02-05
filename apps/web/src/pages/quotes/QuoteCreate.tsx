@@ -4,18 +4,28 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { api } from '../../lib/axios';
 import { toast } from 'sonner';
 import { AsyncSelect } from '../../components/AsyncSelect'; // 👈 Import AsyncSelect
+import { Client, Product, CreateQuoteDTO } from '@erp/types';
+import axios from 'axios';
 
 export default function QuoteCreate() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
-  const { register, control, handleSubmit, watch, setValue } = useForm({
+  const { register, control, handleSubmit, watch, setValue } = useForm<CreateQuoteDTO>({
     defaultValues: {
       title: '',
       clientId: '',
       date: new Date().toISOString().split('T')[0],
       expiredDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-      items: [{ itemName: '', quantity: 1, price: 0, total: 0 }]
+      items: [{ itemName: '', quantity: 1, price: 0, total: 0 }],
+      status: 'draft',
+      currency: 'USD',
+      subTotal: 0,
+      taxRate: 0,
+      taxTotal: 0,
+      total: 0,
+      discount: 0,
+      credit: 0
     }
   });
 
@@ -26,12 +36,12 @@ export default function QuoteCreate() {
   const subTotal = (items || []).reduce((acc, item) => acc + ((item.quantity || 0) * (item.price || 0)), 0);
 
   // ✅ SERVER-SIDE SEARCH FETCHERS
-  const fetchClients = async (q: string) => {
+  const fetchClients = async (q: string): Promise<Client[]> => {
     const res = await api.get(`/clients?search=${q}&limit=20`);
     return res.data.data;
   };
 
-  const fetchProducts = async (q: string) => {
+  const fetchProducts = async (q: string): Promise<Product[]> => {
     const res = await api.get(`/products?search=${q}&limit=20`);
     return res.data.data;
   };
@@ -51,14 +61,17 @@ export default function QuoteCreate() {
     }
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: CreateQuoteDTO) => {
     setIsLoading(true);
     try {
       await api.post('/quotes', { ...data, subTotal, total: subTotal });
       toast.success("Quote created!");
       navigate('/quotes');
-    } catch (error) {
-      toast.error("Failed to create quote");
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) 
+        ? error.response?.data?.message 
+        : "Failed to create quote";
+      toast.error(message || "Failed to create quote");
     } finally { setIsLoading(false); }
   };
 
@@ -78,7 +91,8 @@ export default function QuoteCreate() {
                         <AsyncSelect
                             label="Client"
                             fetcher={fetchClients}
-                            renderOption={(c) => c.name}
+                            renderOption={(c: Client) => c.name}
+                            getOptionLabel={(c: Client) => c.name}
                             onChange={(id) => setValue('clientId', id)}
                             placeholder="Search Client..."
                         />
@@ -94,7 +108,8 @@ export default function QuoteCreate() {
                                 <AsyncSelect
                                     label=""
                                     fetcher={fetchProducts}
-                                    renderOption={(p) => `${p.name} ($${p.price})`}
+                                    renderOption={(p: Product) => `${p.name} ($${p.price})`}
+                                    getOptionLabel={(p: Product) => p.name}
                                     onChange={(id) => handleProductSelect(index, id)}
                                     placeholder="✨ Search Product..."
                                 />

@@ -6,7 +6,7 @@ export const connectDB = async () => {
   try {
     logger.info("Connecting to MongoDB...");
     // @ts-ignore - We validated mongoUri exists in env.ts
-    await mongoose.connect(config.mongoUri, { 
+    await mongoose.connect(env.MONGO_URI, { 
         serverSelectionTimeoutMS: 5000 
     });
     logger.info("✅ Connected to MongoDB");

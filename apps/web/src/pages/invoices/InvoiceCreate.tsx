@@ -4,6 +4,7 @@ import { api } from '../../lib/axios';
 import { toast } from 'sonner';
 import { InvoiceForm } from '../../features/invoices/components/InvoiceForm'; // 👈 Import reusable form
 import { type CreateInvoiceDTO } from "@erp/types";
+import axios from 'axios';
 
 export default function InvoiceCreate() {
   const navigate = useNavigate();
@@ -12,11 +13,14 @@ export default function InvoiceCreate() {
   const handleSubmit = async (data: CreateInvoiceDTO) => {
     setIsLoading(true);
     try {
-      await api.post('/invoices', data);
+      const { data: newInvoice } = await api.post('/invoices', data);
       toast.success('Invoice created successfully!');
-      navigate('/invoices');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Creation failed');
+      navigate(`/invoices/${newInvoice.id}`);
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) 
+        ? error.response?.data?.message 
+        : 'Creation failed';
+      toast.error(message || 'Creation failed');
     } finally {
       setIsLoading(false);
     }

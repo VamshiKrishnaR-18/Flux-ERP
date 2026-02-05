@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../../lib/axios';
 import { ExternalLink, Loader2 } from 'lucide-react';
+import type { Client, Invoice, Quote, SettingsDTO } from '@erp/types';
 
-type PortalPayload = { client: any; settings?: any; invoices: any[]; quotes: any[] };
+type PortalPayload = { client: Client; settings?: SettingsDTO; invoices: Invoice[]; quotes: Quote[] };
 
 const money = (value: unknown, currency?: unknown) => {
   const cur = typeof currency === 'string' && currency ? currency : 'USD';
@@ -29,8 +30,9 @@ export default function ClientPortalPublic() {
       try {
         const res = await api.get(`/public/portal/${token}`);
         setPayload(res.data.data);
-      } catch (e: any) {
-        setError(e.response?.data?.message || 'This portal link is invalid or has been disabled.');
+      } catch (e: unknown) {
+        const errorMsg = e instanceof Error ? e.message : 'This portal link is invalid or has been disabled.';
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -87,7 +89,7 @@ export default function ClientPortalPublic() {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {invoices.map((inv: any) => (
+                    {invoices.map((inv: Invoice) => (
                       <tr key={inv._id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 font-medium">#{inv.number}</td>
                         <td className="px-4 py-3 text-gray-600">{inv.date ? new Date(inv.date).toLocaleDateString() : '-'}</td>
@@ -124,7 +126,7 @@ export default function ClientPortalPublic() {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {quotes.map((q: any) => (
+                    {quotes.map((q: Quote) => (
                       <tr key={q._id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 font-medium">#{q.number}</td>
                         <td className="px-4 py-3 text-gray-700">{q.title || '-'}</td>

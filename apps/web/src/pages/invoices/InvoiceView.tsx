@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 import { InvoicePDF } from '../../features/invoices/components/InvoicePDF';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { ArrowLeft, Printer, Pencil, Download, CreditCard, X, Link as LinkIcon } from 'lucide-react'; // ✅ Import LinkIcon
-import type { Invoice } from '@erp/types';
+import type { Invoice, SettingsDTO } from '@erp/types';
+import axios from 'axios';
 
 export default function InvoiceView() {
   const { id } = useParams();
@@ -13,7 +14,7 @@ export default function InvoiceView() {
   
   // Data State
   const [invoice, setInvoice] = useState<Invoice | null>(null);
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<SettingsDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Payment Modal State
@@ -30,7 +31,7 @@ export default function InvoiceView() {
       ]);
       setInvoice(invoiceRes.data.data);
       setSettings(settingsRes.data.data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load invoice");
       navigate('/invoices');
     } finally {
@@ -60,8 +61,11 @@ export default function InvoiceView() {
       setPaymentAmount('');
       await loadData(); 
 
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to record payment");
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) 
+        ? error.response?.data?.message 
+        : "Failed to record payment";
+      toast.error(message || "Failed to record payment");
     } finally {
       setIsSubmitting(false);
     }
@@ -77,7 +81,7 @@ export default function InvoiceView() {
 
   if (isLoading || !invoice) return <div className="p-10 text-center text-gray-500">Loading invoice...</div>;
 
-  const client = invoice.clientId as any;
+  const client = invoice.clientId as unknown as { name: string, email: string, address?: string, phoneNumber?: string };
   const amountPaid = invoice.amountPaid || 0;
   const balanceDue = invoice.total - amountPaid;
   const isPaid = invoice.status === 'paid';

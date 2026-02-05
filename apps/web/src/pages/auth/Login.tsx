@@ -22,7 +22,7 @@ export default function Login() {
       await login(data.email, data.password);
       toast.success('Welcome back!');
       navigate('/dashboard');
-    } catch (error) {
+    } catch {
       toast.error('Invalid credentials');
     } finally {
       setIsLoading(false);
@@ -89,7 +89,7 @@ export default function Login() {
 	        </form>
 	
 	        <p className="mt-6 text-center text-sm text-gray-600">
-	          Don't have an account?{' '}
+	          Don&apos;t have an account?{' '}
 	          <Link to="/register" className="text-blue-600 font-semibold hover:underline">
 	            Create account
 	          </Link>

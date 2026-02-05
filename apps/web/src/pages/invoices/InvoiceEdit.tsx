@@ -5,12 +5,13 @@ import { toast } from 'sonner';
 import { InvoiceForm } from '../../features/invoices/components/InvoiceForm'; // 👈 Import reusable form
 import { type CreateInvoiceDTO } from "@erp/types";
 import { Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 export default function InvoiceEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [initialData, setInitialData] = useState<any>(null);
+  const [initialData, setInitialData] = useState<Partial<CreateInvoiceDTO> & { clientName?: string, number?: string } | null>(null);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -27,7 +28,7 @@ export default function InvoiceEdit() {
             date: new Date(inv.date).toISOString().split('T')[0],
             expiredDate: new Date(inv.expiredDate).toISOString().split('T')[0]
         });
-      } catch (error) {
+      } catch {
         toast.error("Failed to load invoice");
         navigate('/invoices');
       }
@@ -41,8 +42,11 @@ export default function InvoiceEdit() {
       await api.put(`/invoices/${id}`, data);
       toast.success('Invoice updated successfully!');
       navigate('/invoices');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Update failed');
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) 
+        ? error.response?.data?.message 
+        : 'Update failed';
+      toast.error(message || 'Update failed');
     } finally {
       setIsLoading(false);
     }

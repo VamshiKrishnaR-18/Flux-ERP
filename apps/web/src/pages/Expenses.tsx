@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/axios';
 import { toast } from 'sonner';
 import { Search, ArrowUpDown, Plus, DollarSign, Calendar, Tag, Trash2, ChevronLeft, ChevronRight, Loader2, Download } from 'lucide-react';
 import { useSortableData } from '../hooks/useSortableData';
 import { useDebounce } from '../hooks/useDebounce'; // ✅ Import Debounce
+import axios from 'axios';
 
 interface Expense {
   _id: string;
@@ -36,7 +37,7 @@ export default function Expenses() {
   };
 
   // ✅ Fetch Data (Triggered by Page or Search)
-  const fetchExpenses = async () => {
+  const fetchExpenses = useCallback(async () => {
     setIsLoading(true);
     try {
         // Pass search param to backend
@@ -49,9 +50,9 @@ export default function Expenses() {
     } finally { 
         setIsLoading(false); 
     }
-  };
+  }, [page, LIMIT, debouncedSearch]);
   
-  useEffect(() => { fetchExpenses(); }, [page, debouncedSearch]); // 👈 Re-run on change
+  useEffect(() => { fetchExpenses(); }, [fetchExpenses]); // 👈 Re-run on change
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
@@ -66,13 +67,13 @@ export default function Expenses() {
       setShowModal(false);
       setFormData({ description: '', amount: '', date: new Date().toISOString().split('T')[0], category: 'Operational' });
       toast.success('Expense recorded');
-    } catch (error) { toast.error('Failed to add expense'); }
+    } catch { toast.error('Failed to add expense'); }
   };
 
   const handleDelete = async (id: string) => {
     if(!confirm("Delete this expense?")) return;
     try { await api.delete(`/expenses/${id}`); setExpenses(prev => prev.filter(e => e._id !== id)); toast.success("Expense deleted"); } 
-    catch (err) { toast.error("Failed to delete"); }
+    catch { toast.error("Failed to delete"); }
   };
 
   const handleExportCsv = async () => {
@@ -97,8 +98,11 @@ export default function Expenses() {
       window.URL.revokeObjectURL(url);
 
       toast.success('CSV exported');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to export CSV');
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) 
+        ? error.response?.data?.message 
+        : 'Failed to export CSV';
+      toast.error(message || 'Failed to export CSV');
     } finally {
       setIsExporting(false);
     }

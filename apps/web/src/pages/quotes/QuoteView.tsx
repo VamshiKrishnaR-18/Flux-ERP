@@ -5,13 +5,13 @@ import { toast } from 'sonner';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { QuotePDF } from '../../features/quotes/components/QuotePDF';
 import { ArrowLeft, Printer, Download, Mail, FileText, Trash2, Check, X } from 'lucide-react';
-import type { Quote } from '@erp/types';
+import type { Quote, SettingsDTO } from '@erp/types';
 
 export default function QuoteView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [quote, setQuote] = useState<Quote | null>(null);
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<SettingsDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -25,7 +25,7 @@ export default function QuoteView() {
         ]);
         setQuote(quoteRes.data.data);
         setSettings(settingsRes.data.data);
-      } catch (error) {
+      } catch {
         toast.error("Failed to load quote");
         navigate('/quotes');
       } finally {
@@ -43,7 +43,7 @@ export default function QuoteView() {
           // Refresh to update status
           const res = await api.get(`/quotes/${id}`);
           setQuote(res.data.data);
-      } catch (error) {
+      } catch {
           toast.error("Failed to send email");
       } finally {
           setIsSending(false);
@@ -56,7 +56,7 @@ export default function QuoteView() {
           const res = await api.post(`/quotes/${id}/convert`);
           toast.success("Converted to Invoice!");
           navigate(`/invoices/${res.data.data._id}`);
-      } catch (error) {
+      } catch {
           toast.error("Failed to convert");
       }
   };
@@ -81,14 +81,14 @@ export default function QuoteView() {
         await api.delete(`/quotes/${id}`);
         toast.success("Quote deleted");
         navigate('/quotes');
-    } catch (error) {
+    } catch {
         toast.error("Failed to delete quote");
     }
   };
 
   if (isLoading || !quote) return <div className="p-10 text-center">Loading...</div>;
 
-  const client = quote.clientId as any;
+  const client = quote.clientId as unknown as { name: string, email: string, phoneNumber?: string, address?: string };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">

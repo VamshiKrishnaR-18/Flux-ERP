@@ -3,8 +3,9 @@ import { api } from '../lib/axios';
 import { 
 	  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
 	} from 'recharts';
-import { DollarSign, FileText, TrendingUp, TrendingDown, ArrowRight, Activity, Loader2, Users } from 'lucide-react';
+import { DollarSign, FileText, TrendingUp, TrendingDown, ArrowRight, Activity, Loader2, Users, LucideIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import type { Invoice } from '@erp/types';
 
 type MoneyBucket = { amount: number; count: number };
 
@@ -15,7 +16,7 @@ type DashboardStats = {
 	totalInvoices: number;
 	pendingAmount: number;
 	totalClients: number;
-	recentInvoices: any[];
+	recentInvoices: Invoice[];
 	chartData: { name: string; income: number; expense: number }[];
 	trendPercentage: number;
 	invoiceAging?: {
@@ -193,11 +194,11 @@ export default function Dashboard() {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <h2 className="text-lg font-bold text-gray-800 mb-4">Recent Invoices</h2>
 	            <div className="space-y-4">
-	                {(stats?.recentInvoices || []).map((inv: any) => (
+	                {(stats?.recentInvoices || []).map((inv: Invoice) => (
 	                    <div key={inv._id} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg transition border border-gray-100">
 	                        <div>
 	                            <p className="font-medium text-gray-900">#{inv.number}</p>
-	                            <p className="text-xs text-gray-500">{inv.clientId?.name || 'Unknown'}</p>
+	                            <p className="text-xs text-gray-500">{(inv.clientId as any)?.name || 'Unknown'}</p>
 	                        </div>
 	                        <div className="text-right">
 	                            <p className="font-bold text-sm">${inv.total.toFixed(2)}</p>
@@ -234,7 +235,14 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ title, value, icon: Icon, color }: any) {
+interface StatCardProps {
+  title: string;
+  value: string;
+  icon: LucideIcon;
+  color: string;
+}
+
+function StatCard({ title, value, icon: Icon, color }: StatCardProps) {
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
             <div className={`p-3 rounded-lg ${color}`}>

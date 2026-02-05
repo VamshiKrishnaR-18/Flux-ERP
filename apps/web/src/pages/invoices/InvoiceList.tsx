@@ -4,9 +4,11 @@ import { api } from '../../lib/axios';
 import { Plus, FileText, ChevronLeft, ChevronRight, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { type Invoice } from '@erp/types';
+
 export default function InvoiceList() {
   const navigate = useNavigate();
-  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [currencySymbol, setCurrencySymbol] = useState('$');
@@ -36,7 +38,7 @@ export default function InvoiceList() {
         if (data.pagination) {
           setTotalPages(data.pagination.totalPages);
         }
-      } catch (error) {
+      } catch {
         toast.error("Failed to load invoices");
       } finally {
         setIsLoading(false);
@@ -65,8 +67,8 @@ export default function InvoiceList() {
       window.URL.revokeObjectURL(url);
 
       toast.success('CSV exported');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to export CSV');
+    } catch {
+      toast.error('Failed to export CSV');
     } finally {
       setIsExporting(false);
     }
@@ -134,40 +136,43 @@ export default function InvoiceList() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {invoices.map((inv) => (
-                    <tr 
-                      key={inv._id} 
-                      onClick={() => navigate(`/invoices/${inv._id}`)}
-                      className="group hover:bg-gray-50 cursor-pointer transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <span className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                            {inv.invoicePrefix}{inv.number}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-gray-700 font-medium">
-                        {inv.clientId?.name || <span className="text-gray-400 italic">Unknown Client</span>}
-                      </td>
-                      <td className="px-6 py-4 text-gray-500 text-sm">
-                        {new Date(inv.date).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-gray-500 text-sm">
-                        {new Date(inv.expiredDate).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize border
-                          ${inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 
-                            inv.status === 'sent' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
-                            inv.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' :
-                            'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                          {inv.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right font-bold text-gray-900">
-                        {currencySymbol} {inv.total.toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
+                  {invoices.map((inv) => {
+                    const client = inv.clientId as unknown as { name: string };
+                    return (
+                      <tr 
+                        key={inv._id} 
+                        onClick={() => navigate(`/invoices/${inv._id}`)}
+                        className="group hover:bg-gray-50 cursor-pointer transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <span className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                              {inv.number}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-gray-700 font-medium">
+                          {client?.name || <span className="text-gray-400 italic">Unknown Client</span>}
+                        </td>
+                        <td className="px-6 py-4 text-gray-500 text-sm">
+                          {new Date(inv.date).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 text-gray-500 text-sm">
+                          {new Date(inv.expiredDate).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize border
+                            ${inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 
+                              inv.status === 'sent' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                              inv.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' :
+                              'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                            {inv.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right font-bold text-gray-900">
+                          {currencySymbol} {inv.total.toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

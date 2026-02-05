@@ -95,7 +95,8 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                     label="Client" 
                     placeholder="Search Client..." 
                     fetcher={fetchClients} 
-                    renderOption={(c) => c.name} 
+                    renderOption={(c: any) => c.name} 
+                    getOptionLabel={(c: any) => c.name}
                     onChange={(id) => setValue('clientId', id, { shouldValidate: true })} 
                     initialLabel={initialValues?.clientName} 
                     error={errors.clientId?.message}
@@ -152,7 +153,8 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                                     label="" 
                                     placeholder="Select Product (Optional)"
                                     fetcher={fetchProducts}
-                                    renderOption={(p) => `${p.name} - ${currency} ${p.price}`}
+                                    renderOption={(p: any) => `${p.name} - ${currency} ${p.price}`}
+                                    getOptionLabel={(p: any) => p.name}
                                     onChange={(id) => handleProductSelect(index, id)}
                                 />
                             </div>

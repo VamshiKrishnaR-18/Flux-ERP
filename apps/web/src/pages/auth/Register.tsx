@@ -5,6 +5,7 @@ import { RegisterSchema, type RegisterDTO } from '@erp/types';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/axios'; 
 import { toast } from 'sonner';
+import axios from 'axios';
 
 	export default function Register() {
 	  const [isLoading, setIsLoading] = useState(false);
@@ -22,8 +23,11 @@ import { toast } from 'sonner';
       await api.post('/auth/register', data);
       toast.success('Account created! Redirecting to login...');
       setTimeout(() => navigate('/login'), 1500);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) 
+        ? error.response?.data?.message 
+        : 'Registration failed';
+      toast.error(message || 'Registration failed');
     } finally {
         setIsLoading(false);
     }
