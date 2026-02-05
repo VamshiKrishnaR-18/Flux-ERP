@@ -9,7 +9,7 @@ provider:
   environment:
     # We pass these variables to Lambda
     NODE_ENV: production
-    MONGO_URI: ${param:MONGO_URI} # We will set this securely in the deployment command
+    MONGO_URI: ${param:MONGO_URI}
     JWT_SECRET: ${param:JWT_SECRET}
     CORS_ORIGIN: 'https://flux-erp-web.vercel.app'
 
@@ -20,14 +20,14 @@ functions:
       - http:
           path: / # Matches root
           method: ANY
-          cors: true
+          # cors: true  <-- DELETED (Lets Express handle CORS)
       - http:
           path: /{proxy+} # Matches all other routes
           method: ANY
-          cors: true
+          # cors: true  <-- DELETED (Lets Express handle CORS)
 
 plugins:
-  - serverless-offline # Great for local testing if you want it
+  - serverless-offline
 
 package:
   patterns:
