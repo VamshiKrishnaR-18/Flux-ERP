@@ -50,22 +50,33 @@ app.use(morgan(morganFormat, {
   },
 }));
 
-// ✅ CORS (UPDATED: Robust Logic)
-// This ensures OPTIONS/Preflight requests are handled before they can be blocked
+// ✅ CORS (UPDATED: Allows Localhost + Production + ALL Vercel Previews)
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // 1. Allow requests with no origin (like Postman/Mobile Apps)
     if (!origin) return callback(null, true);
-    
-    // Check if configuration allows wildcard '*' OR the specific origin
-    if (config.corsOrigin.includes('*') || config.corsOrigin.includes(origin)) {
+
+    // 2. Define Allowed Rules (Strings or Regex)
+    const allowedOrigins = [
+      'http://localhost:5173',                  // Local Frontend
+      'http://localhost:3000',                  // Local Testing
+      /\.vercel\.app$/                          // ✅ REGEX: Matches ANY Vercel deployment
+    ];
+
+    // 3. Check if the origin matches any rule
+    const isAllowed = allowedOrigins.some(rule => {
+      if (rule instanceof RegExp) return rule.test(origin);
+      return rule === origin; // Strict string match
+    });
+
+    if (isAllowed) {
       callback(null, true);
     } else {
-      logger.warn(`Blocked by CORS: ${origin}`); // Log blocked origins for debugging
+      logger.warn(`Blocked by CORS: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, // This allows cookies to be sent/received
+  credentials: true, // Required for Cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
