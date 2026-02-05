@@ -3,7 +3,7 @@ import { InvoiceModel } from '../models/invoice.model';
 import { asyncHandler } from '../utils/asyncHandler';
 import { generateInvoiceNumber } from '../utils/generators';
 import { ProductService } from '../services/product.service';
-import { CreateInvoiceSchema } from '../shared/types';
+import { CreateInvoiceSchema } from '@erp/types';
 import { ClientModel } from '../models/client.model';
 import { EmailService } from '../services/email.service';
 import { buildCsv } from '../utils/csv';

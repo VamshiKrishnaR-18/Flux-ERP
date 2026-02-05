@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ClientModel } from '../models/client.model';
 import { asyncHandler } from '../utils/asyncHandler';
-import { ClientSchema } from '../shared/types';
+import { ClientSchema } from '@erp/types';
 import { buildCsv } from '../utils/csv';
 import crypto from 'crypto';
 

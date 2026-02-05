@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ExpenseModel } from '../models/expense.model';
-import { ExpenseSchema } from '../shared/types';
+import { ExpenseSchema } from '@erp/types';
 import { asyncHandler } from '../utils/asyncHandler';
 import { buildCsv } from '../utils/csv';
 

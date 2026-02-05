@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { UserType } from "../shared/types";
+import { UserType } from "@erp/types";
 
 // 1. Mongoose Schema (Database Structure)
 const userSchema = new mongoose.Schema<UserType>(
