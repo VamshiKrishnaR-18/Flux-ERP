@@ -11,7 +11,7 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
     
-    # ✅ NEW: Spin up a temporary MongoDB for testing
+    # ✅ Spin up a temporary MongoDB for testing
     services:
       mongo:
         image: mongo:6
@@ -45,11 +45,14 @@ jobs:
     - name: Build API
       run: npx turbo run build --filter=api...
 
+    # ✅ FIX: Create a real .env file so dotenv finds it reliably
+    - name: Create Test .env File
+      run: |
+        echo "MONGO_URI=mongodb://localhost:27017/flux-test-db" > apps/api/.env
+        echo "JWT_SECRET=test_secret_for_ci_pipeline" >> apps/api/.env
+        echo "NODE_ENV=test" >> apps/api/.env
+
     - name: Run Tests
-      # ✅ NEW: Inject Env Vars so env.ts passes
-      env:
-        MONGO_URI: "mongodb://localhost:27017/flux-test-db"
-        JWT_SECRET: "test_secret_for_ci_pipeline"
       run: npx turbo run test --filter=api
 
   # 2. DEPLOY (Only on push to main)
