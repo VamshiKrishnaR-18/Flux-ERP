@@ -30,8 +30,11 @@ plugins:
   - serverless-offline
 
 package:
+  individually: true
   patterns:
-    - '!src/**'
+    - 'dist/**'           
+    - 'node_modules/**'    
+    - '!src/**'           
     - '!test/**'
     - '!jest.config.js'
     - '!nodemon.json'
