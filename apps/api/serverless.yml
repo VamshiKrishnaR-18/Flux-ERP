@@ -11,7 +11,7 @@ provider:
     NODE_ENV: production
     MONGO_URI: ${param:MONGO_URI} # We will set this securely in the deployment command
     JWT_SECRET: ${param:JWT_SECRET}
-    CORS_ORIGIN: '*'
+    CORS_ORIGIN: 'https://flux-erp-web.vercel.app'
 
 functions:
   api:

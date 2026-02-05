@@ -50,21 +50,24 @@ app.use(morgan(morganFormat, {
   },
 }));
 
-// ✅ CORS (MOVED UP: Must be before Rate Limit and Parsing)
+// ✅ CORS (UPDATED: Robust Logic)
 // This ensures OPTIONS/Preflight requests are handled before they can be blocked
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    if (config.corsOrigin.includes(origin)) {
+    // Check if configuration allows wildcard '*' OR the specific origin
+    if (config.corsOrigin.includes('*') || config.corsOrigin.includes(origin)) {
       callback(null, true);
     } else {
       logger.warn(`Blocked by CORS: ${origin}`); // Log blocked origins for debugging
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true, // This allows cookies to be sent/received
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // ✅ BODY PARSING
@@ -75,7 +78,7 @@ app.use(cookieParser() as unknown as RequestHandler);
 app.use(mongoSanitize() as unknown as RequestHandler);
 app.use(hpp() as unknown as RequestHandler);
 
-// ✅ RATE LIMITING (Now safe to be here)
+// ✅ RATE LIMITING
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   limit: 100, 
