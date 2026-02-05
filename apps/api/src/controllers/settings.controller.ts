@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { SettingsModel } from '../models/settings.model';
-import { SettingsSchema } from '@erp/types';
+import { SettingsSchema } from '../shared/types';
 import { asyncHandler } from '../utils/asyncHandler';
 
 export const SettingsController = {

@@ -62,30 +62,22 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # ✅ UPGRADE: Node 20 here too
     - name: Use Node.js 20
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
 
-    - name: Install Root Dependencies
+    # ✅ Standard Monorepo Install (Installs everything, links @erp/types)
+    - name: Install Dependencies
       run: npm ci
 
     - name: Install Serverless Framework
       run: npm install -g serverless
 
-    - name: Build API
-      run: npx turbo run build --filter=api...
-
-    # ✅ CRITICAL FIX: Delete local dependency so npm doesn't crash
-    - name: Install API Production Dependencies
-      working-directory: ./apps/api
-      run: |
-        npm pkg delete devDependencies.@erp/types
-        rm -rf node_modules
-        npm install --omit=dev --no-workspaces --no-save
-
+    # ✅ Build & Deploy with Esbuild
+    # We NO LONGER need to manually install prod deps inside apps/api.
+    # Esbuild will bundle the code + @erp/types, and pack node_modules for us.
     - name: Deploy to AWS Lambda
       working-directory: ./apps/api
       env:

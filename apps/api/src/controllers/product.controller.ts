@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ProductModel } from '../models/product.model';
-import { ProductSchema } from '@erp/types';
+import { ProductSchema } from '../shared/types';
 import { asyncHandler } from '../utils/asyncHandler';
 
 export const ProductController = {

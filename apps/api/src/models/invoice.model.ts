@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { Invoice as IInvoiceDTO } from "@erp/types";
+import { Invoice as IInvoiceDTO } from "../shared/types";
 
 // 1. Interface Definition
 export interface IInvoiceDocument extends Document, Omit<IInvoiceDTO, '_id' | 'createdAt' | 'updatedAt'> {

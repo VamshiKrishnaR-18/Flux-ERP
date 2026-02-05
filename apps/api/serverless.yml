@@ -2,10 +2,10 @@ service: flux-erp-api
 
 provider:
   name: aws
-  runtime: nodejs20.x  # ✅ UPDATED: Was nodejs18.x
-  region: ap-south-2 
-  memorySize: 512 
-  timeout: 10 
+  runtime: nodejs20.x
+  region: ap-south-2
+  memorySize: 512
+  timeout: 10
   environment:
     NODE_ENV: production
     MONGO_URI: ${param:MONGO_URI}
@@ -14,27 +14,24 @@ provider:
 
 functions:
   api:
-    handler: dist/lambda.handler 
+    handler: src/lambda.handler # Point directly to TS source! Esbuild handles the rest.
     events:
       - http:
-          path: / 
+          path: /
           method: ANY
-          # cors: true  <-- DELETED (Lets Express handle CORS)
       - http:
-          path: /{proxy+} 
+          path: /{proxy+}
           method: ANY
-          # cors: true  <-- DELETED (Lets Express handle CORS)
 
 plugins:
   - serverless-offline
+  - serverless-esbuild  # ✅ ADDED: The Magic Bundler
 
-package:
-  individually: true
-  patterns:
-    - 'dist/**'           
-    - 'node_modules/**'    
-    - '!src/**'           
-    - '!test/**'
-    - '!jest.config.js'
-    - '!nodemon.json'
-    - '!README.md'
+custom:
+  esbuild:
+    bundle: true
+    minify: true       # Minifies code to make it smaller/faster
+    sourcemap: true    # Helps with debugging errors
+    target: 'node20'
+    packager: 'npm'    # Uses npm to pack external modules
+    exclude: ['aws-sdk']

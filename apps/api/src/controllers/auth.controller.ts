@@ -2,7 +2,7 @@ import { Request, Response, CookieOptions } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import jwt, { SignOptions } from 'jsonwebtoken';
-import { RegisterSchema, LoginSchema } from '@erp/types';
+import { RegisterSchema, LoginSchema } from '../shared/types';
 import { UserModel } from '../models/user.model';
 import { asyncHandler } from '../utils/asyncHandler';
 import { config } from '../config/env';
