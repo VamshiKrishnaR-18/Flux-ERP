@@ -7,7 +7,8 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   MONGO_URI: z.string().min(1, "MONGO_URI is required"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
-  JWT_EXPIRES_IN: z.string().default('1d'),
+  // ✅ FIX: Handle empty strings by transforming them to '1d'
+  JWT_EXPIRES_IN: z.string().default('1d').transform(val => val.trim() === '' ? '1d' : val),
   COOKIE_EXPIRES_IN_HOURS: z.coerce.number().default(24),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CORS_ORIGIN: z
@@ -21,7 +22,16 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
 });
 
-export const env = envSchema.parse(process.env);
+// Validate process.env
+const parsedEnv = envSchema.safeParse(process.env);
+
+if (!parsedEnv.success) {
+  console.error('❌ Invalid environment variables:', JSON.stringify(parsedEnv.error.format(), null, 4));
+  process.exit(1);
+}
+
+export const env = parsedEnv.data;
+
 export const config = {
   port: env.PORT,
   mongoUri: env.MONGO_URI,

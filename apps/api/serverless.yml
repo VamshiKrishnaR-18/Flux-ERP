@@ -1,0 +1,38 @@
+service: flux-erp-api
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-2 # Hyderabad
+  memorySize: 512 # 512MB is a good balance for cost/speed
+  timeout: 10 # 10 seconds timeout
+  environment:
+    # We pass these variables to Lambda
+    NODE_ENV: production
+    MONGO_URI: ${param:MONGO_URI} # We will set this securely in the deployment command
+    JWT_SECRET: ${param:JWT_SECRET}
+    CORS_ORIGIN: '*'
+
+functions:
+  api:
+    handler: dist/lambda.handler # Points to your compiled lambda.ts
+    events:
+      - http:
+          path: / # Matches root
+          method: ANY
+          cors: true
+      - http:
+          path: /{proxy+} # Matches all other routes
+          method: ANY
+          cors: true
+
+plugins:
+  - serverless-offline # Great for local testing if you want it
+
+package:
+  patterns:
+    - '!src/**'
+    - '!test/**'
+    - '!jest.config.js'
+    - '!nodemon.json'
+    - '!README.md'

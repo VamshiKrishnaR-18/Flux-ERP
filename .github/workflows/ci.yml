@@ -29,8 +29,8 @@ jobs:
       run: npx turbo run build --filter=api...
 
     - name: Run Tests
-      # We only run API tests for now since that's what we set up
-      run: npm run test --filter=api
+      # Use Turbo to locate and run the test script inside apps/api
+      run: npx turbo run test --filter=api
 
   # 2. DEPLOY (Only runs on push to main, and only if tests pass)
   deploy-api:
