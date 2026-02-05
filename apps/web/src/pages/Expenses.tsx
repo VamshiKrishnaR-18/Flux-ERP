@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/axios';
 import { toast } from 'sonner';
-import { Search, ArrowUpDown, Plus, DollarSign, Calendar, Tag, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Search, ArrowUpDown, Plus, DollarSign, Calendar, Tag, Trash2, ChevronLeft, ChevronRight, Loader2, Download } from 'lucide-react';
 import { useSortableData } from '../hooks/useSortableData';
 import { useDebounce } from '../hooks/useDebounce'; // ✅ Import Debounce
 
@@ -16,6 +16,7 @@ interface Expense {
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ description: '', amount: '', date: new Date().toISOString().split('T')[0], category: 'Operational' });
 
@@ -74,6 +75,35 @@ export default function Expenses() {
     catch (err) { toast.error("Failed to delete"); }
   };
 
+  const handleExportCsv = async () => {
+    setIsExporting(true);
+    try {
+      const qs = debouncedSearch ? `?search=${encodeURIComponent(debouncedSearch)}` : '';
+      const res = await api.get(`/expenses/export/csv${qs}`, { responseType: 'blob' });
+
+      const disposition = (res.headers?.['content-disposition'] as string | undefined) ?? '';
+      const match = disposition.match(/filename="?([^";]+)"?/i);
+      const fallback = `expenses-${new Date().toISOString().slice(0, 10)}.csv`;
+      const filename = match?.[1] ?? fallback;
+
+      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success('CSV exported');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to export CSV');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="flex justify-between items-center mb-6 gap-4">
@@ -89,6 +119,14 @@ export default function Expenses() {
                     className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg outline-none" 
                 />
              </div>
+	            <button
+	              onClick={handleExportCsv}
+	              disabled={isExporting}
+	              className="bg-white border border-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition flex items-center gap-2 whitespace-nowrap disabled:opacity-60"
+	            >
+	              {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+	              Export CSV
+	            </button>
             <button onClick={() => setShowModal(true)} className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition flex items-center gap-2"><Plus className="w-4 h-4" /> Add Expense</button>
         </div>
       </div>

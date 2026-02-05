@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/axios';
-import { Plus, FileText, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Plus, FileText, ChevronLeft, ChevronRight, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function InvoiceList() {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [currencySymbol, setCurrencySymbol] = useState('$');
   
   // Pagination State
@@ -44,6 +45,33 @@ export default function InvoiceList() {
     fetchData();
   }, [page]);
 
+  const handleExportCsv = async () => {
+    setIsExporting(true);
+    try {
+      const res = await api.get('/invoices/export/csv', { responseType: 'blob' });
+      const disposition = (res.headers?.['content-disposition'] as string | undefined) ?? '';
+      const match = disposition.match(/filename="?([^";]+)"?/i);
+      const fallback = `invoices-${new Date().toISOString().slice(0, 10)}.csv`;
+      const filename = match?.[1] ?? fallback;
+
+      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success('CSV exported');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to export CSV');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 lg:p-10">
       <main className="max-w-7xl mx-auto">
@@ -54,12 +82,22 @@ export default function InvoiceList() {
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Invoices</h1>
             <p className="text-gray-500 mt-1">Manage and track your client billings</p>
           </div>
-          <button 
-            onClick={() => navigate('/invoices/new')} 
-            className="bg-black text-white px-5 py-2.5 rounded-xl font-medium flex items-center gap-2 hover:bg-gray-800 transition-all shadow-md hover:shadow-lg active:scale-95"
-          >
-            <Plus className="w-5 h-5" /> New Invoice
-          </button>
+	      <div className="flex items-center gap-3 w-full sm:w-auto">
+	        <button
+	          onClick={handleExportCsv}
+	          disabled={isExporting}
+	          className="bg-white border border-gray-200 text-gray-900 px-4 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition-all shadow-sm disabled:opacity-60 w-full sm:w-auto"
+	        >
+	          {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+	          Export CSV
+	        </button>
+	        <button 
+	          onClick={() => navigate('/invoices/new')} 
+	          className="bg-black text-white px-5 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-800 transition-all shadow-md hover:shadow-lg active:scale-95 w-full sm:w-auto"
+	        >
+	          <Plus className="w-5 h-5" /> New Invoice
+	        </button>
+	      </div>
         </div>
 
         {/* Content */}

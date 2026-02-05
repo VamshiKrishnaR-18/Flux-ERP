@@ -4,7 +4,7 @@ import { api } from '../../lib/axios';
 import { toast } from 'sonner';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { QuotePDF } from '../../features/quotes/components/QuotePDF';
-import { ArrowLeft, Printer, Download, Mail, FileText, Trash2 } from 'lucide-react';
+import { ArrowLeft, Printer, Download, Mail, FileText, Trash2, Check, X } from 'lucide-react';
 import type { Quote } from '@erp/types';
 
 export default function QuoteView() {
@@ -14,6 +14,7 @@ export default function QuoteView() {
   const [settings, setSettings] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -50,7 +51,7 @@ export default function QuoteView() {
   };
 
   const handleConvert = async () => {
-      if(!confirm("Create an Invoice from this quote?")) return;
+	    if(!confirm("Create an Invoice from this accepted quote?")) return;
       try {
           const res = await api.post(`/quotes/${id}/convert`);
           toast.success("Converted to Invoice!");
@@ -59,6 +60,20 @@ export default function QuoteView() {
           toast.error("Failed to convert");
       }
   };
+
+	const handleUpdateStatus = async (status: 'accepted' | 'rejected') => {
+		setIsUpdatingStatus(true);
+		try {
+			await api.patch(`/quotes/${id}/status`, { status });
+			toast.success(`Marked as ${status}`);
+			const res = await api.get(`/quotes/${id}`);
+			setQuote(res.data.data);
+		} catch (error: any) {
+			toast.error(error.response?.data?.message || 'Failed to update status');
+		} finally {
+			setIsUpdatingStatus(false);
+		}
+	};
 
   const handleDelete = async () => {
     if(!confirm("Are you sure you want to delete this quote?")) return;
@@ -85,7 +100,7 @@ export default function QuoteView() {
             <ArrowLeft className="w-4 h-4" /> Back to Quotes
           </button>
           
-          <div className="flex gap-3">
+	          <div className="flex gap-3">
             {/* Delete Button */}
             <button 
                 onClick={handleDelete}
@@ -95,8 +110,30 @@ export default function QuoteView() {
                <Trash2 className="w-5 h-5" />
             </button>
 
+	            {/* Accept / Reject (manual workflow) */}
+	            {quote.status === 'sent' && (
+	              <>
+	                <button
+	                  onClick={() => handleUpdateStatus('accepted')}
+	                  disabled={isUpdatingStatus}
+	                  className="px-4 py-2 bg-white border border-gray-200 text-green-700 hover:bg-green-50 rounded-lg font-medium flex items-center gap-2 disabled:opacity-50"
+	                  title="Mark as accepted"
+	                >
+	                  <Check className="w-4 h-4" /> Accept
+	                </button>
+	                <button
+	                  onClick={() => handleUpdateStatus('rejected')}
+	                  disabled={isUpdatingStatus}
+	                  className="px-4 py-2 bg-white border border-gray-200 text-red-700 hover:bg-red-50 rounded-lg font-medium flex items-center gap-2 disabled:opacity-50"
+	                  title="Mark as rejected"
+	                >
+	                  <X className="w-4 h-4" /> Reject
+	                </button>
+	              </>
+	            )}
+
             {/* Convert Button */}
-            {quote.status !== 'converted' && (
+	            {quote.status === 'accepted' && (
                 <button onClick={handleConvert} className="px-4 py-2 bg-white border border-gray-200 text-purple-700 hover:bg-purple-50 rounded-lg font-medium flex items-center gap-2">
                    <FileText className="w-4 h-4" /> Convert to Invoice
                 </button>
@@ -105,7 +142,7 @@ export default function QuoteView() {
             {/* Email Button */}
             <button 
                 onClick={handleSendEmail} 
-                disabled={isSending || quote.status === 'converted'}
+	                disabled={isSending || quote.status === 'converted'}
                 className="px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg font-medium flex items-center gap-2 disabled:opacity-50"
             >
                <Mail className="w-4 h-4" /> {isSending ? 'Sending...' : 'Email Client'}
@@ -141,10 +178,12 @@ export default function QuoteView() {
              <div className="text-right">
                 <h2 className="text-4xl font-extrabold text-indigo-100 uppercase tracking-widest mb-2">Quote</h2>
                 <p className="text-lg font-bold text-gray-700">#{quote.number}</p>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase mt-2 inline-block ${
-                    quote.status === 'converted' ? 'bg-purple-100 text-purple-800' :
-                    quote.status === 'sent' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                }`}>
+	                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase mt-2 inline-block ${
+	                    quote.status === 'converted' ? 'bg-purple-100 text-purple-800' :
+	                    quote.status === 'accepted' ? 'bg-green-100 text-green-800' :
+	                    quote.status === 'rejected' ? 'bg-red-100 text-red-800' :
+	                    quote.status === 'sent' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+	                }`}>
                     {quote.status}
                 </span>
              </div>

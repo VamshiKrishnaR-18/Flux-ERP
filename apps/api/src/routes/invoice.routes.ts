@@ -9,6 +9,7 @@ router.use(authMiddleware);
 
 // Routes
 router.get('/', InvoiceController.getAll);
+router.get('/export/csv', InvoiceController.exportCsv);
 router.get('/:id', InvoiceController.getOne);
 
 // ✅ Create must be protected so 'req.user' exists

@@ -6,6 +6,7 @@ import { ProductService } from '../services/product.service';
 import { CreateInvoiceSchema } from '@erp/types';
 import { ClientModel } from '../models/client.model';
 import { EmailService } from '../services/email.service';
+import { buildCsv } from '../utils/csv';
 
 export const InvoiceController = {
   
@@ -37,6 +38,44 @@ export const InvoiceController = {
         totalPages: Math.ceil(total / limit)
       }
     });
+  }),
+
+  exportCsv: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
+    const query: any = { createdBy: userId, removed: { $ne: true } };
+
+    const invoices: any[] = await InvoiceModel.find(query)
+      .populate('clientId', 'name email')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const csv = buildCsv(invoices, [
+      { header: 'Invoice Number', value: (inv: any) => `${inv.invoicePrefix ?? ''}${inv.number ?? ''}` },
+      { header: 'Client Name', value: (inv: any) => inv.clientId?.name ?? '' },
+      { header: 'Client Email', value: (inv: any) => inv.clientId?.email ?? '' },
+      { header: 'Date', value: (inv: any) => (inv.date ? new Date(inv.date).toISOString().slice(0, 10) : '') },
+      { header: 'Due Date', value: (inv: any) => (inv.expiredDate ? new Date(inv.expiredDate).toISOString().slice(0, 10) : '') },
+      { header: 'Status', value: (inv: any) => inv.status ?? '' },
+      { header: 'Currency', value: (inv: any) => inv.currency ?? '' },
+      { header: 'Subtotal', value: (inv: any) => inv.subTotal ?? '' },
+      { header: 'Tax', value: (inv: any) => inv.taxTotal ?? '' },
+      { header: 'Discount', value: (inv: any) => inv.discount ?? '' },
+      { header: 'Total', value: (inv: any) => inv.total ?? '' },
+      { header: 'Amount Paid', value: (inv: any) => inv.amountPaid ?? 0 },
+      { header: 'Payment Status', value: (inv: any) => inv.paymentStatus ?? '' },
+      { header: 'Notes', value: (inv: any) => inv.notes ?? '' },
+      { header: 'Invoice ID', value: (inv: any) => inv._id ?? '' }
+    ]);
+
+    const dateTag = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="invoices-${dateTag}.csv"`);
+    res.status(200).send(csv);
   }),
 
   getOne: asyncHandler(async (req: Request, res: Response) => {

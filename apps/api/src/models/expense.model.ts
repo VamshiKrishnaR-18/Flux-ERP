@@ -5,6 +5,7 @@ export interface IExpense extends Document {
   amount: number;
   date: Date;
   category: string;
+  createdBy: string;
   createdAt: Date;
 }
 
@@ -14,7 +15,10 @@ const ExpenseSchema: Schema = new Schema({
   date: { type: Date, required: true, default: Date.now },
   
   // ✅ FIX: Remove 'enum: [...]' if it exists. Just use type: String.
-  category: { type: String, required: true, default: 'Operational' } 
+  category: { type: String, required: true, default: 'Operational' },
+
+  // Multi-tenant scoping
+  createdBy: { type: String, required: true, index: true }
 }, { 
   timestamps: true 
 });

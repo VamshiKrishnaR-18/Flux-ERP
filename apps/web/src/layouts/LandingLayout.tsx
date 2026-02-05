@@ -12,11 +12,10 @@ export default function LandingLayout({ children }: { children: ReactNode }) {
                 FluxERP
               </span>
             </div>
-            <div className="hidden md:flex space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
-              <a href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">Pricing</a>
-              <a href="#about" className="text-gray-600 hover:text-blue-600 transition-colors">About</a>
-            </div>
+	            <div className="hidden md:flex space-x-8">
+	              <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
+	              <a href="#about" className="text-gray-600 hover:text-blue-600 transition-colors">About</a>
+	            </div>
             <div className="flex items-center space-x-4">
               <Link to="/login" className="text-gray-600 hover:text-blue-600 font-medium">
                 Log in
@@ -31,45 +30,18 @@ export default function LandingLayout({ children }: { children: ReactNode }) {
       <main className="pt-16">
         {children}
       </main>
-      <footer className="bg-gray-50 border-t border-gray-100 py-12 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Product</h3>
-              <ul className="mt-4 space-y-4">
-                <li><a href="#" className="text-gray-500 hover:text-gray-900">Features</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-gray-900">Pricing</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Company</h3>
-              <ul className="mt-4 space-y-4">
-                <li><a href="#" className="text-gray-500 hover:text-gray-900">About</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-gray-900">Blog</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Legal</h3>
-              <ul className="mt-4 space-y-4">
-                <li><a href="#" className="text-gray-500 hover:text-gray-900">Privacy</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-gray-900">Terms</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Connect</h3>
-              <ul className="mt-4 space-y-4">
-                <li><a href="#" className="text-gray-500 hover:text-gray-900">Twitter</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-gray-900">GitHub</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 border-t border-gray-200 pt-8 md:flex md:items-center md:justify-between">
-            <p className="mt-8 text-base text-gray-400 md:mt-0 md:order-1">
-              &copy; 2024 FluxERP. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+	      <footer className="bg-gray-50 border-t border-gray-100 py-8 mt-20">
+	        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+	          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+	            <p className="text-sm text-gray-500 max-w-xl">
+	              FluxERP helps you manage clients, invoices, quotes and expenses in a single, simple workspace.
+	            </p>
+	            <p className="text-sm text-gray-400">
+	              &copy; 2024 FluxERP. All rights reserved.
+	            </p>
+	          </div>
+	        </div>
+	      </footer>
     </div>
   );
 }

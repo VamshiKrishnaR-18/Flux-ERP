@@ -1,23 +1,79 @@
 import { Router } from 'express';
+import { asyncHandler } from '../utils/asyncHandler';
 import { InvoiceModel } from '../models/invoice.model';
+import { ClientModel } from '../models/client.model';
+import { QuoteModel } from '../models/quote.model';
 import { SettingsModel } from '../models/settings.model';
 
 const router = Router();
 
 // GET Public Invoice (No Auth Required)
-router.get('/invoices/:id', async (req, res) => {
-    try {
-        const invoice = await InvoiceModel.findById(req.params.id).populate('clientId');
-        if (!invoice) return res.status(404).json({ success: false, message: "Invoice not found" });
+router.get('/invoices/:id', asyncHandler(async (req, res) => {
+  const invoice = await InvoiceModel.findOne({ _id: req.params.id, removed: { $ne: true } }).populate('clientId');
+  if (!invoice) {
+    res.status(404);
+    throw new Error('Invoice not found');
+  }
 
-        // We also need the company settings to display the logo/address on the public page
-        // Assuming the invoice has a 'createdBy' field, we find settings for that user
-        const settings = await SettingsModel.findOne({ userId: invoice.createdBy });
+  // We also need the company settings to display the logo/address on the public page
+  const settings = await SettingsModel.findOne({ userId: (invoice as any).createdBy });
+  res.json({ success: true, data: { invoice, settings } });
+}));
 
-        res.json({ success: true, data: { invoice, settings } });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Server error" });
+// GET Public Client Portal (No Auth Required)
+// Read-only view of a single client's invoices + quotes via an unguessable token.
+router.get('/portal/:token', asyncHandler(async (req, res) => {
+  const token = req.params.token;
+  if (!token) {
+    res.status(400);
+    throw new Error('Portal token is required');
+  }
+
+  const client: any = await ClientModel.findOne({ portalToken: token, removed: false }).lean();
+  if (!client) {
+    res.status(404);
+    throw new Error('Portal not found');
+  }
+
+  const userId = client.userId;
+  const settings = await SettingsModel.findOne({ userId }).lean();
+
+  const [invoices, quotes] = await Promise.all([
+    InvoiceModel.find({
+      createdBy: userId,
+      clientId: client._id,
+      removed: { $ne: true },
+      status: { $ne: 'draft' }
+    })
+      .select('number year date expiredDate total status currency amountPaid paymentStatus invoicePrefix createdAt')
+      .sort({ date: -1 })
+      .lean(),
+    QuoteModel.find({
+      createdBy: userId,
+      clientId: client._id,
+      status: { $ne: 'draft' }
+    })
+      .select('number title date expiredDate total status currency createdAt')
+      .sort({ date: -1 })
+      .lean()
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      client: {
+        _id: client._id,
+        name: client.name,
+        email: client.email,
+        phoneNumber: client.phoneNumber,
+        address: client.address,
+        status: client.status
+      },
+      settings,
+      invoices,
+      quotes
     }
-});
+  });
+}));
 
 export default router;

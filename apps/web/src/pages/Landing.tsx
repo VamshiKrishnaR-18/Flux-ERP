@@ -38,14 +38,14 @@ export default function Landing() {
               <p className="text-xl text-gray-600 mb-10 leading-relaxed">
                 Streamline your operations, manage clients, and track finances in one powerful, intuitive platform designed for growth.
               </p>
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link to="/register" className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 md:text-xl shadow-lg shadow-blue-600/30 transition-all hover:scale-105">
-                  Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-                <Link to="/login" className="inline-flex items-center justify-center px-8 py-4 border border-gray-300 text-lg font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 md:text-xl transition-all hover:scale-105">
-                  Live Demo
-                </Link>
-              </div>
+	              <div className="flex flex-col sm:flex-row justify-center gap-4">
+	                <Link to="/register" className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 md:text-xl shadow-lg shadow-blue-600/30 transition-all hover:scale-105">
+	                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
+	                </Link>
+	                <Link to="/login" className="inline-flex items-center justify-center px-8 py-4 border border-gray-300 text-lg font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 md:text-xl transition-all hover:scale-105">
+	                  Sign in
+	                </Link>
+	              </div>
             </motion.div>
             
             <motion.div 
@@ -54,12 +54,21 @@ export default function Landing() {
               transition={{ delay: 0.3, duration: 0.8 }}
               className="mt-16 relative"
             >
-              <div className="absolute inset-0 bg-blue-600 blur-3xl opacity-10 rounded-full" />
-              <img 
-                src="https://placehold.co/1200x800/e2e8f0/1e293b?text=Dashboard+Preview" 
-                alt="App Dashboard" 
-                className="relative rounded-2xl shadow-2xl border border-gray-200 w-full" 
-              />
+	              <div className="absolute inset-0 bg-blue-600 blur-3xl opacity-10 rounded-full" />
+	              <div className="relative rounded-2xl shadow-2xl border border-gray-200 w-full bg-white/80 backdrop-blur">
+	                <div className="p-6 md:p-8 grid gap-6 md:grid-cols-3">
+	                  <div className="space-y-3">
+	                    <div className="h-3 w-24 bg-gray-200 rounded-full" />
+	                    <div className="h-6 w-40 bg-gray-100 rounded-lg" />
+	                    <div className="h-4 w-28 bg-gray-100 rounded-lg" />
+	                  </div>
+	                  <div className="md:col-span-2 grid grid-cols-3 gap-3">
+	                    {Array.from({ length: 6 }).map((_, i) => (
+	                      <div key={i} className="h-20 rounded-xl border border-gray-100 bg-gray-50" />
+	                    ))}
+	                  </div>
+	                </div>
+	              </div>
             </motion.div>
           </div>
         </div>
@@ -75,39 +84,42 @@ export default function Landing() {
             </p>
           </div>
 
-          <motion.div 
+	          <motion.div 
             variants={stagger}
             initial="initial"
             whileInView="animate"
             viewport={{ once: true }}
             className="grid grid-cols-1 md:grid-cols-3 gap-12"
           >
-            {[
-              {
-                icon: <BarChart2 className="h-8 w-8 text-white" />,
-                title: "Advanced Analytics",
-                desc: "Get real-time insights into your business performance with detailed reports and customizable dashboards.",
-                color: "bg-blue-500"
-              },
-              {
-                icon: <Users className="h-8 w-8 text-white" />,
-                title: "CRM & Client Management",
-                desc: "Keep track of every interaction. manage leads, and build stronger relationships with your customers.",
-                color: "bg-indigo-500"
-              },
-              {
-                icon: <FileText className="h-8 w-8 text-white" />,
-                title: "Smart Invoicing",
-                desc: "Create professional invoices in seconds, track payments, and automate follow-ups.",
-                color: "bg-purple-500"
-              }
-            ].map((feature, index) => (
+	            {[
+	              {
+	                icon: <BarChart2 className="h-8 w-8 text-white" />,
+	                title: "Dashboard & insights",
+	                desc: "See revenue, expenses and trends at a glance with a clear visual dashboard.",
+	                color: "bg-blue-500",
+	                accent: "via-blue-500"
+	              },
+	              {
+	                icon: <Users className="h-8 w-8 text-white" />,
+	                title: "Clients & CRM",
+	                desc: "Keep all of your client details, notes and activity in one simple view.",
+	                color: "bg-indigo-500",
+	                accent: "via-indigo-500"
+	              },
+	              {
+	                icon: <FileText className="h-8 w-8 text-white" />,
+	                title: "Invoices & quotes",
+	                desc: "Create invoices and quotes in seconds, send them, and track what’s outstanding.",
+	                color: "bg-purple-500",
+	                accent: "via-purple-500"
+	              }
+	            ].map((feature, index) => (
               <motion.div 
                 key={index} 
                 variants={fadeInUp}
                 className="relative p-8 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl transition-shadow"
               >
-                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-${feature.color.replace('bg-', '')} to-transparent opacity-50`} />
+	                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${feature.accent} to-transparent opacity-50`} />
                 <div className={`inline-flex items-center justify-center p-3 rounded-xl ${feature.color} shadow-lg mb-6`}>
                   {feature.icon}
                 </div>
@@ -121,8 +133,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Trust Section */}
-      <section className="py-20 bg-gray-50 border-y border-gray-200">
+	      {/* Trust / About Section */}
+	      <section id="about" className="py-20 bg-gray-50 border-y border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             <div>
@@ -132,58 +144,63 @@ export default function Landing() {
               <p className="text-lg text-gray-600 mb-8">
                 We take data security seriously. Your information is encrypted, backed up, and protected by industry-leading standards.
               </p>
-              <ul className="space-y-4">
-                {[
-                  "Bank-level 256-bit encryption",
-                  "Daily automated backups",
-                  "Role-based access control",
-                  "99.9% Uptime SLA"
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center text-gray-700">
-                    <Shield className="h-5 w-5 text-green-500 mr-3" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="relative">
-               <div className="absolute -inset-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl transform rotate-2"></div>
-               <div className="relative bg-white p-8 rounded-xl shadow-lg">
-                 <div className="flex items-center mb-6">
-                   <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold text-gray-600">JD</div>
-                   <div className="ml-4">
-                     <h4 className="text-lg font-bold text-gray-900">John Doe</h4>
-                     <p className="text-gray-500">CEO, TechStart Inc.</p>
-                   </div>
-                 </div>
-                 <p className="text-gray-600 italic">
-                   "FluxERP has completely transformed how we manage our agency. The invoicing features alone have saved us hours every week. Highly recommended!"
-                 </p>
-                 <div className="flex mt-4 text-yellow-400">
-                   {[...Array(5)].map((_, i) => (
-                     <svg key={i} className="h-5 w-5 fill-current" viewBox="0 0 20 20">
-                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                     </svg>
-                   ))}
-                 </div>
-               </div>
-            </div>
+	              <ul className="space-y-4">
+	                {[
+	                  "Secure sign-in with token-based authentication",
+	                  "Role-based access for admins and users",
+	                  "Built on a modern, managed database"
+	                ].map((item, i) => (
+	                  <li key={i} className="flex items-center text-gray-700">
+	                    <Shield className="h-5 w-5 text-green-500 mr-3" />
+	                    {item}
+	                  </li>
+	                ))}
+	              </ul>
+	            </div>
+	            <div className="relative">
+	              <div className="absolute -inset-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl transform rotate-2" />
+	              <div className="relative bg-white p-8 rounded-xl shadow-lg">
+	                <h3 className="text-sm font-semibold text-gray-900 tracking-wide uppercase mb-4">
+	                  What you can manage
+	                </h3>
+	                <ul className="space-y-3 text-sm text-gray-600">
+	                  <li className="flex items-center justify-between">
+	                    <span>Clients & contacts</span>
+	                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-xs font-medium text-blue-700">
+	                      CRM
+	                    </span>
+	                  </li>
+	                  <li className="flex items-center justify-between">
+	                    <span>Invoices & quotes</span>
+	                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-xs font-medium text-emerald-700">
+	                      Billing
+	                    </span>
+	                  </li>
+	                  <li className="flex items-center justify-between">
+	                    <span>Expenses & cash flow</span>
+	                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-xs font-medium text-amber-700">
+	                      Finance
+	                    </span>
+	                  </li>
+	                </ul>
+	              </div>
+	            </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20">
+	      {/* CTA Section */}
+	      <section className="py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-blue-600 rounded-3xl p-12 text-center text-white shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
             <h2 className="text-3xl font-extrabold mb-4 relative z-10">Ready to get started?</h2>
-            <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto relative z-10">
-              Join thousands of businesses that trust FluxERP to power their growth. No credit card required.
-            </p>
-            <Link to="/register" className="relative z-10 inline-block bg-white text-blue-600 font-bold py-4 px-10 rounded-lg shadow-lg hover:bg-gray-50 transition-colors transform hover:-translate-y-1">
-              Create Free Account
-            </Link>
+	            <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto relative z-10">
+	              Join teams that use FluxERP to manage clients, invoices, quotes and expenses in one place.
+	            </p>
+	            <Link to="/register" className="relative z-10 inline-block bg-white text-blue-600 font-bold py-4 px-10 rounded-lg shadow-lg hover:bg-gray-50 transition-colors transform hover:-translate-y-1">
+	              Create Account
+	            </Link>
           </div>
         </div>
       </section>

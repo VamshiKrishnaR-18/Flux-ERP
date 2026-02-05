@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/axios';
 import { toast } from 'sonner';
-import { Search, User, Plus } from 'lucide-react';
+import { Search, User, Plus, Download, Loader2 } from 'lucide-react';
 import { useDebounce } from '../hooks/useDebounce'; 
 import { ClientTable } from '../features/clients/components/ClientTable';
 import { ClientModal } from '../features/clients/components/ClientModal';
@@ -10,6 +10,8 @@ import type { Client } from '../features/clients/types';
 export default function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const [portalLoadingId, setPortalLoadingId] = useState<string | null>(null);
   
   // ✅ Pagination & Search State
   const [page, setPage] = useState(1);
@@ -57,6 +59,69 @@ export default function Clients() {
     }
   };
 
+  const handleExportCsv = async () => {
+    setIsExporting(true);
+    try {
+      const qs = debouncedSearch ? `?search=${encodeURIComponent(debouncedSearch)}` : '';
+      const res = await api.get(`/clients/export/csv${qs}`, { responseType: 'blob' });
+
+      const disposition = (res.headers?.['content-disposition'] as string | undefined) ?? '';
+      const match = disposition.match(/filename="?([^";]+)"?/i);
+      const fallback = `clients-${new Date().toISOString().slice(0, 10)}.csv`;
+      const filename = match?.[1] ?? fallback;
+
+      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success('CSV exported');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to export CSV');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.setAttribute('readonly', '');
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    el.remove();
+  };
+
+  const handlePortalLink = async (id: string) => {
+    setPortalLoadingId(id);
+    try {
+      const res = await api.post(`/clients/${id}/portal-token`);
+      const token = res.data?.data?.token as string | undefined;
+      if (!token) throw new Error('No token returned');
+
+      const url = `${window.location.origin}/portal/${token}`;
+      await copyToClipboard(url);
+      toast.success('Portal link copied to clipboard');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to generate portal link');
+    } finally {
+      setPortalLoadingId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 lg:p-10">
       <main className="max-w-7xl mx-auto">
@@ -84,6 +149,15 @@ export default function Clients() {
                         className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm transition-all"
                     />
                 </div>
+
+	                <button
+	                    onClick={handleExportCsv}
+	                    disabled={isExporting}
+	                    className="bg-white border border-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition flex items-center gap-2 shadow-sm whitespace-nowrap disabled:opacity-60"
+	                >
+	                    {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+	                    Export CSV
+	                </button>
                 <button 
                     onClick={() => { setEditingClient(null); setIsModalOpen(true); }}
                     className="bg-black text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-800 transition flex items-center gap-2 shadow-sm whitespace-nowrap"
@@ -102,6 +176,8 @@ export default function Clients() {
             onPageChange={setPage}
             onEdit={(client) => { setEditingClient(client); setIsModalOpen(true); }}
             onDelete={handleDelete}
+	            onPortalLink={handlePortalLink}
+	            portalLoadingId={portalLoadingId}
         />
 
         <ClientModal 

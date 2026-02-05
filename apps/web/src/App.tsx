@@ -25,6 +25,7 @@ import InvoiceCreate from './pages/invoices/InvoiceCreate';
 import InvoiceEdit from './pages/invoices/InvoiceEdit';
 import InvoiceView from './pages/invoices/InvoiceView';
 import InvoicePublic from './pages/public/InvoicePublic';
+import ClientPortalPublic from './pages/public/ClientPortalPublic';
 import QuoteList from './pages/quotes/QuoteList';
 import QuoteCreate from './pages/quotes/QuoteCreate';
 import QuoteView from './pages/quotes/QuoteView';
@@ -46,6 +47,7 @@ function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPassword />} /> {/* ✅ New Route */}
         <Route path="/reset-password/:token" element={<ResetPassword />} /> {/* ✅ New Route */}
         <Route path="/p/invoice/:id" element={<InvoicePublic />} />
+        <Route path="/portal/:token" element={<ClientPortalPublic />} />
       </Route>
 
       {/* Protected Routes */}

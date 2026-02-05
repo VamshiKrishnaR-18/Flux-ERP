@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { ExpenseModel } from '../models/expense.model';
 import { ExpenseSchema } from '@erp/types';
 import { asyncHandler } from '../utils/asyncHandler';
+import { buildCsv } from '../utils/csv';
 
 export const ExpenseController = {
   // ✅ UPDATED: Search + Pagination
@@ -11,7 +12,7 @@ export const ExpenseController = {
     const search = req.query.search as string || '';
     const skip = (page - 1) * limit;
 
-    const query: any = {};
+    const query: any = { createdBy: req.user?.id };
     if (search) {
       query.$or = [
         { description: { $regex: search, $options: 'i' } },
@@ -33,6 +34,41 @@ export const ExpenseController = {
     });
   }),
 
+  exportCsv: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
+    const search = (req.query.search as string) || '';
+
+    const query: any = { createdBy: userId };
+    if (search) {
+      query.$or = [
+        { description: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const expenses: any[] = await ExpenseModel.find(query)
+      .sort({ date: -1 })
+      .lean();
+
+    const csv = buildCsv(expenses, [
+      { header: 'Description', value: (e: any) => e.description ?? '' },
+      { header: 'Amount', value: (e: any) => e.amount ?? '' },
+      { header: 'Date', value: (e: any) => (e.date ? new Date(e.date).toISOString().slice(0, 10) : '') },
+      { header: 'Category', value: (e: any) => e.category ?? '' },
+      { header: 'Expense ID', value: (e: any) => e._id ?? '' }
+    ]);
+
+    const dateTag = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="expenses-${dateTag}.csv"`);
+    res.status(200).send(csv);
+  }),
+
   create: asyncHandler(async (req: Request, res: Response) => {
     const validation = ExpenseSchema.safeParse(req.body);
     if (!validation.success) { res.status(400); throw new Error("Invalid Input"); }
@@ -41,7 +77,11 @@ export const ExpenseController = {
   }),
 
   delete: asyncHandler(async (req: Request, res: Response) => {
-    await ExpenseModel.findByIdAndDelete(req.params.id);
+    const deleted = await ExpenseModel.findOneAndDelete({ _id: req.params.id, createdBy: req.user?.id });
+    if (!deleted) {
+      res.status(404);
+      throw new Error('Expense not found');
+    }
     res.json({ success: true, message: "Expense deleted" });
   })
 };

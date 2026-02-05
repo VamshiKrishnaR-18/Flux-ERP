@@ -1,5 +1,5 @@
 import type { Client } from '../types';
-import { ChevronLeft, ChevronRight, Edit, Trash2, Mail, Phone, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Trash2, Mail, Phone, MapPin, Link2, Loader2 } from 'lucide-react';
 
 interface ClientTableProps {
   clients: Client[];
@@ -11,12 +11,16 @@ interface ClientTableProps {
   // Actions
   onEdit: (client: Client) => void;
   onDelete: (id: string) => void;
+  onPortalLink: (id: string) => void;
+  portalLoadingId?: string | null;
 }
 
 export function ClientTable({ 
   clients, loading, 
   page, totalPages, onPageChange,
-  onEdit, onDelete 
+  onEdit, onDelete,
+  onPortalLink,
+  portalLoadingId
 }: ClientTableProps) {
   
   if (loading) {
@@ -80,6 +84,14 @@ export function ClientTable({
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+	                    <button
+	                      onClick={() => onPortalLink(client._id)}
+	                      disabled={portalLoadingId === client._id}
+	                      className="p-2 hover:bg-emerald-50 text-emerald-700 rounded-lg transition-colors disabled:opacity-60"
+	                      title="Generate / copy portal link"
+	                    >
+	                      {portalLoadingId === client._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+	                    </button>
                     <button onClick={() => onEdit(client)} className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors">
                         <Edit className="w-4 h-4" />
                     </button>
