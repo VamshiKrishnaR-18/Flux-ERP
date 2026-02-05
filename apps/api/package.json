@@ -9,7 +9,6 @@
     "test": "jest"
   },
   "dependencies": {
-    "@erp/types": "*",
     "@vendia/serverless-express": "^4.12.6",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
@@ -30,6 +29,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@erp/types": "*", 
     "@types/aws-lambda": "^8.10.160",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.10",
