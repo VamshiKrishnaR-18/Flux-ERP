@@ -70,7 +70,7 @@ jobs:
         node-version: '18'
         cache: 'npm'
 
-    - name: Install Dependencies
+    - name: Install Root Dependencies
       run: npm ci
 
     - name: Install Serverless Framework
@@ -79,12 +79,18 @@ jobs:
     - name: Build API
       run: npx turbo run build --filter=api...
 
+    # ✅ CRITICAL FIX: Force install REAL production dependencies (No Symlinks!)
+    - name: Install API Production Dependencies
+      working-directory: ./apps/api
+      run: |
+        rm -rf node_modules
+        npm install --omit=dev --no-workspaces --no-save
+
     - name: Deploy to AWS Lambda
       working-directory: ./apps/api
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        # ✅ NEW: Authenticates Serverless V4
         SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
       run: |
         serverless deploy \
