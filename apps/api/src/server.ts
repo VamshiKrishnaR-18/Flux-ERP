@@ -3,6 +3,7 @@ import app from './app';
 import mongoose from 'mongoose';
 import { connectDB } from './config/db';
 import { startCronJobs } from './jobs/cron';
+import { logger } from './utils/logger';
 
 const startServer = async () => {
   // 1. Connect DB
@@ -13,20 +14,20 @@ const startServer = async () => {
 
   // 3. Start Listener
   const server = app.listen(config.port, () => {
-    console.log(`⚡️[server]: Server is running at http://localhost:${config.port}`);
+    logger.info(`⚡️[server]: Server is running at http://localhost:${config.port}`);
   });
 
   // ✅ Graceful Shutdown Logic
   const shutdown = async () => {
-    console.log('🛑 SIGTERM/SIGINT received. Shutting down gracefully...');
+    logger.info('🛑 SIGTERM/SIGINT received. Shutting down gracefully...');
     
     // Stop accepting new requests
     server.close(() => {
-      console.log('✅ HTTP server closed.');
+      logger.info('✅ HTTP server closed.');
       
       // Close Database Connection
       mongoose.connection.close(false).then(() => {
-        console.log('✅ MongoDB connection closed.');
+        logger.info('✅ MongoDB connection closed.');
         process.exit(0);
       });
     });

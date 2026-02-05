@@ -42,6 +42,8 @@ export const UserSchema = z.object({
   password: z.string().optional(), // Optional for sanitized returns
   role: z.enum(['admin', 'user']).default('user'),
   createdAt: z.date().optional(),
+  resetPasswordToken: z.string().optional(),
+  resetPasswordExpire: z.date().optional(),
 });
 export type UserType = z.infer<typeof UserSchema>;
 

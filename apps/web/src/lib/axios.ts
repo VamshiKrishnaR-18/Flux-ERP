@@ -11,7 +11,7 @@ if (isProduction && !apiUrl) {
 
 export const api = axios.create({
   // Only default to localhost in development mode
-  baseURL: apiUrl || 'http://localhost:3000',
+  baseURL: (apiUrl || 'http://localhost:3000') + '/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },

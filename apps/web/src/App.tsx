@@ -8,11 +8,15 @@ import { SessionExpiryModal } from './components/SessionExpiryModal';
 // ... (Keep existing Layout and Page imports) ...
 import {Layout as DashboardLayout} from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
+import LandingLayout from './layouts/LandingLayout'; // ✅ New Landing Layout
 import ProtectedLayout from './layouts/ProtectedLayout';
 import AdminRoute from './components/AdminRoute';
 
+import Landing from './pages/Landing'; // ✅ New Landing Page
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword'; // ✅ Import
+import ResetPassword from './pages/auth/ResetPassword';   // ✅ Import
 import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
 import Products from './pages/Products';
@@ -32,17 +36,22 @@ const queryClient = new QueryClient();
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* Landing Page (Root) */}
+      <Route element={<LandingLayout><Landing /></LandingLayout>} path="/" />
+
+      {/* Public Auth Routes */}
       <Route element={<PublicLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} /> {/* ✅ New Route */}
+        <Route path="/reset-password/:token" element={<ResetPassword />} /> {/* ✅ New Route */}
         <Route path="/p/invoice/:id" element={<InvoicePublic />} />
       </Route>
 
       {/* Protected Routes */}
       <Route element={<ProtectedLayout />}>
         <Route element={<DashboardLayout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* <Route path="/" element={<Navigate to="/dashboard" replace />} />  <-- Removed this redirect */}
           <Route path="/dashboard" element={<Dashboard />} />
           
           <Route path="/clients" element={<Clients />} />
@@ -65,7 +74,7 @@ function AppRoutes() {
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

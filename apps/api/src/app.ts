@@ -9,6 +9,7 @@ import hpp from 'hpp';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import { config } from './config/env';
+import { logger } from './utils/logger';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -34,7 +35,20 @@ const app = express();
 app.use(helmet());
 
 // ✅ LOGGING
-app.use(morgan('dev'));
+const morganFormat = ':method :url :status :response-time ms';
+app.use(morgan(morganFormat, {
+  stream: {
+    write: (message) => {
+      const logObject = {
+        method: message.split(' ')[0],
+        url: message.split(' ')[1],
+        status: message.split(' ')[2],
+        responseTime: message.split(' ')[3],
+      };
+      logger.http(JSON.stringify(logObject));
+    },
+  },
+}));
 
 // ✅ CORS (MOVED UP: Must be before Rate Limit and Parsing)
 // This ensures OPTIONS/Preflight requests are handled before they can be blocked
@@ -46,7 +60,7 @@ app.use(cors({
     if (config.corsOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.error(`Blocked by CORS: ${origin}`); // Log blocked origins for debugging
+      logger.warn(`Blocked by CORS: ${origin}`); // Log blocked origins for debugging
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -83,31 +97,36 @@ app.get('/', (req: Request, res: Response) => {
 // Swagger Docs
 app.use('/api-docs', ...(swaggerUi.serve as unknown as RequestHandler[]), swaggerUi.setup(swaggerSpec) as unknown as RequestHandler); 
 
+// API V1 Router
+const apiV1 = express.Router();
+
 // Public Routes
-app.use('/auth', authRoutes);
-app.use('/public', publicRoutes); // Public Invoice Links
+apiV1.use('/auth', authRoutes);
+apiV1.use('/public', publicRoutes); // Public Invoice Links
 
 // Protected Routes
-app.use('/clients', authMiddleware as unknown as RequestHandler, clientRoutes);
-app.use('/invoices', authMiddleware as unknown as RequestHandler, invoiceRoutes);
-app.use('/dashboard', authMiddleware as unknown as RequestHandler, dashboardRoutes);
-app.use('/products', authMiddleware as unknown as RequestHandler, productRoutes);
-app.use('/quotes', authMiddleware as unknown as RequestHandler, quoteRoutes);
+apiV1.use('/clients', authMiddleware as unknown as RequestHandler, clientRoutes);
+apiV1.use('/invoices', authMiddleware as unknown as RequestHandler, invoiceRoutes);
+apiV1.use('/dashboard', authMiddleware as unknown as RequestHandler, dashboardRoutes);
+apiV1.use('/products', authMiddleware as unknown as RequestHandler, productRoutes);
+apiV1.use('/quotes', authMiddleware as unknown as RequestHandler, quoteRoutes);
 
 // 🛡️ ADMIN ROUTES
-app.use('/expenses', 
+apiV1.use('/expenses', 
   authMiddleware as unknown as RequestHandler, 
   requireAdmin as unknown as RequestHandler, 
   expenseRoutes
 );
 
 
-// Remove 'requireAdmin' from here so GET requests can pass through
-app.use('/settings', 
+apiV1.use('/settings', 
   authMiddleware as unknown as RequestHandler, 
-  // requireAdmin, ❌ REMOVED (Moved to routes file)
+  requireAdmin as unknown as RequestHandler, 
   settingsRoutes
 );
+
+// Mount API V1
+app.use('/api/v1', apiV1);
 
 // --- 3. Global Error Handler (MUST BE LAST) ---
 app.use(errorHandler as unknown as RequestHandler);

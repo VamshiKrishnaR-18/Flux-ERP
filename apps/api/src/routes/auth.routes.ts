@@ -10,6 +10,10 @@ router.post('/login', AuthController.login);
 // ✅ NEW: Logout Route (Protected optional, but good practice)
 router.post('/logout', AuthController.logout);
 
+// ✅ Forgot / Reset Password
+router.post('/forgotpassword', AuthController.forgotPassword);
+router.put('/resetpassword/:resetToken', AuthController.resetPassword);
+
 // ✅ Change Password (Protected)
 router.post('/change-password', authMiddleware, AuthController.changePassword);
 

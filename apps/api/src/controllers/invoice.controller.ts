@@ -5,6 +5,7 @@ import { generateInvoiceNumber } from '../utils/generators';
 import { ProductService } from '../services/product.service';
 import { CreateInvoiceSchema } from '@erp/types';
 import { ClientModel } from '../models/client.model';
+import { EmailService } from '../services/email.service';
 
 export const InvoiceController = {
   
@@ -114,16 +115,29 @@ export const InvoiceController = {
     res.json({ success: true, message: "Payment recorded", data: invoice });
   }),
 
-  // ✅ FIX: Missing 'send' method from Route error
+  // 📧 Send Invoice Email
   send: asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const invoice = await InvoiceModel.findOneAndUpdate(
-      { _id: id, createdBy: req.user?.id },
-      { status: 'sent' },
-      { new: true }
-    );
+    const invoice = await InvoiceModel.findOne({ _id: req.params.id, createdBy: req.user?.id }).populate('clientId');
     if (!invoice) { res.status(404); throw new Error("Invoice not found"); }
-    
-    res.json({ success: true, message: "Invoice marked as sent", data: invoice });
+
+    const client = invoice.clientId as any; // Populated
+    if (!client || !client.email) {
+      res.status(400);
+      throw new Error("Client email not found");
+    }
+
+    const sent = await EmailService.sendInvoice(invoice, client);
+    if (!sent) {
+      res.status(500);
+      throw new Error("Failed to send email");
+    }
+
+    // Update status to 'sent' if it was 'draft'
+    if (invoice.status === 'draft') {
+      invoice.status = 'sent';
+      await invoice.save();
+    }
+
+    res.json({ success: true, message: "Invoice sent successfully" });
   })
 };

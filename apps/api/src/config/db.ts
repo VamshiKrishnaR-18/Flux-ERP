@@ -1,16 +1,17 @@
 import mongoose from 'mongoose';
 import { config } from './env';
+import { logger } from '../utils/logger';
 
 export const connectDB = async () => {
   try {
-    console.log("Connecting to MongoDB...");
+    logger.info("Connecting to MongoDB...");
     // @ts-ignore - We validated mongoUri exists in env.ts
     await mongoose.connect(config.mongoUri, { 
         serverSelectionTimeoutMS: 5000 
     });
-    console.log("✅ Connected to MongoDB");
+    logger.info("✅ Connected to MongoDB");
   } catch (error) {
-    console.error("❌ MongoDB Connection Failed:", error);
+    logger.error("❌ MongoDB Connection Failed:", error);
     process.exit(1);
   }
 };

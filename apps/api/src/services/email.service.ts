@@ -74,5 +74,31 @@ export const EmailService = {
       console.error("❌ Email failed:", error);
       return false;
     }
+  },
+
+  // 🔐 Password Reset
+  sendPasswordReset: async (email: string, resetUrl: string) => {
+    try {
+      const info = await transporter.sendMail({
+        from: `"Flux ERP" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: "Password Reset Request",
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>Reset Your Password</h2>
+            <p>You requested a password reset. Click the link below to reset your password:</p>
+            <br />
+            <a href="${resetUrl}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
+            <p style="margin-top: 20px; color: #888; font-size: 12px;">This link expires in 10 minutes.</p>
+          </div>
+        `
+      });
+      console.log("✅ Reset Email sent:", info.messageId);
+      console.log("🔗 Preview URL:", nodemailer.getTestMessageUrl(info));
+      return true;
+    } catch (error) {
+      console.error("❌ Reset Email failed:", error);
+      return false;
+    }
   }
 };

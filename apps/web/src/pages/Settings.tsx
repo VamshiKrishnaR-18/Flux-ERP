@@ -53,6 +53,28 @@ export default function Settings() {
     }
   };
 
+  // 🔐 Password Change Logic
+  const [passData, setPassData] = useState({ oldPassword: '', newPassword: '' });
+  const [passLoading, setPassLoading] = useState(false);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passData.oldPassword || !passData.newPassword) {
+        toast.error("Please fill in all fields");
+        return;
+    }
+    setPassLoading(true);
+    try {
+        await api.post('/auth/change-password', passData);
+        toast.success("Password updated successfully");
+        setPassData({ oldPassword: '', newPassword: '' });
+    } catch (error: any) {
+        toast.error(error.response?.data?.message || "Failed to update password");
+    } finally {
+        setPassLoading(false);
+    }
+  };
+
   if (isLoading) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -228,15 +250,39 @@ export default function Settings() {
                                 <h2 className="text-lg font-semibold text-gray-900">Security & Access</h2>
                                 <p className="text-sm text-gray-500">Manage your account security.</p>
                             </div>
-                            <div className="p-12 text-center">
-                                <div className="bg-gray-100 inline-block p-4 rounded-full mb-4">
-                                    <Lock className="w-8 h-8 text-gray-400" />
-                                </div>
-                                <h3 className="text-gray-900 font-medium mb-1">Change Password</h3>
-                                <p className="text-gray-500 text-sm max-w-sm mx-auto mb-6">Secure your account by updating your password regularly.</p>
-                                <button type="button" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border border-blue-100 font-medium text-sm px-6 py-2.5 rounded-xl transition-colors">
-                                    Update Password (Coming Soon)
-                                </button>
+                            
+                            <div className="p-8 max-w-lg mx-auto">
+                                <form onSubmit={handlePasswordChange} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Current Password</label>
+                                        <input 
+                                            type="password" 
+                                            value={passData.oldPassword}
+                                            onChange={e => setPassData({...passData, oldPassword: e.target.value})}
+                                            className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
+                                        <input 
+                                            type="password" 
+                                            value={passData.newPassword}
+                                            onChange={e => setPassData({...passData, newPassword: e.target.value})}
+                                            className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                    </div>
+
+                                    <div className="pt-4">
+                                        <button 
+                                            type="submit" 
+                                            disabled={passLoading}
+                                            className="w-full bg-black text-white px-6 py-2.5 rounded-xl font-medium hover:bg-gray-800 transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                                        >
+                                            {passLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                                            {passLoading ? 'Updating...' : 'Update Password'}
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     )}
