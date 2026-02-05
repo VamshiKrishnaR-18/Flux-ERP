@@ -11,7 +11,6 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
     
-    # ✅ Spin up a temporary MongoDB for testing
     services:
       mongo:
         image: mongo:6
@@ -26,10 +25,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Use Node.js 18
+    # ✅ UPGRADE: Node 20 for MongoDB compatibility
+    - name: Use Node.js 20
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'npm'
 
     - name: Install Dependencies
@@ -38,14 +38,12 @@ jobs:
     - name: Lint Code
       run: npm run lint
 
-    # Run Type Check (Good practice)
     - name: Type Check
       run: npx turbo run check-types --filter=api
 
     - name: Build API
       run: npx turbo run build --filter=api...
 
-    # ✅ FIX: Create a real .env file so dotenv finds it reliably
     - name: Create Test .env File
       run: |
         echo "MONGO_URI=mongodb://localhost:27017/flux-test-db" > apps/api/.env
@@ -64,10 +62,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Use Node.js 18
+    # ✅ UPGRADE: Node 20 here too
+    - name: Use Node.js 20
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'npm'
 
     - name: Install Root Dependencies
@@ -79,10 +78,11 @@ jobs:
     - name: Build API
       run: npx turbo run build --filter=api...
 
-    # ✅ CRITICAL FIX: Force install REAL production dependencies (No Symlinks!)
+    # ✅ CRITICAL FIX: Delete local dependency so npm doesn't crash
     - name: Install API Production Dependencies
       working-directory: ./apps/api
       run: |
+        npm pkg delete devDependencies.@erp/types
         rm -rf node_modules
         npm install --omit=dev --no-workspaces --no-save
 

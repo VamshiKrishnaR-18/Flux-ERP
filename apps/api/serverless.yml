@@ -2,12 +2,11 @@ service: flux-erp-api
 
 provider:
   name: aws
-  runtime: nodejs18.x
-  region: ap-south-2 # Hyderabad
-  memorySize: 512 # 512MB is a good balance for cost/speed
-  timeout: 10 # 10 seconds timeout
+  runtime: nodejs20.x  # ✅ UPDATED: Was nodejs18.x
+  region: ap-south-2 
+  memorySize: 512 
+  timeout: 10 
   environment:
-    # We pass these variables to Lambda
     NODE_ENV: production
     MONGO_URI: ${param:MONGO_URI}
     JWT_SECRET: ${param:JWT_SECRET}
@@ -15,14 +14,14 @@ provider:
 
 functions:
   api:
-    handler: dist/lambda.handler # Points to your compiled lambda.ts
+    handler: dist/lambda.handler 
     events:
       - http:
-          path: / # Matches root
+          path: / 
           method: ANY
           # cors: true  <-- DELETED (Lets Express handle CORS)
       - http:
-          path: /{proxy+} # Matches all other routes
+          path: /{proxy+} 
           method: ANY
           # cors: true  <-- DELETED (Lets Express handle CORS)
 
