@@ -1,4 +1,4 @@
-import { env } from './config/env'; // ✅ Load Config FIRST
+import { config } from './config/env'; // ✅ Load Config FIRST
 import app from './app';
 import mongoose from 'mongoose';
 import { connectDB } from './config/db';

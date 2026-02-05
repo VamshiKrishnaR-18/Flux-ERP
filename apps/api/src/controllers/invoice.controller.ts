@@ -7,6 +7,7 @@ import { CreateInvoiceSchema } from '@erp/types';
 import { ClientModel } from '../models/client.model';
 import { EmailService } from '../services/email.service';
 import { buildCsv } from '../utils/csv';
+import { SettingsModel } from '../models/settings.model';
 
 export const InvoiceController = {
   
@@ -85,6 +86,12 @@ export const InvoiceController = {
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
     const validation = CreateInvoiceSchema.safeParse(req.body);
     if (!validation.success) {
       res.status(400);
@@ -93,38 +100,65 @@ export const InvoiceController = {
     const { clientId, items } = validation.data;
     
     // Validate Client
-    const clientExists = await ClientModel.findById(clientId);
+    const clientExists = await ClientModel.findOne({ _id: clientId, userId, removed: false });
     if (!clientExists) { res.status(404); throw new Error("Client not found"); }
 
-    const nextNumber = await generateInvoiceNumber(req.user?.id);
+    const nextNumber = await generateInvoiceNumber(userId);
+    const settings = await SettingsModel.findOne({ userId }).select('invoicePrefix').lean();
     
     const newInvoice = await InvoiceModel.create({
       ...validation.data,
       number: nextNumber,
       year: new Date().getFullYear(),
-      createdBy: req.user?.id 
+      createdBy: userId,
+      invoicePrefix: settings?.invoicePrefix
     });
 
     // Adjust Stock
-    await ProductService.adjustStock(items, 'deduct');
+    await ProductService.adjustStock(items, 'deduct', userId);
 
     res.status(201).json({ success: true, message: "Invoice created", data: newInvoice });
   }),
 
   update: asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
+    const existing = await InvoiceModel.findOne({ _id: id, createdBy: userId });
+    if (!existing) { res.status(404); throw new Error("Invoice not found"); }
+
     const invoice = await InvoiceModel.findOneAndUpdate(
-      { _id: id, createdBy: req.user?.id },
+      { _id: id, createdBy: userId },
       req.body,
       { new: true }
     );
     if (!invoice) { res.status(404); throw new Error("Invoice not found"); }
+
+    if (Array.isArray(req.body?.items)) {
+      await ProductService.adjustStock(existing.items, 'restore', userId);
+      await ProductService.adjustStock(req.body.items, 'deduct', userId);
+    }
+
     res.json({ success: true, message: "Invoice updated", data: invoice });
   }),
 
   delete: asyncHandler(async (req: Request, res: Response) => {
-    const invoice = await InvoiceModel.findOneAndDelete({ _id: req.params.id, createdBy: req.user?.id });
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
+    const invoice = await InvoiceModel.findOne({ _id: req.params.id, createdBy: userId });
     if (!invoice) { res.status(404); throw new Error("Invoice not found"); }
+
+    await ProductService.adjustStock(invoice.items, 'restore', userId);
+    await InvoiceModel.deleteOne({ _id: req.params.id, createdBy: userId });
+
     res.json({ success: true, message: "Invoice deleted" });
   }),
 

@@ -6,12 +6,18 @@ import { asyncHandler } from '../utils/asyncHandler';
 export const ProductController = {
   // ✅ UPDATED: Search + Pagination
   getAll: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const search = req.query.search as string || '';
     const skip = (page - 1) * limit;
 
-    const query: any = {};
+    const query: any = { createdBy: userId };
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -35,20 +41,55 @@ export const ProductController = {
 
   // ... (Keep create, update, delete as is)
   create: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
     const parsed = ProductSchema.safeParse(req.body); 
     if (!parsed.success) { res.status(400); throw new Error("Invalid data"); }
-    const product = await ProductModel.create(parsed.data);
+    const product = await ProductModel.create({ ...parsed.data, createdBy: userId });
     res.status(201).json({ success: true, data: product });
   }),
 
   update: asyncHandler(async (req: Request, res: Response) => {
-    const product = await ProductModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
+    const product = await ProductModel.findOneAndUpdate(
+      { _id: req.params.id, createdBy: userId },
+      req.body,
+      { new: true }
+    );
     if (!product) { res.status(404); throw new Error("Product not found"); }
     res.json({ success: true, data: product });
   }),
 
   delete: asyncHandler(async (req: Request, res: Response) => {
-    await ProductModel.findByIdAndDelete(req.params.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
+    const product = await ProductModel.findOneAndDelete({ _id: req.params.id, createdBy: userId });
+    if (!product) { res.status(404); throw new Error("Product not found"); }
     res.json({ success: true, message: "Product deleted" });
+  }),
+
+  getOne: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
+    const product = await ProductModel.findOne({ _id: req.params.id, createdBy: userId });
+    if (!product) { res.status(404); throw new Error("Product not found"); }
+    res.json({ success: true, data: product });
   })
 };

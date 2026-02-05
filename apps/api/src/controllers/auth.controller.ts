@@ -18,7 +18,7 @@ const generateToken = (id: string) => {
 const cookieOptions: CookieOptions = {
   httpOnly: true,
   // ✅ FIX: Use 'nodeEnv' instead of 'env'
-  secure: env.NODE_ENV === 'production',
+  secure: config.nodeEnv === 'production',
   sameSite: 'strict',
   maxAge: 24 * 60 * 60 * 1000 // 1 day
 };
@@ -143,7 +143,7 @@ export const AuthController = {
 
     // Create Reset URL
     // NOTE: In production, this should point to the FRONTEND URL
-    const resetUrl = `${env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetUrl = `${config.frontendUrl}/reset-password/${resetToken}`;
 
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
 

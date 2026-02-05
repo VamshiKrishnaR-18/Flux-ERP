@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import { useSortableData } from '../hooks/useSortableData';
 
 export default function Products() {
+  type ProductFormValues = Omit<ProductDTO, 'stock'> & { stock?: number };
+
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -48,15 +50,16 @@ export default function Products() {
   };
 
   // Forms
-  const { register, handleSubmit, reset  } = useForm<ProductDTO>({
+  const { register, handleSubmit, reset  } = useForm<ProductFormValues>({
     resolver: zodResolver(ProductSchema),
     defaultValues: { name: '', price: 0, stock: 0, description: '', sku: '' }
   });
 
-  const onSubmit = async (data: ProductDTO) => {
+  const onSubmit = async (data: ProductFormValues) => {
+    const payload = ProductSchema.parse(data);
     try {
-      if (editingId) { await api.put(`/products/${editingId}`, data); toast.success("Updated"); } 
-      else { await api.post('/products', data); toast.success("Added"); }
+      if (editingId) { await api.put(`/products/${editingId}`, payload); toast.success("Updated"); } 
+      else { await api.post('/products', payload); toast.success("Added"); }
       setIsModalOpen(false); reset(); setEditingId(null); fetchProducts();
     } catch { toast.error("Failed"); }
   };

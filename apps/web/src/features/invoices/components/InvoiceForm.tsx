@@ -69,6 +69,7 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
     try {
         const { data } = await api.get(`/products/${productId}`);
         const p = data.data;
+        setValue(`items.${index}.productId`, productId);
         setValue(`items.${index}.itemName`, p.name);
         setValue(`items.${index}.description`, p.description || '');
         setValue(`items.${index}.price`, p.price);

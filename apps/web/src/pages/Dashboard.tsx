@@ -3,7 +3,8 @@ import { api } from '../lib/axios';
 import { 
 	  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
 	} from 'recharts';
-import { DollarSign, FileText, TrendingUp, TrendingDown, ArrowRight, Activity, Loader2, Users, LucideIcon } from 'lucide-react';
+import { DollarSign, FileText, TrendingUp, TrendingDown, ArrowRight, Activity, Loader2, Users } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Invoice } from '@erp/types';
 

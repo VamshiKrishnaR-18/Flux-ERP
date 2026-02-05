@@ -6,6 +6,8 @@ import { EmailService } from '../services/email.service';
 import { asyncHandler } from '../utils/asyncHandler';
 import { generateInvoiceNumber } from '../utils/generators';
 import { buildCsv } from '../utils/csv';
+import { ProductService } from '../services/product.service';
+import { SettingsModel } from '../models/settings.model';
 
 const generateQuoteNumber = async (userId?: string) => {
   const last = await QuoteModel.findOne({ createdBy: userId }).sort({ number: -1 });
@@ -179,6 +181,12 @@ export const QuoteController = {
   }),
 
   convertToInvoice: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
     const quote = await QuoteModel.findOne({ _id: req.params.id, createdBy: req.user?.id });
     if (!quote) { res.status(404); throw new Error("Quote not found"); }
     if (quote.status === 'converted') { res.status(400); throw new Error("Already converted"); }
@@ -187,7 +195,8 @@ export const QuoteController = {
       throw new Error('Quote must be accepted before converting to an invoice');
     }
 
-    const nextInvNumber = await generateInvoiceNumber(String(quote.createdBy || req.user?.id));
+    const nextInvNumber = await generateInvoiceNumber(String(quote.createdBy || userId));
+    const settings = await SettingsModel.findOne({ userId }).select('invoicePrefix').lean();
     const quoteData = quote as any; 
 
     const newInvoice = await InvoiceModel.create({
@@ -204,9 +213,12 @@ export const QuoteController = {
       discount: quoteData.discount,
       notes: `Converted from Quote #${quoteData.number}`,
       status: 'draft',
-      createdBy: String(quote.createdBy || req.user?.id),
+      createdBy: String(quote.createdBy || userId),
+      invoicePrefix: settings?.invoicePrefix,
       converted: { from: 'quote', quoteId: quote._id }
     });
+
+    await ProductService.adjustStock(quoteData.items || [], 'deduct', userId);
 
     quote.status = 'converted';
     quote.convertedInvoiceId = newInvoice._id as any;

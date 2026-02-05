@@ -8,6 +8,7 @@ export interface IInvoiceDocument extends Document, Omit<IInvoiceDTO, '_id' | 'c
   amountPaid: number;
   removed: boolean;
   createdBy: string;
+  invoicePrefix?: string;
 }
 
 // 2. Schema Definition
@@ -15,6 +16,7 @@ const InvoiceSchema: Schema = new Schema({
   // Identification
   number: { type: Number, required: true },
   year: { type: Number, required: true },
+  invoicePrefix: { type: String },
   recurring: { 
     type: String, 
     enum: ['daily', 'weekly', 'monthly', 'annually', 'quarter', 'none'], 

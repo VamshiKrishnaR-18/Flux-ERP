@@ -1,13 +1,14 @@
 import nodemailer from 'nodemailer';
+import { config } from '../config/env';
 
 // 1. Setup Transporter (Generic SMTP for Ethereal/Gmail)
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-  port: parseInt(process.env.SMTP_PORT || '587'),
+  host: config.smtpHost,
+  port: config.smtpPort,
   secure: false, // true for 465, false for other ports
   auth: {
-    user: process.env.SMTP_USER, // Defined in .env
-    pass: process.env.SMTP_PASS  // Defined in .env
+    user: config.smtpUser, // Defined in .env
+    pass: config.smtpPass  // Defined in .env
   }
 });
 
@@ -17,7 +18,7 @@ export const EmailService = {
   sendInvoice: async (invoice: any, client: any) => {
     try {
       const info = await transporter.sendMail({
-        from: `"Flux ERP" <${env.SMTP_USER}>`, // Sender address
+        from: `"Flux ERP" <${config.smtpUser}>`, // Sender address
         to: client.email,
         subject: `Invoice #${invoice.number} from Flux ERP`,
         html: `
@@ -27,7 +28,7 @@ export const EmailService = {
             <p>Here is your invoice for <strong>$${invoice.total.toFixed(2)}</strong>.</p>
             <p><strong>Due Date:</strong> ${new Date(invoice.expiredDate).toDateString()}</p>
             <br />
-            <a href="${env.FRONTEND_URL}/invoices/${invoice._id}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a>
+            <a href="${config.frontendUrl}/invoices/${invoice._id}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a>
             <p style="margin-top: 20px; color: #888; font-size: 12px;">Thank you for your business!</p>
           </div>
         `
@@ -48,7 +49,7 @@ export const EmailService = {
   sendQuote: async (quote: any, client: any) => {
     try {
       const info = await transporter.sendMail({
-        from: `"Flux ERP" <${process.env.SMTP_USER}>`,
+        from: `"Flux ERP" <${config.smtpUser}>`,
         to: client.email,
         subject: `Quote #${quote.number} - ${quote.title}`,
         html: `
@@ -60,7 +61,7 @@ export const EmailService = {
             <br />
             <p>Please reply to this email to approve or reject this quote.</p>
             <br />
-            <a href="${env.FRONTEND_URL}/quotes" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Quote</a>
+            <a href="${config.frontendUrl}/quotes" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Quote</a>
           </div>
         `
       });
@@ -80,7 +81,7 @@ export const EmailService = {
   sendPasswordReset: async (email: string, resetUrl: string) => {
     try {
       const info = await transporter.sendMail({
-        from: `"Flux ERP" <${process.env.SMTP_USER}>`,
+        from: `"Flux ERP" <${config.smtpUser}>`,
         to: email,
         subject: "Password Reset Request",
         html: `

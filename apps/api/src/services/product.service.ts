@@ -6,8 +6,9 @@ export const ProductService = {
    * Adjusts stock levels for a list of invoice items.
    * @param items The array of items from the invoice
    * @param action 'deduct' (for creating invoices) or 'restore' (for deleting/cancelling)
+   * @param userId The current user ID for tenant scoping
    */
-  adjustStock: async (items: any[], action: 'deduct' | 'restore') => {
+  adjustStock: async (items: any[], action: 'deduct' | 'restore', userId?: string) => {
     console.log(`--- STARTING STOCK ${action.toUpperCase()} ---`);
     const multiplier = action === 'deduct' ? -1 : 1;
 
@@ -17,18 +18,21 @@ export const ProductService = {
 
       // 1. Try to find by ID (Most Reliable)
       if (item.productId) {
-        updatedProduct = await ProductModel.findByIdAndUpdate(
-          item.productId,
+        const idQuery = userId
+          ? { _id: item.productId, createdBy: userId }
+          : { _id: item.productId };
+        updatedProduct = await ProductModel.findOneAndUpdate(
+          idQuery,
           { $inc: { stock: quantityChange } },
           { new: true }
         );
       }
 
       // 2. Fallback: Find by Name
-      if (!updatedProduct && item.itemName) {
+      if (!updatedProduct && item.itemName && userId) {
         const cleanName = item.itemName.trim();
         updatedProduct = await ProductModel.findOneAndUpdate(
-          { name: cleanName },
+          { name: cleanName, createdBy: userId },
           { $inc: { stock: quantityChange } },
           { new: true }
         );

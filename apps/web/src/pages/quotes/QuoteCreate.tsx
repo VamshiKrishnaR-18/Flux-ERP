@@ -4,7 +4,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { api } from '../../lib/axios';
 import { toast } from 'sonner';
 import { AsyncSelect } from '../../components/AsyncSelect'; // 👈 Import AsyncSelect
-import { Client, Product, CreateQuoteDTO } from '@erp/types';
+import type { Client, Product, CreateQuoteDTO } from '@erp/types';
 import axios from 'axios';
 
 export default function QuoteCreate() {
@@ -52,6 +52,7 @@ export default function QuoteCreate() {
     try {
         const { data } = await api.get(`/products/${id}`);
         const p = data.data;
+        setValue(`items.${index}.productId`, id);
         setValue(`items.${index}.itemName`, p.name);
         setValue(`items.${index}.price`, p.price);
         setValue(`items.${index}.quantity`, 1); // Default to 1
