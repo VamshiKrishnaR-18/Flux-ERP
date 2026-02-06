@@ -83,12 +83,20 @@ export const CreateInvoiceSchema = z.object({
 
 export type CreateInvoiceDTO = z.infer<typeof CreateInvoiceSchema>;
 
+export interface InvoiceAuditLog {
+  action: 'created' | 'updated';
+  userId: string;
+  at: string | Date;
+  changes?: string[];
+}
+
 export interface Invoice extends CreateInvoiceDTO {
   _id: string;
   createdAt: string;
   updatedAt: string;
   amountPaid?: number;
   removed?: boolean; // 👈 Added for Soft Delete
+  auditLogs?: InvoiceAuditLog[];
 }
 
 

@@ -8,11 +8,11 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { config } from '../config/env';
 import { EmailService } from '../services/email.service';
 
-const generateToken = (id: string) => {
+const generateToken = (id: string, role: string) => {
   // ✅ FIX: Use 'jwtExpiresIn' and 'jwtSecret' (Flat structure)
   const options: SignOptions = { expiresIn: config.jwtExpiresIn as any };
   if (!config.jwtSecret) throw new Error("JWT Secret is undefined");
-  return jwt.sign({ id }, config.jwtSecret, options);
+  return jwt.sign({ id, role }, config.jwtSecret, options);
 };
 
 const cookieOptions: CookieOptions = {
@@ -47,7 +47,7 @@ export const AuthController = {
       role: role || 'user'
     });
 
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, user.role);
     res.cookie('token', token, cookieOptions);
 
     res.status(201).json({
@@ -74,7 +74,7 @@ export const AuthController = {
       throw new Error("Invalid credentials");
     }
 
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, user.role);
     res.cookie('token', token, cookieOptions);
 
     res.json({
@@ -96,6 +96,38 @@ export const AuthController = {
       throw new Error("User not found");
     }
     res.json({ success: true, data: user });
+  }),
+
+  // 👤 Update Profile (Name & Email)
+  updateProfile: asyncHandler(async (req: Request, res: Response) => {
+    const { name, email } = req.body;
+    const userId = req.user?.id;
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+
+    // If email is being changed, check if it's already taken
+    if (email && email !== user.email) {
+      const emailExists = await UserModel.findOne({ email });
+      if (emailExists) {
+        res.status(400);
+        throw new Error("Email already in use");
+      }
+      user.email = email;
+    }
+
+    if (name) user.name = name;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Profile updated successfully",
+      data: { id: user.id, name: user.name, email: user.email, role: user.role }
+    });
   }),
 
   changePassword: asyncHandler(async (req: Request, res: Response) => {

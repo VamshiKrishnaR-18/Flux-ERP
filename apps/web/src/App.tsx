@@ -19,7 +19,9 @@ import ForgotPassword from './pages/auth/ForgotPassword'; // ✅ Import
 import ResetPassword from './pages/auth/ResetPassword';   // ✅ Import
 import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
+import ClientDetail from './pages/ClientDetail'; // ✅ Import
 import Products from './pages/Products';
+import Reports from './pages/Reports'; // ✅ Import
 import InvoiceList from './pages/invoices/InvoiceList';
 import InvoiceCreate from './pages/invoices/InvoiceCreate';
 import InvoiceEdit from './pages/invoices/InvoiceEdit';
@@ -57,7 +59,9 @@ function AppRoutes() {
           <Route path="/dashboard" element={<Dashboard />} />
           
           <Route path="/clients" element={<Clients />} />
+          <Route path="/clients/:id" element={<ClientDetail />} /> {/* ✅ New Route */}
           <Route path="/products" element={<Products />} />
+          <Route path="/reports" element={<Reports />} /> {/* ✅ Reports */}
           
           <Route path="/invoices" element={<InvoiceList />} />
           <Route path="/invoices/new" element={<InvoiceCreate />} />

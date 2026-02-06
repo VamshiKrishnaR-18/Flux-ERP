@@ -2,15 +2,58 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/axios';
 import { Plus, FileText, ChevronLeft, ChevronRight, Loader2, Download } from 'lucide-react';
+import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { toast } from 'sonner';
 
 import { type Invoice } from '@erp/types';
+import { EmptyState } from '../../components/EmptyState'; // ✅ Import
+
+const invoiceListStyles = StyleSheet.create({
+  page: { padding: 24, fontSize: 10, color: '#111', fontFamily: 'Helvetica' },
+  title: { fontSize: 16, fontWeight: 700, marginBottom: 12 },
+  tableHeader: { flexDirection: 'row', borderBottom: '1px solid #E5E7EB', paddingBottom: 6, marginBottom: 4 },
+  row: { flexDirection: 'row', paddingVertical: 4, borderBottom: '1px solid #F3F4F6' },
+  colNumber: { width: '18%' },
+  colClient: { width: '32%' },
+  colDate: { width: '16%' },
+  colStatus: { width: '14%' },
+  colTotal: { width: '20%', textAlign: 'right' }
+});
+
+const InvoiceListPDF = ({ invoices, currencySymbol }: { invoices: Invoice[]; currencySymbol: string }) => (
+  <Document>
+    <Page size="A4" style={invoiceListStyles.page}>
+      <Text style={invoiceListStyles.title}>Invoices</Text>
+      <View style={invoiceListStyles.tableHeader}>
+        <Text style={invoiceListStyles.colNumber}>Number</Text>
+        <Text style={invoiceListStyles.colClient}>Client</Text>
+        <Text style={invoiceListStyles.colDate}>Date</Text>
+        <Text style={invoiceListStyles.colStatus}>Status</Text>
+        <Text style={invoiceListStyles.colTotal}>Total</Text>
+      </View>
+      {invoices.map((inv) => {
+        const client = inv.clientId as unknown as { name?: string };
+        const number = `${(inv as unknown as { invoicePrefix?: string }).invoicePrefix ?? ''}${inv.number ?? ''}`;
+        return (
+          <View key={inv._id} style={invoiceListStyles.row}>
+            <Text style={invoiceListStyles.colNumber}>{number}</Text>
+            <Text style={invoiceListStyles.colClient}>{client?.name || 'Unknown Client'}</Text>
+            <Text style={invoiceListStyles.colDate}>{new Date(inv.date).toLocaleDateString()}</Text>
+            <Text style={invoiceListStyles.colStatus}>{inv.status}</Text>
+            <Text style={invoiceListStyles.colTotal}>{currencySymbol}{inv.total.toFixed(2)}</Text>
+          </View>
+        );
+      })}
+    </Page>
+  </Document>
+);
 
 export default function InvoiceList() {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [currencySymbol, setCurrencySymbol] = useState('$');
   
   // Pagination State
@@ -74,6 +117,28 @@ export default function InvoiceList() {
     }
   };
 
+  const handleExportPdf = async () => {
+    setIsExportingPdf(true);
+    try {
+      const res = await api.get('/invoices?limit=10000');
+      const allInvoices = res.data.data as Invoice[];
+      const blob = await pdf(<InvoiceListPDF invoices={allInvoices} currencySymbol={currencySymbol} />).toBlob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoices-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('PDF exported');
+    } catch {
+      toast.error('Failed to export PDF');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 lg:p-10">
       <main className="max-w-7xl mx-auto">
@@ -85,6 +150,14 @@ export default function InvoiceList() {
             <p className="text-gray-500 mt-1">Manage and track your client billings</p>
           </div>
 	      <div className="flex items-center gap-3 w-full sm:w-auto">
+          <button
+            onClick={handleExportPdf}
+            disabled={isExportingPdf}
+            className="bg-white border border-gray-200 text-gray-900 px-4 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition-all shadow-sm disabled:opacity-60 w-full sm:w-auto"
+          >
+            {isExportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Export PDF
+          </button>
 	        <button
 	          onClick={handleExportCsv}
 	          disabled={isExporting}
@@ -108,19 +181,13 @@ export default function InvoiceList() {
             <Loader2 className="animate-spin text-gray-400 w-8 h-8" />
           </div>
         ) : invoices.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
-            <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900">No invoices yet</h3>
-            <p className="text-gray-500 mt-1 mb-6">Create your first invoice to get started.</p>
-            <button 
-                onClick={() => navigate('/invoices/new')} 
-                className="text-blue-600 font-semibold hover:text-blue-700 hover:underline"
-            >
-                Create Invoice
-            </button>
-          </div>
+          <EmptyState 
+            title="No invoices yet"
+            description="Create your first invoice to get started."
+            icon={FileText}
+            actionLabel="Create Invoice"
+            onAction={() => navigate('/invoices/new')}
+          />
         ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden animate-in fade-in duration-500">
             <div className="overflow-x-auto">

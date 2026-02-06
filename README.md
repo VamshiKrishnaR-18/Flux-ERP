@@ -82,8 +82,14 @@ docker-compose up -d --build
 │   ├── eslint-config # Shared ESLint configurations
 │   ├── types        # Shared TypeScript interfaces
 │   └── typescript-config # Shared TSConfig
+├── docs
 └── docker-compose.yml
 ```
+
+## 📚 Documentation
+
+- [Repository Structure](./docs/structure.md)
+- [Testing](./docs/testing.md)
 
 ## 🛡️ Security Features
 *   **Strict CORS Policy:** Only allows trusted origins.

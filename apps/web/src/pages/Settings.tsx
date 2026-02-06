@@ -6,18 +6,21 @@ import { api } from '../lib/axios';
 import { toast } from 'sonner';
 import { 
     Settings as SettingsIcon, Save, Building, FileText, Lock, 
-    ChevronRight, Loader2,  Mail, Phone, MapPin 
+    ChevronRight, Loader2,  Mail, Phone, MapPin, User 
 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 const TABS = [
+    { id: 'profile', label: 'My Profile', icon: User, description: 'Update your personal details' },
     { id: 'general', label: 'Company Profile', icon: Building, description: 'Manage your business details' },
     { id: 'invoices', label: 'Invoice Defaults', icon: FileText, description: 'Set prefixes, terms, and notes' },
     { id: 'security', label: 'Security', icon: Lock, description: 'Password and access controls' },
 ];
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(true);
+  const { user, updateUser } = useAuth();
 
   const { 
     register, 
@@ -56,6 +59,36 @@ export default function Settings() {
   // 🔐 Password Change Logic
   const [passData, setPassData] = useState({ oldPassword: '', newPassword: '' });
   const [passLoading, setPassLoading] = useState(false);
+
+  // 👤 Profile Update Logic
+  const [profileData, setProfileData] = useState({ name: user?.name || '', email: user?.email || '' });
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+        setProfileData({ name: user.name, email: user.email });
+    }
+  }, [user]);
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profileData.name || !profileData.email) {
+        toast.error("Name and Email are required");
+        return;
+    }
+    setProfileLoading(true);
+    try {
+        const { data } = await api.put('/auth/profile', profileData);
+        if (data.success) {
+            updateUser(data.data);
+            toast.success("Profile updated successfully");
+        }
+    } catch (err: any) {
+        toast.error(err.response?.data?.message || "Failed to update profile");
+    } finally {
+        setProfileLoading(false);
+    }
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,6 +170,53 @@ export default function Settings() {
             <div className="flex-1 w-full">
                 <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                     
+                    {/* --- MY PROFILE TAB --- */}
+                    {activeTab === 'profile' && (
+                        <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                            <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                                <h2 className="text-lg font-semibold text-gray-900">My Profile</h2>
+                                <p className="text-sm text-gray-500">Update your personal information.</p>
+                            </div>
+                            
+                            <div className="p-8 max-w-lg mx-auto">
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+                                        <input 
+                                            type="text" 
+                                            value={profileData.name}
+                                            onChange={e => setProfileData({...profileData, name: e.target.value})}
+                                            className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="John Doe"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                                        <input 
+                                            type="email" 
+                                            value={profileData.email}
+                                            onChange={e => setProfileData({...profileData, email: e.target.value})}
+                                            className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="john@example.com"
+                                        />
+                                    </div>
+
+                                    <div className="pt-4">
+                                        <button 
+                                            type="button" 
+                                            onClick={handleProfileUpdate}
+                                            disabled={profileLoading}
+                                            className="w-full bg-black text-white px-6 py-2.5 rounded-xl font-medium hover:bg-gray-800 transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                                        >
+                                            {profileLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <Save className="w-4 h-4" />}
+                                            {profileLoading ? 'Saving...' : 'Save Profile'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* --- GENERAL TAB --- */}
                     {activeTab === 'general' && (
                         <div className="animate-in fade-in slide-in-from-right-4 duration-300">
@@ -287,8 +367,8 @@ export default function Settings() {
                         </div>
                     )}
 
-                    {/* Footer Actions */}
-                    {activeTab !== 'security' && (
+                    {/* Footer Actions (Only for Settings Forms) */}
+                    {activeTab !== 'security' && activeTab !== 'profile' && (
                         <div className="px-8 py-5 bg-gray-50 border-t border-gray-200 flex justify-end">
                             <button 
                                 type="submit" 

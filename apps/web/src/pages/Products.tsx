@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+import { useSearchParams } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductSchema, type ProductDTO, type Product } from '@erp/types';
 import { Package, Plus, Pencil, Trash2, ArrowUpDown, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../lib/axios';
 import { toast } from 'sonner';
 import { useSortableData } from '../hooks/useSortableData';
+import { EmptyState } from '../components/EmptyState'; // ✅ Import
 
 export default function Products() {
   type ProductFormValues = Omit<ProductDTO, 'stock'> & { stock?: number };
@@ -19,6 +21,7 @@ export default function Products() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const LIMIT = 10;
+  const [searchParams] = useSearchParams();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -28,6 +31,14 @@ export default function Products() {
     const handler = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 500);
     return () => clearTimeout(handler);
   }, [search]);
+
+  useEffect(() => {
+    const param = searchParams.get('search') || '';
+    if (param !== search) {
+      setSearch(param);
+      setPage(1);
+    }
+  }, [searchParams, search]);
 
   // 2️⃣ Fetch
   const fetchProducts = useCallback(async () => {
@@ -86,7 +97,15 @@ export default function Products() {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
         {isLoading ? <div className="p-12 text-center text-gray-500">Loading...</div> : 
-         products.length === 0 ? <div className="p-12 text-center text-gray-500">No products found.</div> : (
+         products.length === 0 ? (
+           <EmptyState 
+             title="No products found"
+             description="Add your first product to inventory."
+             icon={Package}
+             actionLabel="Add Product"
+             onAction={() => { setEditingId(null); reset(); setIsModalOpen(true); }}
+           />
+         ) : (
           <>
             <table className="w-full text-left">
               <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-semibold cursor-pointer select-none">

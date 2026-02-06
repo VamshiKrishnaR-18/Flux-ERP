@@ -1,5 +1,7 @@
 import type { Client } from '../types';
-import { ChevronLeft, ChevronRight, Edit, Trash2, Mail, Phone, MapPin, Link2, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Trash2, Mail, Phone, MapPin, Link2, Loader2, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { EmptyState } from '../../../components/EmptyState';
 
 interface ClientTableProps {
   clients: Client[];
@@ -12,6 +14,7 @@ interface ClientTableProps {
   onEdit: (client: Client) => void;
   onDelete: (id: string) => void;
   onPortalLink: (id: string) => void;
+  onAdd?: () => void;
   portalLoadingId?: string | null;
 }
 
@@ -20,6 +23,7 @@ export function ClientTable({
   page, totalPages, onPageChange,
   onEdit, onDelete,
   onPortalLink,
+  onAdd,
   portalLoadingId
 }: ClientTableProps) {
   
@@ -33,9 +37,13 @@ export function ClientTable({
 
   if (clients.length === 0) {
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center text-gray-500">
-            No clients found.
-        </div>
+        <EmptyState 
+            title="No clients found"
+            description="Get started by adding your first client."
+            icon={Users}
+            actionLabel="Add Client"
+            onAction={onAdd}
+        />
     );
   }
 
@@ -55,7 +63,11 @@ export function ClientTable({
           <tbody className="divide-y divide-gray-100">
             {clients.map((client) => (
               <tr key={client._id} className="hover:bg-gray-50 transition group">
-                <td className="px-6 py-4 font-medium text-gray-900">{client.name}</td>
+                <td className="px-6 py-4 font-medium text-gray-900">
+                    <Link to={`/clients/${client._id}`} className="hover:text-blue-600 hover:underline flex items-center gap-2">
+                        {client.name}
+                    </Link>
+                </td>
                 <td className="px-6 py-4 text-gray-600 text-sm">
                     <div className="flex items-center gap-2 mb-1">
                         <Mail className="w-3 h-3 text-gray-400" /> {client.email}

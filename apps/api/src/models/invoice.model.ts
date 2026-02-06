@@ -9,6 +9,7 @@ export interface IInvoiceDocument extends Document, Omit<IInvoiceDTO, '_id' | 'c
   removed: boolean;
   createdBy: string;
   invoicePrefix?: string;
+  auditLogs?: { action: 'created' | 'updated'; userId: string; at: Date; changes?: string[] }[];
 }
 
 // 2. Schema Definition
@@ -70,7 +71,13 @@ const InvoiceSchema: Schema = new Schema({
   
   // System
   pdf: { type: String },
-  removed: { type: Boolean, default: false }
+  removed: { type: Boolean, default: false },
+  auditLogs: [{
+    action: { type: String, enum: ['created', 'updated'], required: true },
+    userId: { type: String, required: true },
+    at: { type: Date, default: Date.now },
+    changes: [{ type: String }]
+  }]
 
 }, { 
   timestamps: true 

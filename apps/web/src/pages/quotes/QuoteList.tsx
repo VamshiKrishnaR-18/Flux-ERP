@@ -3,10 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { api } from '../../lib/axios';
 import { toast } from 'sonner';
-import { Plus, FileOutput, ArrowRightLeft, Send, ArrowUpDown, Search, ChevronLeft, ChevronRight, Loader2, Check, X, Download } from 'lucide-react';
+import { Plus, FileOutput, ArrowRightLeft, Send, ArrowUpDown, Search, ChevronLeft, ChevronRight, Loader2, Check, X, Download, FileText } from 'lucide-react';
 import { useSortableData } from '../../hooks/useSortableData';
 import { useDebounce } from '../../hooks/useDebounce';
 import type { Quote } from '@erp/types';
+import { EmptyState } from '../../components/EmptyState'; // ✅ Import
 
 export default function QuoteList() {
   const navigate = useNavigate();
@@ -154,15 +155,18 @@ export default function QuoteList() {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-            {/* ✅ FIX: Use isLoading to show feedback */}
             {isLoading ? (
                 <div className="p-12 text-center text-gray-500 flex items-center justify-center gap-2">
                     <Loader2 className="animate-spin w-5 h-5" /> Loading quotes...
                 </div>
             ) : quotes.length === 0 ? (
-                <div className="p-12 text-center text-gray-500">
-                    No quotes found.
-                </div>
+                <EmptyState 
+                    title="No quotes found"
+                    description="Create your first quote to send to a client."
+                    icon={FileText}
+                    actionLabel="Create Quote"
+                    onAction={() => navigate('/quotes/new')}
+                />
             ) : (
                 <>
                     <table className="w-full text-left">

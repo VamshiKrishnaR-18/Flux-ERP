@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, FileText, Package, 
-  Receipt, Settings, LogOut, FileCode 
+  Receipt, Settings, LogOut, FileCode, PieChart
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -14,6 +14,7 @@ export default function Sidebar() {
     { to: '/products', label: 'Products', icon: Package },
     { to: '/invoices', label: 'Invoices', icon: FileText },
     { to: '/quotes', label: 'Quotes', icon: FileCode },
+    { to: '/reports', label: 'Reports', icon: PieChart }, // ✅ Reports
     // 🛡️ Hide these from non-admins
     ...(user?.role === 'admin' ? [
         { to: '/expenses', label: 'Expenses', icon: Receipt },

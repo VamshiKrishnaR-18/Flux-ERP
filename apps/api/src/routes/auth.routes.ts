@@ -17,4 +17,7 @@ router.put('/resetpassword/:resetToken', AuthController.resetPassword);
 // ✅ Change Password (Protected)
 router.post('/change-password', authMiddleware, AuthController.changePassword);
 
+// ✅ Update Profile (Protected)
+router.put('/profile', authMiddleware, AuthController.updateProfile);
+
 export default router;

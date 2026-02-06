@@ -16,9 +16,32 @@ export const InvoiceController = {
   getAll: asyncHandler(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
+    const search = req.query.search as string || '';
+    const clientId = req.query.clientId as string;
     const skip = (page - 1) * limit;
 
-    const query = { createdBy: req.user?.id };
+    const query: any = { createdBy: req.user?.id, removed: { $ne: true } };
+
+    if (clientId) {
+        query.clientId = clientId;
+    }
+
+    if (search) {
+        const searchNum = Number(search);
+        if (!isNaN(searchNum)) {
+            query.number = searchNum;
+        } else {
+             // Find clients matching name (if not already filtering by client)
+             if (!clientId) {
+                const clients = await ClientModel.find({
+                    userId: req.user?.id,
+                    name: { $regex: search, $options: 'i' }
+                }).select('_id');
+                const clientIds = clients.map(c => c._id);
+                query.clientId = { $in: clientIds };
+             }
+        }
+    }
 
     const [total, invoices] = await Promise.all([
       InvoiceModel.countDocuments(query),
@@ -111,7 +134,8 @@ export const InvoiceController = {
       number: nextNumber,
       year: new Date().getFullYear(),
       createdBy: userId,
-      invoicePrefix: settings?.invoicePrefix
+      invoicePrefix: settings?.invoicePrefix,
+      auditLogs: [{ action: 'created', userId, at: new Date(), changes: [] }]
     });
 
     // Adjust Stock
@@ -131,9 +155,16 @@ export const InvoiceController = {
     const existing = await InvoiceModel.findOne({ _id: id, createdBy: userId });
     if (!existing) { res.status(404); throw new Error("Invoice not found"); }
 
+    const updateData = { ...(req.body || {}) } as Record<string, unknown>;
+    delete updateData.auditLogs;
+    const changes = Object.keys(updateData);
+
     const invoice = await InvoiceModel.findOneAndUpdate(
       { _id: id, createdBy: userId },
-      req.body,
+      { 
+        $set: updateData,
+        $push: { auditLogs: { action: 'updated', userId, at: new Date(), changes } }
+      },
       { new: true }
     );
     if (!invoice) { res.status(404); throw new Error("Invoice not found"); }

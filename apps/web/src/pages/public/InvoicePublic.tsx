@@ -2,14 +2,19 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../../lib/axios'; // Make sure this axios instance handles public URLs
 import { format } from 'date-fns';
-import { Printer } from 'lucide-react';
+import { Printer, CreditCard, CheckCircle, X, Loader2, Lock } from 'lucide-react';
 import type { Invoice, SettingsDTO } from '@erp/types';
+import { toast } from 'sonner';
 
 export default function InvoicePublic() {
   const { id } = useParams();
   const [data, setData] = useState<{ invoice: Invoice, settings: SettingsDTO } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Payment State
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,15 +37,129 @@ export default function InvoicePublic() {
   const { invoice, settings } = data;
   const client = invoice.clientId as unknown as { name: string, email: string, phoneNumber?: string, address?: string };
 
+  const handlePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsProcessing(true);
+    
+    // Simulate network delay for realism
+    await new Promise(r => setTimeout(r, 2000));
+
+    try {
+        await api.post(`/public/invoices/${id}/pay`, {
+            amount: invoice.total - (invoice.amountPaid || 0),
+            method: 'Credit Card'
+        });
+        toast.success("Payment processed successfully!");
+        setShowPayModal(false);
+        // Reload data to show paid status
+        const res = await api.get(`/public/invoices/${id}`);
+        setData(res.data.data);
+    } catch (err) {
+        toast.error("Payment failed. Please try again.");
+    } finally {
+        setIsProcessing(false);
+    }
+  };
+
   return (
-    <div className="bg-white text-gray-800">
+    <div className="bg-white text-gray-800 min-h-screen">
       {/* Top Bar for Actions */}
-      <div className="bg-slate-900 text-white p-4 flex justify-between items-center no-print">
-        <div className="text-sm opacity-80">Viewing as Client</div>
-        <button onClick={() => window.print()} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-medium transition">
-           <Printer className="w-4 h-4" /> Print / Save PDF
-        </button>
+      <div className="bg-slate-900 text-white p-4 flex justify-between items-center no-print sticky top-0 z-40 shadow-md">
+        <div className="text-sm opacity-80 font-medium">Viewing as Client</div>
+        <div className="flex items-center gap-3">
+            {invoice.status !== 'paid' && (
+                <button 
+                    onClick={() => setShowPayModal(true)}
+                    className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-medium transition shadow-lg shadow-emerald-900/20"
+                >
+                    <CreditCard className="w-4 h-4" /> Pay Now
+                </button>
+            )}
+            <button onClick={() => window.print()} className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg font-medium transition">
+                <Printer className="w-4 h-4" /> Print / PDF
+            </button>
+        </div>
       </div>
+
+      {/* Payment Modal */}
+      {showPayModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-emerald-600" /> Secure Payment
+                    </h3>
+                    <button onClick={() => setShowPayModal(false)} className="text-gray-400 hover:text-gray-600">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <form onSubmit={handlePayment} className="p-6 space-y-5">
+                    <div className="text-center mb-6">
+                        <p className="text-gray-500 text-sm mb-1">Total Amount Due</p>
+                        <p className="text-3xl font-bold text-gray-900">${(invoice.total - (invoice.amountPaid || 0)).toFixed(2)}</p>
+                    </div>
+
+                    <div className="space-y-3">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Card Number</label>
+                            <div className="relative">
+                                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input 
+                                    type="text" 
+                                    placeholder="4242 4242 4242 4242" 
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
+                                    defaultValue="4242 4242 4242 4242"
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Expiry</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="MM/YY" 
+                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-center"
+                                    defaultValue="12/28"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">CVC</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="123" 
+                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-center"
+                                    defaultValue="123"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cardholder Name</label>
+                            <input 
+                                type="text" 
+                                placeholder="John Doe" 
+                                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                defaultValue="John Doe"
+                            />
+                        </div>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        disabled={isProcessing}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-emerald-900/20 transition flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
+                        {isProcessing ? 'Processing...' : 'Pay Now'}
+                    </button>
+                    
+                    <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1">
+                        <Lock className="w-3 h-3" /> Payments are secure and encrypted
+                    </p>
+                </form>
+            </div>
+        </div>
+      )}
 
       <div className="p-12 print:p-0">
         {/* Header */}

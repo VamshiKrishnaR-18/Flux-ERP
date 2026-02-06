@@ -100,23 +100,35 @@ export const ClientController = {
       userId,
       removed: false
     });
-
+    
     if (!client) {
       res.status(404);
       throw new Error('Client not found');
     }
 
-    if (!client.portalToken || rotate) {
-      client.portalToken = crypto.randomBytes(24).toString('hex');
-      await client.save();
+    // If rotate=true OR no token exists, generate new one
+    if (rotate || !client.portalToken) {
+        // Generate a random 32-char hex string
+        client.portalToken = crypto.randomBytes(16).toString('hex');
+        await client.save();
     }
 
-    res.json({ success: true, data: { token: client.portalToken } });
+    res.json({
+        success: true,
+        message: rotate ? "New portal link generated" : "Portal link retrieved",
+        data: {
+            token: client.portalToken,
+            url: `${process.env.VITE_APP_URL || 'http://localhost:5173'}/portal/${client.portalToken}`
+        }
+    });
   }),
 
   getOne: asyncHandler(async (req: Request, res: Response) => {
     const client = await ClientModel.findOne({ _id: req.params.id, userId: req.user?.id, removed: false });
-    if (!client) { res.status(404); throw new Error("Client not found"); }
+    if (!client) {
+      res.status(404);
+      throw new Error("Client not found");
+    }
     res.json({ success: true, data: client });
   }),
 

@@ -2,9 +2,11 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/axios';
 import { toast } from 'sonner';
 import { Search, ArrowUpDown, Plus, DollarSign, Calendar, Tag, Trash2, ChevronLeft, ChevronRight, Loader2, Download } from 'lucide-react';
+import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { useSortableData } from '../hooks/useSortableData';
 import { useDebounce } from '../hooks/useDebounce'; // ✅ Import Debounce
 import axios from 'axios';
+import { EmptyState } from '../components/EmptyState'; // ✅ Import
 
 interface Expense {
   _id: string;
@@ -14,10 +16,44 @@ interface Expense {
   category: string;
 }
 
+const expenseListStyles = StyleSheet.create({
+  page: { padding: 24, fontSize: 10, color: '#111', fontFamily: 'Helvetica' },
+  title: { fontSize: 16, fontWeight: 700, marginBottom: 12 },
+  tableHeader: { flexDirection: 'row', borderBottom: '1px solid #E5E7EB', paddingBottom: 6, marginBottom: 4 },
+  row: { flexDirection: 'row', paddingVertical: 4, borderBottom: '1px solid #F3F4F6' },
+  colDescription: { width: '36%' },
+  colCategory: { width: '22%' },
+  colDate: { width: '20%' },
+  colAmount: { width: '22%', textAlign: 'right' }
+});
+
+const ExpenseListPDF = ({ expenses }: { expenses: Expense[] }) => (
+  <Document>
+    <Page size="A4" style={expenseListStyles.page}>
+      <Text style={expenseListStyles.title}>Expenses</Text>
+      <View style={expenseListStyles.tableHeader}>
+        <Text style={expenseListStyles.colDescription}>Description</Text>
+        <Text style={expenseListStyles.colCategory}>Category</Text>
+        <Text style={expenseListStyles.colDate}>Date</Text>
+        <Text style={expenseListStyles.colAmount}>Amount</Text>
+      </View>
+      {expenses.map((expense) => (
+        <View key={expense._id} style={expenseListStyles.row}>
+          <Text style={expenseListStyles.colDescription}>{expense.description}</Text>
+          <Text style={expenseListStyles.colCategory}>{expense.category}</Text>
+          <Text style={expenseListStyles.colDate}>{new Date(expense.date).toLocaleDateString()}</Text>
+          <Text style={expenseListStyles.colAmount}>-{expense.amount.toFixed(2)}</Text>
+        </View>
+      ))}
+    </Page>
+  </Document>
+);
+
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ description: '', amount: '', date: new Date().toISOString().split('T')[0], category: 'Operational' });
 
@@ -108,6 +144,32 @@ export default function Expenses() {
     }
   };
 
+  const handleExportPdf = async () => {
+    setIsExportingPdf(true);
+    try {
+      const qs = debouncedSearch ? `&search=${encodeURIComponent(debouncedSearch)}` : '';
+      const res = await api.get(`/expenses?page=1&limit=10000${qs}`);
+      const allExpenses = res.data.data as Expense[];
+      const blob = await pdf(<ExpenseListPDF expenses={allExpenses} />).toBlob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `expenses-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('PDF exported');
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error) 
+        ? error.response?.data?.message 
+        : 'Failed to export PDF';
+      toast.error(message || 'Failed to export PDF');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="flex justify-between items-center mb-6 gap-4">
@@ -123,14 +185,22 @@ export default function Expenses() {
                     className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg outline-none" 
                 />
              </div>
-	            <button
-	              onClick={handleExportCsv}
-	              disabled={isExporting}
-	              className="bg-white border border-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition flex items-center gap-2 whitespace-nowrap disabled:opacity-60"
-	            >
-	              {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-	              Export CSV
-	            </button>
+            <button
+              onClick={handleExportPdf}
+              disabled={isExportingPdf}
+              className="bg-white border border-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition flex items-center gap-2 whitespace-nowrap disabled:opacity-60"
+            >
+              {isExportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Export PDF
+            </button>
+            <button
+              onClick={handleExportCsv}
+              disabled={isExporting}
+              className="bg-white border border-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition flex items-center gap-2 whitespace-nowrap disabled:opacity-60"
+            >
+              {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Export CSV
+            </button>
             <button onClick={() => setShowModal(true)} className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition flex items-center gap-2"><Plus className="w-4 h-4" /> Add Expense</button>
         </div>
       </div>
@@ -141,7 +211,13 @@ export default function Expenses() {
               <Loader2 className="animate-spin w-5 h-5" /> Loading expenses...
           </div>
         ) : expenses.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">No expenses found.</div>
+          <EmptyState 
+            title="No expenses found"
+            description="Track your business expenses here."
+            icon={DollarSign}
+            actionLabel="Add Expense"
+            onAction={() => setShowModal(true)}
+          />
         ) : (
           <>
             <table className="w-full text-left">

@@ -13,6 +13,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, pass: string) => Promise<void>;
   logout: () => void;
+  updateUser: (userData: User) => void;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -24,13 +25,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  const updateUser = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem('flux_user', JSON.stringify(userData));
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const storedUser = localStorage.getItem('flux_user');
         const token = localStorage.getItem('token');
         if (storedUser && token) {
-            setUser(JSON.parse(storedUser));
+            try {
+                const parsedUser = JSON.parse(storedUser);
+                if (parsedUser) {
+                    setUser(parsedUser);
+                }
+            } catch (e) {
+                console.error("Failed to parse user from storage", e);
+                // Clean up bad data
+                localStorage.removeItem('flux_user');
+            }
         }
       } catch (error) {
         console.error("Auth check failed", error);
@@ -44,10 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const { data } = await api.post('/auth/login', { email, password });
     if (data.success) {
-      setUser(data.user);
+      setUser(data.data);
       // ✅ CRITICAL FIX: Save token so axios interceptor works
       localStorage.setItem('token', data.token); 
-      localStorage.setItem('flux_user', JSON.stringify(data.user)); 
+      localStorage.setItem('flux_user', JSON.stringify(data.data)); 
     }
   };
 
@@ -60,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser, isLoading, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

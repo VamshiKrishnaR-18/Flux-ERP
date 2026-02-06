@@ -21,9 +21,14 @@ export const QuoteController = {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const search = req.query.search as string || ''; // 👈 Get Search
+    const clientId = req.query.clientId as string;
     const skip = (page - 1) * limit;
 
     const query: any = { createdBy: req.user?.id };
+
+    if (clientId) {
+        query.clientId = clientId;
+    }
 
     if (search) {
       const searchNum = Number(search);
@@ -33,20 +38,25 @@ export const QuoteController = {
       } 
       // 2. Search by Title
       else {
-        // We search Title OR Client Name using $or
-        // First, find matching clients
-        const clients = await ClientModel.find({
-            userId: req.user?.id,
-            removed: false,
-            name: { $regex: search, $options: 'i' }
-        }).select('_id');
-        
-        const clientIds = clients.map(c => c._id);
-
-        query.$or = [
-            { title: { $regex: search, $options: 'i' } }, // Match Title
-            { clientId: { $in: clientIds } }              // Match Client Name
-        ];
+        // If filtering by client, only search title
+        if (clientId) {
+             query.title = { $regex: search, $options: 'i' };
+        } else {
+            // We search Title OR Client Name using $or
+            // First, find matching clients
+            const clients = await ClientModel.find({
+                userId: req.user?.id,
+                removed: false,
+                name: { $regex: search, $options: 'i' }
+            }).select('_id');
+            
+            const clientIds = clients.map(c => c._id);
+    
+            query.$or = [
+                { title: { $regex: search, $options: 'i' } }, // Match Title
+                { clientId: { $in: clientIds } }              // Match Client Name
+            ];
+        }
       }
     }
 

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { InvoiceModel } from '../models/invoice.model';
 import { ClientModel } from '../models/client.model';
 import { ExpenseModel } from '../models/expense.model';
+import { ProductModel } from '../models/product.model';
 import { asyncHandler } from '../utils/asyncHandler'; // ✅ Import
 
 export const DashboardController = {
@@ -56,7 +57,7 @@ export const DashboardController = {
 			InvoiceModel.countDocuments(invoiceBaseMatch),
 			ClientModel.countDocuments({ userId, status: 'active', removed: { $ne: true } }),
 			InvoiceModel.find(invoiceBaseMatch)
-				.sort({ createdAt: -1 })
+				.sort({ date: -1 })
 				.limit(5)
 				.populate('clientId', 'name'),
 			InvoiceModel.aggregate([
@@ -200,5 +201,72 @@ export const DashboardController = {
 				topClients
       }
     });
-  })
+  }),
+  search: asyncHandler(async (req: Request, res: Response) => {
+		const userId = String(req.user?.id || '');
+		if (!userId) {
+			res.status(401);
+			throw new Error('Unauthorized');
+		}
+
+		const q = String(req.query.q || '').trim();
+		if (!q) {
+			res.json({ success: true, data: { clients: [], invoices: [], products: [] } });
+			return;
+		}
+
+		const clientQuery = {
+			userId,
+			removed: { $ne: true },
+			$or: [
+				{ name: { $regex: q, $options: 'i' } },
+				{ email: { $regex: q, $options: 'i' } },
+				{ phoneNumber: { $regex: q, $options: 'i' } }
+			]
+		};
+
+		const clients = await ClientModel.find(clientQuery)
+			.select('name email phoneNumber')
+			.limit(5)
+			.lean();
+
+		const searchNum = Number(q);
+		const invoiceQuery: any = { createdBy: userId, removed: { $ne: true } };
+		if (!isNaN(searchNum)) {
+			invoiceQuery.number = searchNum;
+		} else {
+			const matchingClients = await ClientModel.find({
+				userId,
+				removed: { $ne: true },
+				name: { $regex: q, $options: 'i' }
+			}).select('_id');
+			const clientIds = matchingClients.map(c => c._id);
+			if (clientIds.length > 0) {
+				invoiceQuery.clientId = { $in: clientIds };
+			} else {
+				invoiceQuery._id = null;
+			}
+		}
+
+		const invoices = await InvoiceModel.find(invoiceQuery)
+			.select('number invoicePrefix status total date clientId')
+			.populate('clientId', 'name')
+			.sort({ date: -1 })
+			.limit(5)
+			.lean();
+
+		const products = await ProductModel.find({
+			createdBy: userId,
+			$or: [
+				{ name: { $regex: q, $options: 'i' } },
+				{ sku: { $regex: q, $options: 'i' } }
+			]
+		})
+			.select('name sku price stock')
+			.sort({ createdAt: -1 })
+			.limit(5)
+			.lean();
+
+		res.json({ success: true, data: { clients, invoices, products } });
+	})
 };
