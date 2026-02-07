@@ -48,12 +48,12 @@ export default function Clients() {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [portalLoadingId, setPortalLoadingId] = useState<string | null>(null);
   
-  // ✅ Pagination & Search State
+  // Pagination & Search State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
   
-  // ⏳ Debounce Search: Wait 500ms after typing stops before calling API
+  
   const debouncedSearch = useDebounce(search, 500);
 
   // Modal State
@@ -63,7 +63,7 @@ export default function Clients() {
   const fetchClients = useCallback(async () => {
     setIsLoading(true);
     try {
-        // ✅ Server-side Pagination & Search
+        
         const url = `/clients?page=${page}&limit=10&search=${debouncedSearch}`;
         const { data } = await api.get(url);
         
@@ -78,7 +78,7 @@ export default function Clients() {
     }
   }, [page, debouncedSearch]);
 
-  // Trigger fetch when Page OR Search changes
+ 
   useEffect(() => {
     fetchClients();
   }, [fetchClients]);
@@ -203,7 +203,7 @@ export default function Clients() {
                         value={search}
                         onChange={(e) => {
                             setSearch(e.target.value);
-                            setPage(1); // Reset to page 1 on new search
+                            setPage(1);
                         }}
                         className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm transition-all"
                     />

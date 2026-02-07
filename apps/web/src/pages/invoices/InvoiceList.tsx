@@ -6,7 +6,7 @@ import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer
 import { toast } from 'sonner';
 
 import { type Invoice } from '@erp/types';
-import { EmptyState } from '../../components/EmptyState'; // ✅ Import
+import { EmptyState } from '../../components/EmptyState'; 
 
 const invoiceListStyles = StyleSheet.create({
   page: { padding: 24, fontSize: 10, color: '#111', fontFamily: 'Helvetica' },
@@ -61,7 +61,7 @@ export default function InvoiceList() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    // 1. Load Settings for Currency
+    
     api.get('/settings').then(res => {
        const curr = res.data.data?.currency;
        if (curr === 'EUR') setCurrencySymbol('€');
@@ -72,11 +72,11 @@ export default function InvoiceList() {
   }, []);
 
   useEffect(() => {
-    // 2. Fetch Invoices with Pagination
+    
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const { data } = await api.get(`/invoices?page=${page}&limit=10`); // limit=10 for better UI fit
+        const { data } = await api.get(`/invoices?page=${page}&limit=10`); 
         setInvoices(data.data);
         if (data.pagination) {
           setTotalPages(data.pagination.totalPages);

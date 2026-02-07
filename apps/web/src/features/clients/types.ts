@@ -2,9 +2,9 @@ export interface Client {
   _id: string;
   name: string;
   email: string;
-  phoneNumber?: string; // Ensure this matches backend (backend uses phoneNumber, sometimes just phone)
+  phoneNumber?: string; 
   status: 'active' | 'inactive';
-  address?: string;     // ✅ FIX: Add this line
+  address?: string;     
   removed?: boolean;
   createdAt?: string;
 }

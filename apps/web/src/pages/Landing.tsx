@@ -30,17 +30,18 @@ export default function Landing() {
               transition={{ duration: 0.6 }}
             >
               <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight mb-6">
-                Business Management <br />
+                Flux ERP/CRM
+                <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                  Reimagined
+                  Demo
                 </span>
               </h1>
               <p className="text-xl text-gray-600 mb-10 leading-relaxed">
-                Streamline your operations, manage clients, and track finances in one powerful, intuitive platform designed for growth.
+                Portfolio ERP/CRM covering clients, invoices, quotes, expenses, products, dashboards, and reports. Built to demonstrate a complete workflow, data modeling, and UI polish.
               </p>
 	              <div className="flex flex-col sm:flex-row justify-center gap-4">
-	                <Link to="/register" className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 md:text-xl shadow-lg shadow-blue-600/30 transition-all hover:scale-105">
-	                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                <Link to="/login" className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 md:text-xl shadow-lg shadow-blue-600/30 transition-all hover:scale-105">
+                  Explore Demo <ArrowRight className="ml-2 h-5 w-5" />
 	                </Link>
 	                <Link to="/login" className="inline-flex items-center justify-center px-8 py-4 border border-gray-300 text-lg font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 md:text-xl transition-all hover:scale-105">
 	                  Sign in
@@ -74,13 +75,12 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features Section */}
       <section id="features" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-base font-semibold text-blue-600 tracking-wide uppercase">Features</h2>
+            <h2 className="text-base font-semibold text-blue-600 tracking-wide uppercase">Project Modules</h2>
             <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Everything you need to run your business
+              Core flows implemented in the demo
             </p>
           </div>
 
@@ -94,24 +94,24 @@ export default function Landing() {
 	            {[
 	              {
 	                icon: <BarChart2 className="h-8 w-8 text-white" />,
-	                title: "Dashboard & insights",
-	                desc: "See revenue, expenses and trends at a glance with a clear visual dashboard.",
-	                color: "bg-blue-500",
-	                accent: "via-blue-500"
+                title: "Dashboard & insights",
+                desc: "Revenue, expenses, trends, and KPIs presented with charts and summary cards.",
+                color: "bg-blue-500",
+                accent: "via-blue-500"
 	              },
 	              {
 	                icon: <Users className="h-8 w-8 text-white" />,
-	                title: "Clients & CRM",
-	                desc: "Keep all of your client details, notes and activity in one simple view.",
-	                color: "bg-indigo-500",
-	                accent: "via-indigo-500"
+                title: "Clients & CRM",
+                desc: "Client profiles, portal links, and activity views with searchable lists.",
+                color: "bg-indigo-500",
+                accent: "via-indigo-500"
 	              },
 	              {
 	                icon: <FileText className="h-8 w-8 text-white" />,
-	                title: "Invoices & quotes",
-	                desc: "Create invoices and quotes in seconds, send them, and track what’s outstanding.",
-	                color: "bg-purple-500",
-	                accent: "via-purple-500"
+                title: "Invoices & quotes",
+                desc: "Create, edit, and export PDFs with status tracking and payments.",
+                color: "bg-purple-500",
+                accent: "via-purple-500"
 	              }
 	            ].map((feature, index) => (
               <motion.div 
@@ -133,22 +133,21 @@ export default function Landing() {
         </div>
       </section>
 
-	      {/* Trust / About Section */}
 	      <section id="about" className="py-20 bg-gray-50 border-y border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-3xl font-extrabold text-gray-900 mb-6">
-                Enterprise-grade security for everyone.
+                Project overview
               </h2>
               <p className="text-lg text-gray-600 mb-8">
-                We take data security seriously. Your information is encrypted, backed up, and protected by industry-leading standards.
+                A full-stack ERP/CRM demo with secure auth, shared types, and a realistic data model for business operations. Built for portfolio review and technical discussions.
               </p>
 	              <ul className="space-y-4">
 	                {[
-	                  "Secure sign-in with token-based authentication",
-	                  "Role-based access for admins and users",
-	                  "Built on a modern, managed database"
+                  "JWT-based authentication and protected routes",
+                  "Client, invoice, quote, expense, and product workflows",
+                  "Exports via PDF and CSV for real-world use cases"
 	                ].map((item, i) => (
 	                  <li key={i} className="flex items-center text-gray-700">
 	                    <Shield className="h-5 w-5 text-green-500 mr-3" />
@@ -161,25 +160,25 @@ export default function Landing() {
 	              <div className="absolute -inset-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl transform rotate-2" />
 	              <div className="relative bg-white p-8 rounded-xl shadow-lg">
 	                <h3 className="text-sm font-semibold text-gray-900 tracking-wide uppercase mb-4">
-	                  What you can manage
+                  Modules included
 	                </h3>
 	                <ul className="space-y-3 text-sm text-gray-600">
 	                  <li className="flex items-center justify-between">
-	                    <span>Clients & contacts</span>
+                    <span>Clients & contacts</span>
 	                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-xs font-medium text-blue-700">
-	                      CRM
+                      CRM
 	                    </span>
 	                  </li>
 	                  <li className="flex items-center justify-between">
-	                    <span>Invoices & quotes</span>
+                    <span>Invoices & quotes</span>
 	                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-xs font-medium text-emerald-700">
-	                      Billing
+                      Billing
 	                    </span>
 	                  </li>
 	                  <li className="flex items-center justify-between">
-	                    <span>Expenses & cash flow</span>
+                    <span>Expenses & cash flow</span>
 	                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-xs font-medium text-amber-700">
-	                      Finance
+                      Finance
 	                    </span>
 	                  </li>
 	                </ul>
@@ -189,17 +188,69 @@ export default function Landing() {
         </div>
       </section>
 
-	      {/* CTA Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-base font-semibold text-blue-600 tracking-wide uppercase">Tech Used</h2>
+            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+              Technologies powering the demo
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">Frontend</h3>
+              <div className="flex flex-wrap gap-2">
+                {["React 19", "Vite", "Tailwind", "React Query", "RHF + Zod", "Recharts", "React PDF"].map((item) => (
+                  <span key={item} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-medium text-gray-700">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">Backend</h3>
+              <div className="flex flex-wrap gap-2">
+                {["Node 24", "Express", "Serverless", "JWT Auth", "Mongoose"].map((item) => (
+                  <span key={item} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-medium text-gray-700">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">Infrastructure</h3>
+              <div className="flex flex-wrap gap-2">
+                {["AWS Lambda", "API Gateway", "MongoDB Atlas"].map((item) => (
+                  <span key={item} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-medium text-gray-700">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">Tooling</h3>
+              <div className="flex flex-wrap gap-2">
+                {["Turborepo", "TypeScript", "ESLint", "Vitest", "Jest"].map((item) => (
+                  <span key={item} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-medium text-gray-700">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
 	      <section className="py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-blue-600 rounded-3xl p-12 text-center text-white shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-            <h2 className="text-3xl font-extrabold mb-4 relative z-10">Ready to get started?</h2>
+            <h2 className="text-3xl font-extrabold mb-4 relative z-10">Explore the technical demo</h2>
 	            <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto relative z-10">
-	              Join teams that use FluxERP to manage clients, invoices, quotes and expenses in one place.
+              This is a showcase application highlighting architecture and implementation decisions across the stack.
 	            </p>
-	            <Link to="/register" className="relative z-10 inline-block bg-white text-blue-600 font-bold py-4 px-10 rounded-lg shadow-lg hover:bg-gray-50 transition-colors transform hover:-translate-y-1">
-	              Create Account
+            <Link to="/login" className="relative z-10 inline-block bg-white text-blue-600 font-bold py-4 px-10 rounded-lg shadow-lg hover:bg-gray-50 transition-colors transform hover:-translate-y-1">
+              View Demo
 	            </Link>
           </div>
         </div>

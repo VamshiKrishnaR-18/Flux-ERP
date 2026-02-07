@@ -388,7 +388,7 @@ function StatCard({ title, value, icon: Icon, iconColor, bgColor, trend, trendUp
 function AgingRow({ label, bucket, color }: { label: string; bucket?: { amount: number; count: number }; color: string }) {
     const amount = bucket?.amount || 0;
     const count = bucket?.count || 0;
-    const max = 5000; // Arbitrary max for progress bar visual
+    const max = 5000;
     const percent = Math.min((amount / max) * 100, 100);
 
     return (

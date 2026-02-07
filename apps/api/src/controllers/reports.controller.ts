@@ -4,7 +4,7 @@ import { ExpenseModel } from '../models/expense.model';
 import { asyncHandler } from '../utils/asyncHandler';
 
 export const ReportsController = {
-  // Monthly Revenue vs Profit (Last 12 Months)
+  
   getRevenueVsExpenses: asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) { res.status(401); throw new Error('Unauthorized'); }
@@ -48,7 +48,7 @@ export const ReportsController = {
       ])
     ]);
 
-    // Merge into 1-12 array
+    
     const data = Array.from({ length: 12 }, (_, i) => {
       const month = i + 1;
       const rev = revenue.find(r => r._id === month)?.total || 0;

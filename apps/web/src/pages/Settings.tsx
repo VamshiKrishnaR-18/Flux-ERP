@@ -56,11 +56,11 @@ export default function Settings() {
     }
   };
 
-  // 🔐 Password Change Logic
+  // Password Change Logic
   const [passData, setPassData] = useState({ oldPassword: '', newPassword: '' });
   const [passLoading, setPassLoading] = useState(false);
 
-  // 👤 Profile Update Logic
+  //  Profile Update Logic
   const [profileData, setProfileData] = useState({ name: user?.name || '', email: user?.email || '' });
   const [profileLoading, setProfileLoading] = useState(false);
 
@@ -171,7 +171,7 @@ export default function Settings() {
             <div className="flex-1 w-full">
                 <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                     
-                    {/* --- MY PROFILE TAB --- */}
+                    {/* MY PROFILE TAB */}
                     {activeTab === 'profile' && (
                         <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                             <div className="p-6 border-b border-gray-100 bg-gray-50/50">
@@ -368,7 +368,7 @@ export default function Settings() {
                         </div>
                     )}
 
-                    {/* Footer Actions (Only for Settings Forms) */}
+                    {/* Footer Actions */}
                     {activeTab !== 'security' && activeTab !== 'profile' && (
                         <div className="px-8 py-5 bg-gray-50 border-t border-gray-200 flex justify-end">
                             <button 

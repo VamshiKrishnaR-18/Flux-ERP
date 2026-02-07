@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// 1. AUTH 🔐
+// 1. AUTH
 export const RegisterSchema = z.object({
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Invalid email address"),
@@ -17,14 +17,14 @@ export type RegisterDTO = z.infer<typeof RegisterSchema>;
 export type LoginDTO = z.infer<typeof LoginSchema>;
 
 
-// 2. CLIENTS 👥 (✅ FIXED: Added 'removed')
+// 2. CLIENTS 
 export const ClientSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   phoneNumber: z.string().optional(),
   status: z.enum(['active', 'inactive']).default('active'),
   address: z.string().optional(),
-  removed: z.boolean().optional().default(false), // 👈 Added for Soft Delete
+  removed: z.boolean().optional().default(false), 
 });
 export type ClientDTO = z.infer<typeof ClientSchema>;
 
@@ -34,12 +34,12 @@ export interface Client extends ClientDTO {
 }
 
 
-// ✅ ADD: User Definition
+// User Definition
 export const UserSchema = z.object({
   id: z.string().optional(),
   name: z.string(),
   email: z.string().email(),
-  password: z.string().optional(), // Optional for sanitized returns
+  password: z.string().optional(), 
   role: z.enum(['admin', 'user']).default('user'),
   createdAt: z.date().optional(),
   resetPasswordToken: z.string().optional(),
@@ -48,7 +48,7 @@ export const UserSchema = z.object({
 export type UserType = z.infer<typeof UserSchema>;
 
 
-// 3. INVOICES 🧾 (✅ FIXED: Added 'removed')
+// 3. INVOICES 
 export const InvoiceItemSchema = z.object({
   productId: z.string().optional(),
   itemName: z.string().min(1, "Item name is required"),
@@ -95,12 +95,12 @@ export interface Invoice extends CreateInvoiceDTO {
   createdAt: string;
   updatedAt: string;
   amountPaid?: number;
-  removed?: boolean; // 👈 Added for Soft Delete
+  removed?: boolean; 
   auditLogs?: InvoiceAuditLog[];
 }
 
 
-// 4. PAYMENTS 💰
+// 4. PAYMENTS 
 export const PaymentSchema = z.object({
   amount: z.number().min(0.01, "Amount must be greater than 0"),
   date: z.string().or(z.date()),
@@ -110,7 +110,7 @@ export const PaymentSchema = z.object({
 export type PaymentDTO = z.infer<typeof PaymentSchema>;
 
 
-// 5. PRODUCTS 📦
+// 5. PRODUCTS 
 export const ProductSchema = z.object({
   name: z.string().min(2, "Product name is required"),
   description: z.string().optional(),
@@ -147,7 +147,7 @@ export interface Expense extends CreateExpenseDTO {
 }
 
 
-// 7. QUOTES 💬
+// 7. QUOTES 
 export const QuoteSchema = CreateInvoiceSchema.extend({
   title: z.string().min(1, "Title is required"), 
   status: z.enum(['draft', 'sent', 'accepted', 'rejected', 'converted']).default('draft'),
@@ -164,7 +164,7 @@ export interface Quote extends CreateQuoteDTO {
 }
 
 
-// 8. SETTINGS ⚙️
+// 8. SETTINGS 
 export const SettingsSchema = z.object({
   companyName: z.string().min(1, "Company Name is required"),
   companyEmail: z.string().email("Invalid email").optional().or(z.literal('')),
@@ -174,7 +174,7 @@ export const SettingsSchema = z.object({
   currency: z.string().default('USD'),
   taxRate: z.coerce.number().min(0).default(0), 
   invoicePrefix: z.string().default('INV-'),
-  // ✅ NEW: Add configuration for starting number
+  
   invoiceStartNumber: z.coerce.number().min(1).default(1000), 
   defaultPaymentTerms: z.coerce.number().min(0).default(14), 
   defaultNotes: z.string().optional().default('Thank you for your business!'),
@@ -182,7 +182,7 @@ export const SettingsSchema = z.object({
 
 export type SettingsDTO = z.infer<typeof SettingsSchema>;
 
-// ✅ GLOBAL CONSTANTS
+// GLOBAL CONSTANTS
 export const CURRENCIES = [
   { code: 'USD', symbol: '$', label: 'US Dollar ($)' },
   { code: 'EUR', symbol: '€', label: 'Euro (€)' },

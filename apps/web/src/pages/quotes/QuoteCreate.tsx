@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { api } from '../../lib/axios';
 import { toast } from 'sonner';
-import { AsyncSelect } from '../../components/AsyncSelect'; // 👈 Import AsyncSelect
+import { AsyncSelect } from '../../components/AsyncSelect';
 import type { Client, Product, CreateQuoteDTO } from '@erp/types';
 import axios from 'axios';
 
@@ -32,10 +32,10 @@ export default function QuoteCreate() {
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const items = watch("items");
   
-  // Safe math for total calculation
+ 
   const subTotal = (items || []).reduce((acc, item) => acc + ((item.quantity || 0) * (item.price || 0)), 0);
 
-  // ✅ SERVER-SIDE SEARCH FETCHERS
+  
   const fetchClients = async (q: string): Promise<Client[]> => {
     const res = await api.get(`/clients?search=${q}&limit=20`);
     return res.data.data;
@@ -46,7 +46,7 @@ export default function QuoteCreate() {
     return res.data.data;
   };
 
-  // ✅ AUTO-FILL PRODUCT DETAILS
+  
   const handleProductSelect = async (index: number, id: string) => {
     if (!id) return;
     try {
@@ -55,7 +55,7 @@ export default function QuoteCreate() {
         setValue(`items.${index}.productId`, id);
         setValue(`items.${index}.itemName`, p.name);
         setValue(`items.${index}.price`, p.price);
-        setValue(`items.${index}.quantity`, 1); // Default to 1
+        setValue(`items.${index}.quantity`, 1); 
     } catch (e) { 
         console.error(e);
         toast.error("Failed to load product details");
@@ -88,7 +88,7 @@ export default function QuoteCreate() {
                         <input {...register("title")} className="w-full border p-2 rounded" placeholder="e.g. Website Redesign" required />
                     </div>
                     <div>
-                        {/* ✅ ASYNC CLIENT SELECT */}
+                        {/* ASYNC CLIENT SELECT */}
                         <AsyncSelect
                             label="Client"
                             fetcher={fetchClients}
@@ -105,7 +105,7 @@ export default function QuoteCreate() {
                     {fields.map((field, index) => (
                         <div key={field.id} className="flex gap-2 items-start bg-gray-50 p-3 rounded-lg border border-gray-100">
                             <div className="flex-1 space-y-2">
-                                {/* ✅ ASYNC PRODUCT SELECT */}
+                                {/* ASYNC PRODUCT SELECT */}
                                 <AsyncSelect
                                     label=""
                                     fetcher={fetchProducts}

@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 interface PaymentModalProps {
   invoiceId: string;
-  totalDue: number; // To show how much is left
+  totalDue: number; 
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -13,9 +13,14 @@ interface PaymentModalProps {
 
 export default function PaymentModal({ invoiceId, totalDue, isOpen, onClose, onSuccess }: PaymentModalProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    amount: string;
+    date: string;
+    method: 'Bank Transfer' | 'Cash' | 'Check' | 'Credit Card (Offline)' | 'Other';
+    notes: string;
+  }>({
     amount: '',
-    date: new Date().toISOString().split('T')[0], // Today YYYY-MM-DD
+    date: new Date().toISOString().split('T')[0], 
     method: 'Bank Transfer',
     notes: ''
   });
@@ -90,7 +95,7 @@ export default function PaymentModal({ invoiceId, totalDue, isOpen, onClose, onS
               <label className="block text-sm font-medium text-gray-700 mb-1">Method</label>
               <select 
                 value={formData.method}
-                onChange={e => setFormData({...formData, method: e.target.value})}
+                onChange={e => setFormData({...formData, method: e.target.value as typeof formData.method})}
                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
               >
                 <option>Bank Transfer</option>

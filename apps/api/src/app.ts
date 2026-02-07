@@ -29,12 +29,11 @@ import { requireAdmin } from './middleware/admin.middleware';
 
 const app = express();
 
-// --- 1. Global Middleware ---
 
-// ✅ SECURITY HEADERS (Always First)
+// SECURITY HEADERS
 app.use(helmet());
 
-// ✅ LOGGING
+// LOGGING
 const morganFormat = ':method :url :status :response-time ms';
 app.use(morgan(morganFormat, {
   stream: {
@@ -50,23 +49,23 @@ app.use(morgan(morganFormat, {
   },
 }));
 
-// ✅ CORS (UPDATED: Allows Localhost + Production + ALL Vercel Previews)
+// CORS
 app.use(cors({
   origin: (origin, callback) => {
-    // 1. Allow requests with no origin (like Postman/Mobile Apps)
+    
     if (!origin) return callback(null, true);
 
-    // 2. Define Allowed Rules (Strings or Regex)
+    
     const allowedOrigins = [
-      'http://localhost:5173',                  // Local Frontend
-      'http://localhost:3000',                  // Local Testing
-      /\.vercel\.app$/                          // ✅ REGEX: Matches ANY Vercel deployment
+      'http://localhost:5173',                  
+      'http://localhost:3000',                  
+      /\.vercel\.app$/                          // Matches ANY Vercel deployment
     ];
 
-    // 3. Check if the origin matches any rule
+    
     const isAllowed = allowedOrigins.some(rule => {
       if (rule instanceof RegExp) return rule.test(origin);
-      return rule === origin; // Strict string match
+      return rule === origin; 
     });
 
     if (isAllowed) {
@@ -76,20 +75,20 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, // Required for Cookies
+  credentials: true, 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// ✅ BODY PARSING
+// BODY PARSING
 app.use(express.json());
 app.use(cookieParser() as unknown as RequestHandler);
 
-// ✅ SECURITY SANITIZATION
+// SECURITY SANITIZATION
 app.use(mongoSanitize() as unknown as RequestHandler);
 app.use(hpp() as unknown as RequestHandler);
 
-// ✅ RATE LIMITING
+// RATE LIMITING
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   limit: 100, 
@@ -97,13 +96,13 @@ const limiter = rateLimit({
 });
 app.use(limiter as unknown as RequestHandler);
 
-// ✅ CACHE CONTROL
+// CACHE CONTROL
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   next();
 });
 
-// --- 2. Routes ---
+// Routes
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: "Flux ERP API is Online", timestamp: new Date().toISOString() });
 });
@@ -116,7 +115,7 @@ const apiV1 = express.Router();
 
 // Public Routes
 apiV1.use('/auth', authRoutes);
-apiV1.use('/public', publicRoutes); // Public Invoice Links
+apiV1.use('/public', publicRoutes); 
 
 // Protected Routes
 apiV1.use('/clients', authMiddleware as unknown as RequestHandler, clientRoutes);
@@ -125,7 +124,7 @@ apiV1.use('/dashboard', authMiddleware as unknown as RequestHandler, dashboardRo
 apiV1.use('/products', authMiddleware as unknown as RequestHandler, productRoutes);
 apiV1.use('/quotes', authMiddleware as unknown as RequestHandler, quoteRoutes);
 
-// 🛡️ ADMIN ROUTES
+// ADMIN ROUTES
 apiV1.use('/expenses', 
   authMiddleware as unknown as RequestHandler, 
   requireAdmin as unknown as RequestHandler, 
@@ -142,7 +141,7 @@ apiV1.use('/settings',
 // Mount API V1
 app.use('/api/v1', apiV1);
 
-// --- 3. Global Error Handler (MUST BE LAST) ---
+// Global Error Handler
 app.use(errorHandler as unknown as RequestHandler);
 
 export default app;

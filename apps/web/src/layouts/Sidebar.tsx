@@ -6,7 +6,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 
 export default function Sidebar() {
-  const { logout, user } = useAuth(); // 👈 Get user from hook
+  const { logout, user } = useAuth(); 
 
   const LINKS = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -14,8 +14,8 @@ export default function Sidebar() {
     { to: '/products', label: 'Products', icon: Package },
     { to: '/invoices', label: 'Invoices', icon: FileText },
     { to: '/quotes', label: 'Quotes', icon: FileCode },
-    { to: '/reports', label: 'Reports', icon: PieChart }, // ✅ Reports
-    // 🛡️ Hide these from non-admins
+    { to: '/reports', label: 'Reports', icon: PieChart },
+  
     ...(user?.role === 'admin' ? [
         { to: '/expenses', label: 'Expenses', icon: Receipt },
         { to: '/settings', label: 'Settings', icon: Settings },
@@ -28,7 +28,7 @@ export default function Sidebar() {
         <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
           Flux ERP
         </h1>
-        {/* Optional: Show role badge */}
+        
         <span className="text-xs uppercase font-bold text-gray-400 tracking-wider">
             {user?.role} Workspace
         </span>

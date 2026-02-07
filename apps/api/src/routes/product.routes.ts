@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { ProductController } from '../controllers/product.controller';
-import { authMiddleware } from '../middleware/auth.middleware'; // Ensure you import your auth middleware
+import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.use(authMiddleware); // Protect all routes
+router.use(authMiddleware);
 
 router.get('/', ProductController.getAll);
 router.get('/:id', ProductController.getOne);

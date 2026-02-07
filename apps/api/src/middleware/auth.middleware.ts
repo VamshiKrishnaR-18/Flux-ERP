@@ -10,11 +10,11 @@ interface TokenPayload {
 export const authMiddleware: RequestHandler = (req, res, next) => {
   let token;
 
-  // 1. Check Header (Bearer token)
+  
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     token = req.headers.authorization.split(" ")[1];
   } 
-  // 2. Check Cookie (New Secure Way)
+  
   else if (req.cookies.token) {
     token = req.cookies.token;
   }

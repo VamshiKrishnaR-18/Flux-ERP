@@ -10,8 +10,7 @@ export interface Invoice {
   _id: string;
   number: number;
   year: number;
-  clientId: string | { _id: string; name: string }; // Can be ID or populated object
-  date: string;
+  clientId: string | { _id: string; name: string }; 
   expiredDate: string;
   items: InvoiceItem[];
   subTotal: number;

@@ -4,7 +4,7 @@ import { api } from '../../lib/axios';
 import { toast } from 'sonner';
 import { InvoicePDF } from '../../features/invoices/components/InvoicePDF';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { ArrowLeft, Printer, Pencil, Download, CreditCard, X, Link as LinkIcon } from 'lucide-react'; // ✅ Import LinkIcon
+import { ArrowLeft, Printer, Pencil, Download, CreditCard, X, Link as LinkIcon } from 'lucide-react'; 
 import type { Invoice, SettingsDTO } from '@erp/types';
 import axios from 'axios';
 
@@ -14,7 +14,7 @@ export default function InvoiceView() {
   
   // Data State
   const [invoice, setInvoice] = useState<Invoice | null>(null);
-  const [settings, setSettings] = useState<SettingsDTO | null>(null);
+  const [settings, setSettings] = useState<SettingsDTO | null>(null)
   const [isLoading, setIsLoading] = useState(true);
 
   // Payment Modal State
@@ -71,9 +71,9 @@ export default function InvoiceView() {
     }
   };
 
-  // ✅ Share Link Logic
+  
   const copyPublicLink = () => {
-    // Uses the new Public Route: /p/invoice/:id
+    
     const url = `${window.location.origin}/p/invoice/${id}`;
     navigator.clipboard.writeText(url);
     toast.success("Public link copied to clipboard!");
@@ -101,7 +101,7 @@ export default function InvoiceView() {
           
           <div className="flex gap-3">
              
-             {/* ✅ NEW: Share Button */}
+             {/* Share Button */}
              <button 
                 onClick={copyPublicLink}
                 className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2 font-medium transition-colors"
@@ -110,7 +110,7 @@ export default function InvoiceView() {
                 <LinkIcon className="w-4 h-4" /> Share
              </button>
 
-             {/* Record Payment Button (Hidden if Paid) */}
+             {/* Record Payment Button  */}
              {!isPaid && (
                 <button 
                     onClick={() => {

@@ -10,7 +10,7 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
   res.status(status).json({
     success: false,
     message,
-    // Only show stack trace in development mode for safety
+    
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 };

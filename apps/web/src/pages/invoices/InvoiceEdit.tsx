@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/axios';
 import { toast } from 'sonner';
-import { InvoiceForm } from '../../features/invoices/components/InvoiceForm'; // 👈 Import reusable form
+import { InvoiceForm } from '../../features/invoices/components/InvoiceForm'; 
 import { type CreateInvoiceDTO } from "@erp/types";
 import { Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -19,12 +19,12 @@ export default function InvoiceEdit() {
         const { data } = await api.get(`/invoices/${id}`);
         const inv = data.data;
         
-        // Transform API data to Form Data
+        
         setInitialData({
             ...inv,
-            // 💡 Important: Helper for AsyncSelect to show name instantly
+            
             clientName: inv.clientId?.name, 
-            clientId: inv.clientId?._id, // Extract ID
+            clientId: inv.clientId?._id, 
             date: new Date(inv.date).toISOString().split('T')[0],
             expiredDate: new Date(inv.expiredDate).toISOString().split('T')[0]
         });
@@ -60,7 +60,7 @@ export default function InvoiceEdit() {
     <div className="min-h-screen bg-gray-50 pb-12">
       <main className="max-w-5xl mx-auto p-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Edit Invoice #{initialData.number}</h1>
-        {/* ✅ Use the reusable component with initial data */}
+        
         <InvoiceForm 
             initialValues={initialData} 
             onSubmit={handleSubmit} 

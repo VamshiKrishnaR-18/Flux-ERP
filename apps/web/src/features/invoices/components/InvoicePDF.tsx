@@ -1,7 +1,7 @@
 import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
 import type { Invoice, InvoiceItem, SettingsDTO } from '@erp/types';
 
-// Register a standard font (optional, helps with currency symbols)
+
 Font.register({
   family: 'Helvetica',
   fonts: [{ src: 'https://fonts.gstatic.com/s/helvetica/v1/0.ttf' }]
@@ -47,7 +47,7 @@ export const InvoicePDF = ({ invoice, settings }: InvoicePDFProps) => {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          {/* 2. Use Dynamic Settings 👇 */}
+          {/* 2. Use Dynamic Settings  */}
           <Text style={styles.logo}>{settings?.companyName || 'My Company'}</Text>
           <Text style={{ marginTop: 4, color: '#666' }}>{settings?.companyAddress}</Text>
           <Text style={{ color: '#666' }}>{settings?.companyEmail}</Text>

@@ -12,7 +12,7 @@ export const useSortableData = <T>(items: T[], config: SortConfig | null = null)
     const sortableItems = [...items];
     if (sortConfig !== null) {
       sortableItems.sort((a: T, b: T) => {
-        // Handle nested properties (e.g. 'client.name')
+        
         const getValue = (obj: T, path: string) => {
            return path.split('.').reduce((o: unknown, i) => (o ? (o as Record<string, unknown>)[i] : null), obj);
         };

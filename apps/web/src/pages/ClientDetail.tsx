@@ -81,7 +81,7 @@ export default function ClientDetail() {
                     </div>
                     
                     <div className="flex gap-3 w-full md:w-auto">
-                        {/* Future Actions: Edit Client */}
+                    
                     </div>
                 </div>
             </div>

@@ -37,7 +37,7 @@ export default function LandingLayout({ children }: { children: ReactNode }) {
 	              FluxERP helps you manage clients, invoices, quotes and expenses in a single, simple workspace.
 	            </p>
 	            <p className="text-sm text-gray-400">
-	              &copy; 2024 FluxERP. All rights reserved.
+	              &copy; 2026 FluxERP.
 	            </p>
 	          </div>
 	        </div>

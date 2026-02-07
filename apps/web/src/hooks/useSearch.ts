@@ -9,7 +9,7 @@ export const useSearch = <T>(items: T[], searchKeys: string[]) => {
 
     return items.filter((item) => {
       return searchKeys.some((key) => {
-        // Handle nested keys (e.g. "clientId.name")
+        
         const value = key.split('.').reduce((obj: unknown, k) => (obj as Record<string, unknown>)?.[k], item);
         if (value === null || value === undefined) return false;
         return String(value).toLowerCase().includes(lowerQuery);

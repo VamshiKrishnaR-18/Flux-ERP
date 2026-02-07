@@ -1,24 +1,24 @@
 import nodemailer from 'nodemailer';
 import { config } from '../config/env';
 
-// 1. Setup Transporter (Generic SMTP for Ethereal/Gmail)
+
 const transporter = nodemailer.createTransport({
   host: config.smtpHost,
   port: config.smtpPort,
-  secure: false, // true for 465, false for other ports
+  secure: false, 
   auth: {
-    user: config.smtpUser, // Defined in .env
-    pass: config.smtpPass  // Defined in .env
+    user: config.smtpUser, 
+    pass: config.smtpPass  
   }
 });
 
 export const EmailService = {
   
-  // 📩 Send Invoice
+  
   sendInvoice: async (invoice: any, client: any) => {
     try {
       const info = await transporter.sendMail({
-        from: `"Flux ERP" <${config.smtpUser}>`, // Sender address
+        from: `"Flux ERP" <${config.smtpUser}>`, 
         to: client.email,
         subject: `Invoice #${invoice.number} from Flux ERP`,
         html: `
@@ -35,7 +35,7 @@ export const EmailService = {
       });
 
       console.log("✅ Email sent:", info.messageId);
-      // 🌟 MAGIC LINE: Logs the URL to view the email in browser
+     
       console.log("🔗 Preview URL:", nodemailer.getTestMessageUrl(info)); 
       
       return true;
@@ -45,7 +45,7 @@ export const EmailService = {
     }
   },
 
-  // 💬 Send Quote
+  
   sendQuote: async (quote: any, client: any) => {
     try {
       const info = await transporter.sendMail({
@@ -67,7 +67,7 @@ export const EmailService = {
       });
 
       console.log("✅ Quote Email sent:", info.messageId);
-      // 🌟 MAGIC LINE
+      
       console.log("🔗 Preview URL:", nodemailer.getTestMessageUrl(info));
 
       return true;
@@ -77,7 +77,7 @@ export const EmailService = {
     }
   },
 
-  // 🔐 Password Reset
+  //  Password Reset
   sendPasswordReset: async (email: string, resetUrl: string) => {
     try {
       const info = await transporter.sendMail({

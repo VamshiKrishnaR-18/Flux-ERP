@@ -16,7 +16,7 @@ export const ProductService = {
       const quantityChange = item.quantity * multiplier;
       let updatedProduct;
 
-      // 1. Try to find by ID (Most Reliable)
+      
       if (item.productId) {
         const idQuery = userId
           ? { _id: item.productId, createdBy: userId }
@@ -28,7 +28,7 @@ export const ProductService = {
         );
       }
 
-      // 2. Fallback: Find by Name
+      
       if (!updatedProduct && item.itemName && userId) {
         const cleanName = item.itemName.trim();
         updatedProduct = await ProductModel.findOneAndUpdate(
@@ -38,7 +38,7 @@ export const ProductService = {
         );
       }
 
-      // Log result
+      
       if (updatedProduct) {
         console.log(`✅ ${action.toUpperCase()}: "${updatedProduct.name}" stock now ${updatedProduct.stock}`);
       } else {

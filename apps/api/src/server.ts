@@ -19,12 +19,12 @@ const startServer = async () => {
   await connectDB();
   
   const server = app.listen(config.port, () => {
-    // ✅ FIX: Changed 'config.env' to 'config.nodeEnv'
+    
     logger.info(`🚀 Server running in ${config.nodeEnv} mode on port ${config.port}`);
     logger.info(`📚 Swagger Docs available at http://localhost:${config.port}/api-docs`);
   });
 
-  // GRACEFUL SHUTDOWN
+  
   const shutdown = async () => {
     logger.info('🛑 SIGTERM/SIGINT received. Shutting down gracefully...');
     server.close(() => {

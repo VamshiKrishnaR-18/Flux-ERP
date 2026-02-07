@@ -24,7 +24,7 @@ export const DashboardCharts = ({ revenueData, statusData, totalInvoices }: Dash
         
         {/* WRAPPER DIV */}
         <div className="relative w-full h-[300px]" style={{ minHeight: '300px' }}>
-          {/* ✅ FIX: Added minWidth={0} to prevent negative width errors */}
+          
           <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <PieChart>
               <Pie 
@@ -63,7 +63,7 @@ export const DashboardCharts = ({ revenueData, statusData, totalInvoices }: Dash
 
         {/* WRAPPER DIV */}
         <div className="w-full h-[300px]" style={{ minHeight: '300px' }}>
-          {/* ✅ FIX: Added minWidth={0} */}
+          
           <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>

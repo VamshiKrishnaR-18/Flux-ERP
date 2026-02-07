@@ -7,7 +7,7 @@ import { SettingsModel } from '../models/settings.model';
 
 const router = Router();
 
-// GET Public Invoice (No Auth Required)
+
 router.get('/invoices/:id', asyncHandler(async (req, res) => {
   const invoice = await InvoiceModel.findOne({ _id: req.params.id, removed: { $ne: true } }).populate('clientId');
   if (!invoice) {
@@ -15,12 +15,12 @@ router.get('/invoices/:id', asyncHandler(async (req, res) => {
     throw new Error('Invoice not found');
   }
 
-  // We also need the company settings to display the logo/address on the public page
+  
   const settings = await SettingsModel.findOne({ userId: (invoice as any).createdBy });
   res.json({ success: true, data: { invoice, settings } });
 }));
 
-// POST Public Payment (Simulate Payment)
+
 router.post('/invoices/:id/pay', asyncHandler(async (req, res) => {
   const { amount, method } = req.body;
   
@@ -30,14 +30,14 @@ router.post('/invoices/:id/pay', asyncHandler(async (req, res) => {
     throw new Error('Invoice not found');
   }
 
-  // Update Payment Status
+  
   const newPaid = (invoice.amountPaid || 0) + Number(amount);
   const newStatus = newPaid >= invoice.total ? 'paid' : 'partially';
 
   invoice.amountPaid = newPaid;
   invoice.paymentStatus = newStatus;
   
-  // If fully paid, update main status too
+  
   if (newStatus === 'paid') {
       invoice.status = 'paid';
   }
@@ -51,8 +51,7 @@ router.post('/invoices/:id/pay', asyncHandler(async (req, res) => {
   });
 }));
 
-// GET Public Client Portal (No Auth Required)
-// Read-only view of a single client's invoices + quotes via an unguessable token.
+
 router.get('/portal/:token', asyncHandler(async (req, res) => {
   const token = req.params.token;
   if (!token) {

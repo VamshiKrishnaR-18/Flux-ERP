@@ -1,4 +1,4 @@
-// apps/api/src/models/settings.model.ts
+
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ISettings extends Document {
@@ -11,7 +11,7 @@ export interface ISettings extends Document {
   currency: string;
   taxRate: number;
   invoicePrefix: string;
-  invoiceStartNumber: number; // 👈 Added
+  invoiceStartNumber: number;
   defaultPaymentTerms: number;
   defaultNotes: string;
 }
@@ -26,7 +26,7 @@ const SettingsSchema: Schema = new Schema({
   currency: { type: String, default: 'USD' },
   taxRate: { type: Number, default: 0 },
   invoicePrefix: { type: String, default: 'INV-' },
-  invoiceStartNumber: { type: Number, default: 1000 }, // 👈 Added with default
+  invoiceStartNumber: { type: Number, default: 1000 },
   defaultPaymentTerms: { type: Number, default: 14 },
   defaultNotes: { type: String }
 }, { timestamps: true });

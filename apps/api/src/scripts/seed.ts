@@ -11,7 +11,7 @@ import { QuoteModel } from '../models/quote.model';
 
 dotenv.config();
 
-// Ensure MONGO_URI is defined
+
 const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
@@ -21,14 +21,14 @@ if (!MONGO_URI) {
 
 const seed = async () => {
   try {
-    // Mask password in logs
+    
     const safeUri = MONGO_URI.replace(/:([^:@]+)@/, ':****@');
     console.log(`🔌 Connecting to MongoDB at: ${safeUri}`);
     
     await mongoose.connect(MONGO_URI);
     console.log('✅ Connected to MongoDB');
 
-    // Clear DB
+    
     await UserModel.deleteMany({});
     await ClientModel.deleteMany({});
     await ProductModel.deleteMany({});
@@ -38,7 +38,7 @@ const seed = async () => {
     await QuoteModel.deleteMany({});
     console.log('🗑️ Cleared Database');
 
-    // Create User
+    
     const hashedPassword = await bcrypt.hash('password123', 10);
     const user = await UserModel.create({
       name: 'Demo User',
@@ -48,7 +48,7 @@ const seed = async () => {
     });
     console.log('👤 Created User: demo@example.com / password123');
 
-    // Create Settings
+    
     await SettingsModel.create({
         userId: user._id,
         taxRate: 10,
@@ -58,7 +58,7 @@ const seed = async () => {
         companyAddress: '123 Tech Lane, Silicon Valley, CA'
     });
 
-    // --- SCALED CLIENTS ---
+    
     const baseClients = [
         { name: 'TechNova Solutions', email: 'technova.io', type: 'IT' },
         { name: 'GreenLeaf Logistics', email: 'greenleaf.com', type: 'Transport' },
@@ -72,7 +72,7 @@ const seed = async () => {
         const base = baseClients[i % baseClients.length]!;
         scaledClients.push({
             userId: user._id,
-            name: `${base.name} ${Math.floor(i / 5) + 1}`, // e.g. TechNova Solutions 1
+            name: `${base.name} ${Math.floor(i / 5) + 1}`,
             email: `contact${i}@${base.email}`,
             phoneNumber: `+1-555-0${100 + i}`,
             status: Math.random() > 0.1 ? 'active' : 'inactive',
@@ -82,7 +82,7 @@ const seed = async () => {
     const clients = await ClientModel.create(scaledClients);
     console.log(`🏢 Created ${clients.length} Clients (Scaled)`);
 
-    // --- SCALED PRODUCTS ---
+    
     const baseProducts = [
         { name: 'Enterprise License', price: 5000 },
         { name: 'Consulting (Hr)', price: 150 },
@@ -98,13 +98,13 @@ const seed = async () => {
             createdBy: user._id,
             name: `${base.name} v${Math.floor(i / 5) + 1}.0`,
             description: `Professional ${base.name} for enterprise needs`,
-            price: base.price + (i * 10) // Slight price variation
+            price: base.price + (i * 10) 
         });
     }
     const products = await ProductModel.create(scaledProducts);
     console.log(`📦 Created ${products.length} Products (Scaled)`);
 
-    // --- SCALED INVOICES ---
+    
     const invoices = [];
     const INVOICE_COUNT = 200;
     
@@ -121,7 +121,7 @@ const seed = async () => {
         const subTotal = total1 + total2;
         const taxTotal = subTotal * 0.1;
         
-        // Random date within last 6 months
+        
         const date = new Date(Date.now() - Math.floor(Math.random() * 180) * 24 * 60 * 60 * 1000);
         
         invoices.push({
@@ -145,14 +145,14 @@ const seed = async () => {
     await InvoiceModel.create(invoices);
     console.log(`📄 Created ${invoices.length} Invoices (Scaled)`);
 
-    // --- SCALED EXPENSES ---
+    
     const expenseCategories = ['Operational', 'Marketing', 'Software', 'Travel', 'Contractors', 'Office Supplies'];
     const expenses = [];
     const EXPENSE_COUNT = 300;
 
     for (let i = 0; i < EXPENSE_COUNT; i++) {
         const category = expenseCategories[Math.floor(Math.random() * expenseCategories.length)];
-        // Random date within last 6 months
+        
         const date = new Date(Date.now() - Math.floor(Math.random() * 180) * 24 * 60 * 60 * 1000);
         const amount = Math.floor(Math.random() * 2000) + 50;
 
@@ -167,7 +167,7 @@ const seed = async () => {
     await ExpenseModel.create(expenses);
     console.log(`💸 Created ${expenses.length} Expenses (Scaled)`);
 
-    // --- SCALED QUOTES ---
+    
     const quotes = [];
     const QUOTE_COUNT = 100;
 

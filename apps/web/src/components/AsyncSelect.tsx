@@ -10,7 +10,7 @@ interface AsyncSelectProps<T> {
   renderOption: (item: T) => React.ReactNode;
   placeholder?: string;
   error?: string;
-  initialLabel?: string; // To show the name if we already have an ID selected
+  initialLabel?: string; 
   getOptionLabel: (item: T) => string;
 }
 
@@ -34,7 +34,7 @@ export function AsyncSelect<T extends { _id: string }>({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 500);
 
-  // Close when clicking outside
+  
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
@@ -45,9 +45,9 @@ export function AsyncSelect<T extends { _id: string }>({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch data on search
+  
   useEffect(() => {
-    if (!isOpen) return; // Don't fetch if closed
+    if (!isOpen) return; 
     
     let active = true;
     const load = async () => {

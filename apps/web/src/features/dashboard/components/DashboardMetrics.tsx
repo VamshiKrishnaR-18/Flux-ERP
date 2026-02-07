@@ -3,7 +3,7 @@ import type { DashboardStats } from '../hooks/useDashboard';
 
 export const DashboardMetrics = ({ stats }: { stats: DashboardStats | null }) => {
   
-  // Format Trend
+  
   const trend = stats?.trendPercentage || 0;
   const isPositive = trend >= 0;
   const trendLabel = `${Math.abs(trend).toFixed(1)}% from last month`;
@@ -11,7 +11,7 @@ export const DashboardMetrics = ({ stats }: { stats: DashboardStats | null }) =>
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
       
-      {/* 1. Total Revenue (With Real Trend) */}
+      {/* 1. Total Revenue */}
       <MetricCard 
         label="Total Revenue" 
         value={`$${stats?.totalRevenue.toLocaleString() || '0.00'}`}
@@ -21,7 +21,7 @@ export const DashboardMetrics = ({ stats }: { stats: DashboardStats | null }) =>
         color="bg-emerald-50"
       />
 
-      {/* 2. Total Invoices (Generic Trend removed) */}
+      {/* 2. Total Invoices */}
       <MetricCard 
         label="Total Invoices" 
         value={stats?.totalInvoices || 0}
@@ -31,7 +31,7 @@ export const DashboardMetrics = ({ stats }: { stats: DashboardStats | null }) =>
         color="bg-blue-50"
       />
 
-      {/* 3. Pending Amount (Now showing $$$ instead of Count) */}
+      {/* 3. Pending Amount */}
       <MetricCard 
         label="Pending Amount" 
         value={`$${stats?.pendingAmount?.toLocaleString() || '0.00'}`}
@@ -54,7 +54,7 @@ export const DashboardMetrics = ({ stats }: { stats: DashboardStats | null }) =>
   );
 };
 
-// ... MetricCard sub-component stays the same ...
+
 interface MetricCardProps {
   label: string;
   value: string | number;

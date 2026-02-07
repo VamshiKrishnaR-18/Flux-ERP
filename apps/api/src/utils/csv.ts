@@ -6,10 +6,10 @@ export type CsvColumn<T> = {
 export function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return '';
 
-  // Prefer stable date serialization
+  
   const str = value instanceof Date ? value.toISOString() : String(value);
 
-  // Escape if contains special CSV chars
+  
   if (/[",\r\n]/.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;
   }
@@ -26,7 +26,7 @@ export function buildCsv<T>(rows: T[], columns: CsvColumn<T>[]): string {
     lines.push(columns.map((c) => csvEscape(c.value(row))).join(','));
   }
 
-  // Use CRLF for better Excel compatibility
+  
   return lines.join('\r\n');
 }
 

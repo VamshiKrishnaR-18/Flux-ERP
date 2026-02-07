@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useForm, type SubmitHandler, type Resolver } from 'react-hook-form'; // ✅ Added types
+import { useForm, type SubmitHandler, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ClientSchema, type ClientDTO } from '@erp/types';
 import { api } from '../../../lib/axios';
@@ -22,7 +22,7 @@ export function ClientModal({ isOpen, onClose, onSuccess, client }: ClientModalP
     setValue, 
     formState: { errors, isSubmitting } 
   } = useForm<ClientDTO>({
-    // ✅ Fix 1: Cast resolver to handle Zod 'default' value mismatches
+    
     resolver: zodResolver(ClientSchema) as Resolver<ClientDTO>, 
     defaultValues: {
       status: 'active',
@@ -43,7 +43,7 @@ export function ClientModal({ isOpen, onClose, onSuccess, client }: ClientModalP
     }
   }, [isOpen, client, reset, setValue]);
 
-  // ✅ Fix 2: Use SubmitHandler type to match handleSubmit expectation
+ 
   const onSubmit: SubmitHandler<ClientDTO> = async (data) => {
     try {
       if (client) {

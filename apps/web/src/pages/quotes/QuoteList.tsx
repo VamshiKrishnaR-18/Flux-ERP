@@ -7,7 +7,7 @@ import { Plus, FileOutput, ArrowRightLeft, Send, ArrowUpDown, Search, ChevronLef
 import { useSortableData } from '../../hooks/useSortableData';
 import { useDebounce } from '../../hooks/useDebounce';
 import type { Quote } from '@erp/types';
-import { EmptyState } from '../../components/EmptyState'; // ✅ Import
+import { EmptyState } from '../../components/EmptyState';
 
 export default function QuoteList() {
   const navigate = useNavigate();

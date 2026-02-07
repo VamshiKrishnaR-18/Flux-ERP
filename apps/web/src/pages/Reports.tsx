@@ -51,7 +51,7 @@ export default function Reports() {
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                     <PieChartIcon className="w-6 h-6" /> Reports & Analytics
                 </h1>
-                {/* Placeholder for future export functionality */}
+                
                 <button disabled className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">
                     <Download className="w-4 h-4" /> Export PDF
                 </button>
@@ -103,7 +103,7 @@ export default function Reports() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Revenue vs Profit Chart */}
+                
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <h3 className="text-lg font-bold text-gray-900 mb-6">Monthly Revenue vs Profit</h3>
                     <div className="h-80">

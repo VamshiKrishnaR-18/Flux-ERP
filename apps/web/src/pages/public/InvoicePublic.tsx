@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { api } from '../../lib/axios'; // Make sure this axios instance handles public URLs
+import { api } from '../../lib/axios'; 
 import { format } from 'date-fns';
 import { Printer, CreditCard, CheckCircle, X, Loader2, Lock } from 'lucide-react';
 import type { Invoice, SettingsDTO } from '@erp/types';
@@ -19,7 +19,7 @@ export default function InvoicePublic() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // We use the public endpoint we just created
+        
         const res = await api.get(`/public/invoices/${id}`);
         setData(res.data.data);
       } catch {
@@ -41,7 +41,7 @@ export default function InvoicePublic() {
     e.preventDefault();
     setIsProcessing(true);
     
-    // Simulate network delay for realism
+    
     await new Promise(r => setTimeout(r, 2000));
 
     try {
@@ -51,7 +51,7 @@ export default function InvoicePublic() {
         });
         toast.success("Payment processed successfully!");
         setShowPayModal(false);
-        // Reload data to show paid status
+        
         const res = await api.get(`/public/invoices/${id}`);
         setData(res.data.data);
     } catch {

@@ -4,7 +4,6 @@ import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Apply Auth Middleware
 router.use(authMiddleware);
 
 router.get('/revenue-vs-expenses', ReportsController.getRevenueVsExpenses);

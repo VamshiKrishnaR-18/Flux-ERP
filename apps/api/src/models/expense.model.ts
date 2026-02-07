@@ -14,10 +14,10 @@ const ExpenseSchema: Schema = new Schema({
   amount: { type: Number, required: true },
   date: { type: Date, required: true, default: Date.now },
   
-  // ✅ FIX: Remove 'enum: [...]' if it exists. Just use type: String.
+  
   category: { type: String, required: true, default: 'Operational' },
 
-  // Multi-tenant scoping
+  
   createdBy: { type: String, required: true, index: true }
 }, { 
   timestamps: true 

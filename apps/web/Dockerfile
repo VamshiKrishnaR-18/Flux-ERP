@@ -9,7 +9,6 @@ COPY apps/web ./apps/web
 
 RUN npm install
 # Build the Web App
-# We need to pass API URL arg if we want it baked in, but usually we use env vars at runtime or relative paths
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 

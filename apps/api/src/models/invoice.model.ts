@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { Invoice as IInvoiceDTO } from "@erp/types";
 
-// 1. Interface Definition
+
 export interface IInvoiceDocument extends Document, Omit<IInvoiceDTO, '_id' | 'createdAt' | 'updatedAt'> {
   createdAt: Date;
   updatedAt: Date;
@@ -12,9 +12,9 @@ export interface IInvoiceDocument extends Document, Omit<IInvoiceDTO, '_id' | 'c
   auditLogs?: { action: 'created' | 'updated'; userId: string; at: Date; changes?: string[] }[];
 }
 
-// 2. Schema Definition
+
 const InvoiceSchema: Schema = new Schema({
-  // Identification
+  
   number: { type: Number, required: true },
   year: { type: Number, required: true },
   invoicePrefix: { type: String },
@@ -24,11 +24,11 @@ const InvoiceSchema: Schema = new Schema({
     default: 'none' 
   },
 
-  // Dates
+  
   date: { type: Date, required: true },
   expiredDate: { type: Date, required: true },
   
-  // Relations
+  
   clientId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Client',

@@ -13,7 +13,7 @@ import axios from 'axios';
 	  const navigate = useNavigate();
 
   const { register, handleSubmit, formState: { errors } } = useForm<RegisterDTO>({
-    resolver: zodResolver(RegisterSchema) as Resolver<RegisterDTO>, // ✅ STRICT TYPE FIX
+    resolver: zodResolver(RegisterSchema) as Resolver<RegisterDTO>, 
     defaultValues: { name: '', email: '', password: '', role: 'user' }
   });
 

@@ -45,7 +45,7 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
   const fetchClients = async (q: string) => (await api.get(`/clients?search=${q}&limit=20`)).data.data;
   const fetchProducts = async (q: string) => (await api.get(`/products?search=${q}&limit=20`)).data.data;
 
-  // Load Settings (Only if creating new)
+  // Load Settings
   useEffect(() => {
     if (!isEditMode) {
       api.get('/settings').then(({ data }) => {

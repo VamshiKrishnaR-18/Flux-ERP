@@ -31,7 +31,7 @@ services:
     networks:
       - flux-network
 
-  # Frontend Web (Optional: Uncomment to run via Docker)
+  # Frontend Web
   # web:
   #   build:
   #     context: .

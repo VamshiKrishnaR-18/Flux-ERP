@@ -6,7 +6,7 @@ import { EmptyState } from '../../../components/EmptyState';
 interface ClientTableProps {
   clients: Client[];
   loading: boolean;
-  // ✅ Pagination Props
+  
   page: number;
   totalPages: number;
   onPageChange: (newPage: number) => void;

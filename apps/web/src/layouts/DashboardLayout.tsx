@@ -63,7 +63,7 @@ export const Layout = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar (Fixed width) */}
+      {/* Sidebar */}
       <Sidebar />
 
       {/* Main Content Area (Scrollable) */}

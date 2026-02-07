@@ -12,10 +12,10 @@ export function SessionExpiryModal() {
   useEffect(() => {
     const handleExpiry = () => setIsOpen(true);
     
-    // 👂 Listen for the custom event from axios.ts
+    
     window.addEventListener('session-expired', handleExpiry);
     
-    // Cleanup listener on unmount
+    
     return () => window.removeEventListener('session-expired', handleExpiry);
   }, []);
 
@@ -24,13 +24,13 @@ export function SessionExpiryModal() {
     setIsLoading(true);
     try {
       if (user?.email) {
-        // Attempt to login again to refresh the HttpOnly cookie
+        
         await login(user.email, password);
         setIsOpen(false);
         setPassword('');
         toast.success("Session restored! You can now save your work.");
       } else {
-        // Fallback if we somehow lost user context completely
+        
         window.location.href = '/login';
       }
     } catch {

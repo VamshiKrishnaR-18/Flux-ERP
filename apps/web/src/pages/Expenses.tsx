@@ -4,9 +4,9 @@ import { toast } from 'sonner';
 import { Search, ArrowUpDown, Plus, DollarSign, Calendar, Tag, Trash2, ChevronLeft, ChevronRight, Loader2, Download } from 'lucide-react';
 import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { useSortableData } from '../hooks/useSortableData';
-import { useDebounce } from '../hooks/useDebounce'; // ✅ Import Debounce
+import { useDebounce } from '../hooks/useDebounce'; // 
 import axios from 'axios';
-import { EmptyState } from '../components/EmptyState'; // ✅ Import
+import { EmptyState } from '../components/EmptyState'; // 
 
 interface Expense {
   _id: string;
@@ -57,14 +57,14 @@ export default function Expenses() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ description: '', amount: '', date: new Date().toISOString().split('T')[0], category: 'Operational' });
 
-  // ✅ Pagination & Search State
+  //  Pagination & Search State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 500); // Wait 500ms
   const LIMIT = 10;
 
-  // Sorting (Client-side for current page)
+  // Sorting 
   const { items: sortedExpenses, requestSort, sortConfig } = useSortableData(expenses);
   
   const SortIcon = ({ column }: { column: string }) => {
@@ -72,11 +72,11 @@ export default function Expenses() {
     return <ArrowUpDown className={`w-3 h-3 inline ml-1 ${sortConfig.direction === 'ascending' ? 'text-blue-600 rotate-180' : 'text-blue-600'}`} />;
   };
 
-  // ✅ Fetch Data (Triggered by Page or Search)
+  // Fetch Data 
   const fetchExpenses = useCallback(async () => {
     setIsLoading(true);
     try {
-        // Pass search param to backend
+        
         const res = await api.get(`/expenses?page=${page}&limit=${LIMIT}&search=${debouncedSearch}`);
         setExpenses(res.data.data);
         setTotalPages(res.data.pagination?.totalPages || 1);
@@ -92,7 +92,7 @@ export default function Expenses() {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
-      setPage(1); // Reset to page 1
+      setPage(1); 
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -181,7 +181,7 @@ export default function Expenses() {
                     type="text" 
                     placeholder="Search expenses..." 
                     value={search} 
-                    onChange={handleSearchChange} // 👈 Updated handler
+                    onChange={handleSearchChange} 
                     className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg outline-none" 
                 />
              </div>
@@ -255,7 +255,7 @@ export default function Expenses() {
         )}
       </div>
 
-      {/* Modal (Unchanged) */}
+      {/* Modal  */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">

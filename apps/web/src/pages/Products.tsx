@@ -7,15 +7,14 @@ import { Package, Plus, Pencil, Trash2, ArrowUpDown, Search, ChevronLeft, Chevro
 import { api } from '../lib/axios';
 import { toast } from 'sonner';
 import { useSortableData } from '../hooks/useSortableData';
-import { EmptyState } from '../components/EmptyState'; // ✅ Import
-
+import { EmptyState } from '../components/EmptyState'; 
 export default function Products() {
   type ProductFormValues = Omit<ProductDTO, 'stock'> & { stock?: number };
 
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // ✅ Pagination & Search State
+  // Pagination & Search State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
@@ -26,7 +25,7 @@ export default function Products() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // 1️⃣ Debounce Search
+  // Debounce Search
   useEffect(() => {
     const handler = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 500);
     return () => clearTimeout(handler);
@@ -40,7 +39,7 @@ export default function Products() {
     }
   }, [searchParams, search]);
 
-  // 2️⃣ Fetch
+  // Fetch
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -142,7 +141,7 @@ export default function Products() {
           </>
         )}
       </div>
-      {/* Modal code implied (same as before) */}
+      
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">

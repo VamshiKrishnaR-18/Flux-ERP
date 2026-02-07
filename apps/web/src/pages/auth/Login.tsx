@@ -13,7 +13,7 @@ export default function Login() {
 	const [showPassword, setShowPassword] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginDTO>({
-    resolver: zodResolver(LoginSchema) as Resolver<LoginDTO> // ✅ STRICT TYPE FIX
+    resolver: zodResolver(LoginSchema) as Resolver<LoginDTO>
   });
 
   const onSubmit = async (data: LoginDTO) => {
