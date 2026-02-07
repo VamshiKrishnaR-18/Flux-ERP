@@ -3,7 +3,7 @@ import { InvoiceModel } from '../models/invoice.model';
 import { ClientModel } from '../models/client.model';
 import { ExpenseModel } from '../models/expense.model';
 import { ProductModel } from '../models/product.model';
-import { asyncHandler } from '../utils/asyncHandler'; // ✅ Import
+import { asyncHandler } from '../utils/asyncHandler';
 
 export const DashboardController = {
   getStats: asyncHandler(async (req: Request, res: Response) => {

@@ -9,7 +9,6 @@ import { config } from '../config/env';
 import { EmailService } from '../services/email.service';
 
 const generateToken = (id: string, role: string) => {
-  // ✅ FIX: Use 'jwtExpiresIn' and 'jwtSecret' (Flat structure)
   const options: SignOptions = { expiresIn: config.jwtExpiresIn as any };
   if (!config.jwtSecret) throw new Error("JWT Secret is undefined");
   return jwt.sign({ id, role }, config.jwtSecret, options);
@@ -19,7 +18,7 @@ const cookieOptions: CookieOptions = {
   httpOnly: true,
   secure: true,
   sameSite: 'none',
-  maxAge: 24 * 60 * 60 * 1000 // 1 day
+  maxAge: 24 * 60 * 60 * 1000
 };
 
 export const AuthController = {
@@ -66,7 +65,6 @@ export const AuthController = {
 
     const { email, password } = validation.data;
     
-    // Explicitly select password for comparison
     const user = await UserModel.findOne({ email }).select('+password');
 
     if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
@@ -98,7 +96,6 @@ export const AuthController = {
     res.json({ success: true, data: user });
   }),
 
-  // 👤 Update Profile (Name & Email)
   updateProfile: asyncHandler(async (req: Request, res: Response) => {
     const { name, email } = req.body;
     const userId = req.user?.id;
@@ -109,7 +106,6 @@ export const AuthController = {
       throw new Error("User not found");
     }
 
-    // If email is being changed, check if it's already taken
     if (email && email !== user.email) {
       const emailExists = await UserModel.findOne({ email });
       if (emailExists) {
@@ -153,7 +149,6 @@ export const AuthController = {
     res.json({ success: true, message: "Password updated" });
   }),
 
-  // 🔑 Forgot Password
   forgotPassword: asyncHandler(async (req: Request, res: Response) => {
     const { email } = req.body;
     const user = await UserModel.findOne({ email });
@@ -163,17 +158,13 @@ export const AuthController = {
       throw new Error("User not found");
     }
 
-    // Generate Reset Token
     const resetToken = crypto.randomBytes(20).toString('hex');
 
-    // Hash and save to DB
     user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-    user.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 Minutes
+    user.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000);
 
     await user.save();
 
-    // Create Reset URL
-    // NOTE: In production, this should point to the FRONTEND URL
     const resetUrl = `${config.frontendUrl}/reset-password/${resetToken}`;
 
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
@@ -190,7 +181,6 @@ export const AuthController = {
     }
   }),
 
-  // 🔄 Reset Password
   resetPassword: asyncHandler(async (req: Request, res: Response) => {
     const { resetToken } = req.params;
 
@@ -211,11 +201,9 @@ export const AuthController = {
       throw new Error("Invalid Token");
     }
 
-    // Set new password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(req.body.password, salt);
     
-    // Clear reset fields
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
 

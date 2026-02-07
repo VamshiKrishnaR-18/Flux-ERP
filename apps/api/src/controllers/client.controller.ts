@@ -6,14 +6,14 @@ import { buildCsv } from '../utils/csv';
 import crypto from 'crypto';
 
 export const ClientController = {
-  // ✅ FIX: Added Pagination & Server-Side Search
+  // Pagination & Server-Side Search
   getAll: asyncHandler(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
     const search = req.query.search as string;
 
-    // Base query: Only my clients, not deleted ones
+    
     const query: any = { userId: req.user?.id, removed: false };
 
     // Add Search Logic
@@ -25,7 +25,7 @@ export const ClientController = {
       ];
     }
 
-    // Execute queries in parallel for performance
+    
     const [total, clients] = await Promise.all([
       ClientModel.countDocuments(query),
       ClientModel.find(query)
@@ -84,8 +84,7 @@ export const ClientController = {
     res.status(200).send(csv);
   }),
 
-  // 🔗 Create or return an existing portal token for a client
-  // POST /clients/:id/portal-token?rotate=true
+  
   portalToken: asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
@@ -106,9 +105,9 @@ export const ClientController = {
       throw new Error('Client not found');
     }
 
-    // If rotate=true OR no token exists, generate new one
+    
     if (rotate || !client.portalToken) {
-        // Generate a random 32-char hex string
+        
         client.portalToken = crypto.randomBytes(16).toString('hex');
         await client.save();
     }
@@ -153,7 +152,7 @@ export const ClientController = {
   }),
 
   delete: asyncHandler(async (req: Request, res: Response) => {
-    // ✅ Soft Delete implementation
+    
     const client = await ClientModel.findOneAndUpdate(
       { _id: req.params.id, userId: req.user?.id },
       { removed: true },

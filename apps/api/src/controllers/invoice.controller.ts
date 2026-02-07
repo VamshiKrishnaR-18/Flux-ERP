@@ -11,7 +11,6 @@ import { SettingsModel } from '../models/settings.model';
 
 export const InvoiceController = {
   
-  // --- EXISTING METHODS ---
 
   getAll: asyncHandler(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
@@ -193,9 +192,7 @@ export const InvoiceController = {
     res.json({ success: true, message: "Invoice deleted" });
   }),
 
-  // --- 🛠️ NEW METHODS (Fixed Types) ---
-
-  // ✅ FIX: Use 'partially' instead of 'partially_paid'
+  
   addPayment: asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { amount } = req.body;
@@ -205,12 +202,11 @@ export const InvoiceController = {
 
     const newPaid = (invoice.amountPaid || 0) + Number(amount);
     
-    // ✅ Logic: "paid" if full amount, otherwise "partially"
-    // The previous error was using "partially_paid" which is invalid in your Schema
+    
     const newStatus = newPaid >= invoice.total ? 'paid' : 'partially';
 
     invoice.amountPaid = newPaid;
-    invoice.paymentStatus = newStatus; // Typescript error resolved here
+    invoice.paymentStatus = newStatus; 
     if (newStatus === 'paid') {
         invoice.status = 'paid';
     }
@@ -219,7 +215,7 @@ export const InvoiceController = {
     res.json({ success: true, message: "Payment recorded", data: invoice });
   }),
 
-  // 📧 Send Invoice Email
+  // Send Invoice Email
   send: asyncHandler(async (req: Request, res: Response) => {
     const invoice = await InvoiceModel.findOne({ _id: req.params.id, createdBy: req.user?.id }).populate('clientId');
     if (!invoice) { res.status(404); throw new Error("Invoice not found"); }
@@ -236,7 +232,7 @@ export const InvoiceController = {
       throw new Error("Failed to send email");
     }
 
-    // Update status to 'sent' if it was 'draft'
+    
     if (invoice.status === 'draft') {
       invoice.status = 'sent';
       await invoice.save();

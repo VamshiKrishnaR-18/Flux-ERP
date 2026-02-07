@@ -72,7 +72,19 @@ docker-compose up -d --build
 
 ---
 
-## 📂 Project Structure
+## ☁️ AWS Deployment
+
+*   **API Base URL:** https://eoyai58be6.execute-api.ap-south-2.amazonaws.com/dev/
+
+
+---
+## ▲ Vercel Deployment
+
+*   **Web App:** https://flux-erp-web.vercel.app/
+
+---
+
+
 
 ```
 ├── apps
@@ -90,6 +102,16 @@ docker-compose up -d --build
 
 - [Repository Structure](./docs/structure.md)
 - [Testing](./docs/testing.md)
+
+## ✅ Common Scripts
+
+```bash
+npm run dev
+npm run build
+npm run lint
+npm run check-types
+npm run test
+```
 
 ## 🛡️ Security Features
 *   **Strict CORS Policy:** Only allows trusted origins.

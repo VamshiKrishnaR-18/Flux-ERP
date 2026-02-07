@@ -43,7 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
             } catch (e) {
                 console.error("Failed to parse user from storage", e);
-                // Clean up bad data
                 localStorage.removeItem('flux_user');
             }
         }
@@ -60,7 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await api.post('/auth/login', { email, password });
     if (data.success) {
       setUser(data.data);
-      // ✅ CRITICAL FIX: Save token so axios interceptor works
       localStorage.setItem('token', data.token); 
       localStorage.setItem('flux_user', JSON.stringify(data.data)); 
     }
@@ -70,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { await api.post('/auth/logout'); } catch(e) { console.error(e); }
     setUser(null);
     localStorage.removeItem('flux_user');
-    localStorage.removeItem('token'); // ✅ Clear token
+    localStorage.removeItem('token');
     navigate('/login');
   };
 

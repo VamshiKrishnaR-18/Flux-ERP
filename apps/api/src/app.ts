@@ -20,7 +20,6 @@ import settingsRoutes from './routes/settings.routes';
 import productRoutes from './routes/product.routes';
 import expenseRoutes from './routes/expense.routes';
 import quoteRoutes from './routes/quote.routes';
-import reportsRoutes from './routes/reports.routes'; // ✅ Reports
 import publicRoutes from './routes/public.routes';
 
 // Middleware
@@ -125,7 +124,6 @@ apiV1.use('/invoices', authMiddleware as unknown as RequestHandler, invoiceRoute
 apiV1.use('/dashboard', authMiddleware as unknown as RequestHandler, dashboardRoutes);
 apiV1.use('/products', authMiddleware as unknown as RequestHandler, productRoutes);
 apiV1.use('/quotes', authMiddleware as unknown as RequestHandler, quoteRoutes);
-apiV1.use('/reports', authMiddleware as unknown as RequestHandler, reportsRoutes); // ✅ Reports
 
 // 🛡️ ADMIN ROUTES
 apiV1.use('/expenses', 

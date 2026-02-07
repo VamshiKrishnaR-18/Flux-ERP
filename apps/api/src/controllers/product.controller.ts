@@ -4,7 +4,7 @@ import { ProductSchema } from '@erp/types';
 import { asyncHandler } from '../utils/asyncHandler';
 
 export const ProductController = {
-  // ✅ UPDATED: Search + Pagination
+  // Search + Pagination
   getAll: asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {
@@ -39,7 +39,7 @@ export const ProductController = {
     });
   }),
 
-  // ... (Keep create, update, delete as is)
+  
   create: asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) {

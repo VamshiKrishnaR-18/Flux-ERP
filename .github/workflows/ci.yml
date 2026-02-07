@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  # 1. TEST & BUILD
+  # TEST & BUILD
   test-and-build:
     runs-on: ubuntu-latest
     
@@ -25,7 +25,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # ✅ UPGRADE: Node 20 for MongoDB compatibility
+    
     - name: Use Node.js 20
       uses: actions/setup-node@v4
       with:
@@ -53,7 +53,7 @@ jobs:
     - name: Run Tests
       run: npx turbo run test --filter=api
 
-  # 2. DEPLOY (Only on push to main)
+  # DEPLOY 
   deploy-api:
     needs: test-and-build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -68,16 +68,14 @@ jobs:
         node-version: '20'
         cache: 'npm'
 
-    # ✅ Standard Monorepo Install (Installs everything, links @erp/types)
+    
     - name: Install Dependencies
       run: npm ci
 
     - name: Install Serverless Framework
       run: npm install -g serverless
 
-    # ✅ Build & Deploy with Esbuild
-    # We NO LONGER need to manually install prod deps inside apps/api.
-    # Esbuild will bundle the code + @erp/types, and pack node_modules for us.
+    
     - name: Deploy to AWS Lambda
       working-directory: ./apps/api
       env:

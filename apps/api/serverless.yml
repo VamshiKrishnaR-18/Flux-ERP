@@ -2,7 +2,7 @@ service: flux-erp-api
 
 provider:
   name: aws
-  runtime: nodejs20.x
+  runtime: nodejs24.x
   region: ap-south-2
   memorySize: 512
   timeout: 10
@@ -11,7 +11,6 @@ provider:
     MONGO_URI: ${param:MONGO_URI}
     JWT_SECRET: ${param:JWT_SECRET}
     CORS_ORIGIN: 'https://flux-erp-web.vercel.app'
-
 
 build:
   esbuild: false
@@ -36,6 +35,6 @@ custom:
     bundle: true
     minify: true
     sourcemap: true
-    target: 'node20'
+    target: 'node24'
     packager: 'npm'
     exclude: ['aws-sdk']

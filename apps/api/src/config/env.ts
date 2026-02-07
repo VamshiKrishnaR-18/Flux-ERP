@@ -7,7 +7,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   MONGO_URI: z.string().min(1, "MONGO_URI is required"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
-  // ✅ FIX: Handle empty strings by transforming them to '1d'
+  
   JWT_EXPIRES_IN: z.string().default('1d').transform(val => val.trim() === '' ? '1d' : val),
   COOKIE_EXPIRES_IN_HOURS: z.coerce.number().default(24),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),

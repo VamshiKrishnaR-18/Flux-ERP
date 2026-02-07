@@ -1,14 +1,14 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../app';
-import { config } from '../config/env'; // Import config to load env vars
+import { config } from '../config/env'; 
 
-// Generate a random email to avoid "User already exists" errors
+
 const randomEmail = `test${Math.floor(Math.random() * 100000)}@example.com`;
 
 describe('Auth API Integration Tests', () => {
   
-  // ✅ FIX: Connect to the DB before running tests
+  // Connect to the DB before running tests
   beforeAll(async () => {
     try {
       await mongoose.connect(config.mongoUri);
@@ -18,7 +18,7 @@ describe('Auth API Integration Tests', () => {
     }
   });
 
-  // ✅ Clean up: Close connection after tests to prevent Jest from hanging
+  // Close connection after tests to prevent Jest from hanging
   afterAll(async () => {
     await mongoose.connection.close();
   });
@@ -30,7 +30,7 @@ describe('Auth API Integration Tests', () => {
       password: 'password123',
     });
 
-    // If this fails, it prints the error message from the backend
+  
     if (res.statusCode !== 201) {
       console.error('Register Failed:', res.body);
     }

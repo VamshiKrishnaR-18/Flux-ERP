@@ -23,7 +23,7 @@ const options: swaggerJsdoc.Options = {
     },
     security: [{ bearerAuth: [] }],
   },
-  // CHANGED: Look for YAML files in the docs folder
+  
   apis: [path.join(__dirname, '../docs/*.yaml')], 
 };
 

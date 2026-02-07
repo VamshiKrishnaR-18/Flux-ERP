@@ -4,7 +4,7 @@ import { ExpenseModel } from '../models/expense.model';
 import { asyncHandler } from '../utils/asyncHandler';
 
 export const ReportsController = {
-  // 1. Monthly Revenue vs Profit (Last 12 Months)
+  // Monthly Revenue vs Profit (Last 12 Months)
   getRevenueVsExpenses: asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) { res.status(401); throw new Error('Unauthorized'); }
@@ -19,11 +19,7 @@ export const ReportsController = {
           $match: { 
             createdBy: userId, 
             removed: { $ne: true },
-            status: { $ne: 'draft' }, // Consider all non-draft as potential revenue (or strictly 'paid'?)
-            // Usually for reports "Revenue" implies what you billed or what you collected.
-            // Let's stick to "Billed" (Total of non-draft) for now, or "Collected" (Amount Paid).
-            // User asked for "Revenue vs Profit". Revenue usually means Billed.
-            // Let's use Total Billed (non-draft) for Revenue.
+            status: { $ne: 'draft' },
             date: { $gte: startOfYear, $lt: endOfYear }
           } 
         },
