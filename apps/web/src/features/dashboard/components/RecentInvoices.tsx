@@ -1,6 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 
-export const RecentInvoices = ({ invoices }: { invoices: any[] }) => {
+interface InvoicePreview {
+  _id: string;
+  number: string;
+  date: string;
+  total: number;
+  status: string;
+  clientId?: { name: string };
+}
+
+export const RecentInvoices = ({ invoices }: { invoices: InvoicePreview[] }) => {
   const navigate = useNavigate();
 
   return (

@@ -54,8 +54,9 @@ export function ClientModal({ isOpen, onClose, onSuccess, client }: ClientModalP
         toast.success('Client created successfully');
       }
       onSuccess();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Operation failed');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Operation failed');
     }
   };
 

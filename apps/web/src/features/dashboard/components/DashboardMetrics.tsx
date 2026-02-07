@@ -55,7 +55,16 @@ export const DashboardMetrics = ({ stats }: { stats: DashboardStats | null }) =>
 };
 
 // ... MetricCard sub-component stays the same ...
-function MetricCard({ label, value, trend, trendUp, icon, color }: any) {
+interface MetricCardProps {
+  label: string;
+  value: string | number;
+  trend: string;
+  trendUp: boolean;
+  icon: React.ReactNode;
+  color: string;
+}
+
+function MetricCard({ label, value, trend, trendUp, icon, color }: MetricCardProps) {
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group">
       <div className="flex justify-between items-start mb-4">

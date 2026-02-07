@@ -33,7 +33,7 @@ export function SessionExpiryModal() {
         // Fallback if we somehow lost user context completely
         window.location.href = '/login';
       }
-    } catch (error) {
+    } catch {
       toast.error("Incorrect password");
     } finally {
       setIsLoading(false);

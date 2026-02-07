@@ -13,7 +13,7 @@ export interface DashboardStats {
   pendingAmount: number;
   totalClients: number;
   trendPercentage: number;
-  recentInvoices: any[];
+  recentInvoices: Record<string, unknown>[];
   // ✅ NEW: Add chart structure
   chartData: { 
     name: string; 
@@ -38,7 +38,7 @@ export function useDashboard() {
       try {
         const response = await api.get(`/dashboard?t=${Date.now()}`);
         setStats(response.data.data);
-      } catch (error) {
+      } catch {
         toast.error("Failed to load dashboard data");
       } finally {
         setIsLoading(false);

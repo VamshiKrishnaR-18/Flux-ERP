@@ -3,7 +3,13 @@ import {
 } from 'recharts';
 import { MoreHorizontal } from 'lucide-react';
 
-export const DashboardCharts = ({ revenueData, statusData, totalInvoices }: any) => {
+interface DashboardChartsProps {
+  revenueData: { name: string; income: number; expense: number }[];
+  statusData: { name: string; value: number; color: string }[];
+  totalInvoices: number;
+}
+
+export const DashboardCharts = ({ revenueData, statusData, totalInvoices }: DashboardChartsProps) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
       
@@ -31,7 +37,7 @@ export const DashboardCharts = ({ revenueData, statusData, totalInvoices }: any)
                 dataKey="value" 
                 stroke="none"
               >
-                {statusData?.map((entry: any, index: number) => (
+                {statusData?.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
