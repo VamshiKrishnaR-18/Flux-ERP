@@ -131,7 +131,7 @@ export default function InvoiceView() {
             </button>
             
             <PDFDownloadLink
-              document={<InvoicePDF invoice={invoice} settings={settings} />}
+              document={<InvoicePDF invoice={invoice} settings={settings ?? undefined} />}
               fileName={`invoice-${invoice.number}.pdf`}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 font-medium shadow-sm transition-all"
             >

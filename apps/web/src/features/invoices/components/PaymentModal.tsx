@@ -37,8 +37,9 @@ export default function PaymentModal({ invoiceId, totalDue, isOpen, onClose, onS
       toast.success("Payment recorded!");
       onSuccess();
       onClose();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to record payment");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Failed to record payment");
     } finally {
       setIsLoading(false);
     }

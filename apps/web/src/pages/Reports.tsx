@@ -8,10 +8,13 @@ import { DollarSign, PieChart as PieChartIcon, TrendingUp, Download, Loader2 } f
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
+type RevenuePoint = { month: string; revenue: number; profit: number };
+type ExpensePoint = { _id: string; total: number };
+
 export default function Reports() {
     const [loading, setLoading] = useState(true);
-    const [revenueData, setRevenueData] = useState([]);
-    const [expenseData, setExpenseData] = useState([]);
+    const [revenueData, setRevenueData] = useState<RevenuePoint[]>([]);
+    const [expenseData, setExpenseData] = useState<ExpensePoint[]>([]);
     const [taxData, setTaxData] = useState<{totalTax: number, totalTaxable: number, totalRevenue: number} | null>(null);
 
     useEffect(() => {
@@ -64,7 +67,7 @@ export default function Reports() {
                         <div>
                             <p className="text-sm text-gray-500 font-medium">Net Profit (YTD)</p>
                             <p className="text-2xl font-bold text-gray-900">
-                                ${revenueData.reduce((acc: number, curr: any) => acc + (curr.profit || 0), 0).toLocaleString()}
+                                ${revenueData.reduce((acc, curr) => acc + (curr.profit || 0), 0).toLocaleString()}
                             </p>
                         </div>
                     </div>
@@ -92,7 +95,7 @@ export default function Reports() {
                         <div>
                             <p className="text-sm text-gray-500 font-medium">Total Expenses</p>
                             <p className="text-2xl font-bold text-gray-900">
-                                ${expenseData.reduce((acc: number, curr: any) => acc + curr.total, 0).toLocaleString()}
+                                ${expenseData.reduce((acc, curr) => acc + curr.total, 0).toLocaleString()}
                             </p>
                         </div>
                     </div>

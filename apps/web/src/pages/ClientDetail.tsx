@@ -15,6 +15,8 @@ export default function ClientDetail() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
+  const getInvoicePrefix = (invoice: Invoice) =>
+    (invoice as Invoice & { invoicePrefix?: string }).invoicePrefix ?? '';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -112,10 +114,10 @@ export default function ClientDetail() {
                                 {invoices.length === 0 ? (
                                     <tr><td colSpan={4} className="px-6 py-12 text-center text-gray-400">No invoices found</td></tr>
                                 ) : (
-                                    invoices.map(inv => (
+                                    invoices.map((inv: Invoice) => (
                                         <tr key={inv._id} className="hover:bg-gray-50 cursor-pointer transition group" onClick={() => navigate(`/invoices/${inv._id}`)}>
                                             <td className="px-6 py-4 font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
-                                                {(inv as any).invoicePrefix}{inv.number}
+                                                {getInvoicePrefix(inv)}{inv.number}
                                             </td>
                                             <td className="px-6 py-4 text-gray-500">
                                                 {inv.date ? format(new Date(inv.date), 'MMM d, yyyy') : '-'}

@@ -64,6 +64,7 @@ export default function Dashboard() {
 	const aging = stats?.invoiceAging;
 	const topClients = stats?.topClients || [];
     const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const getClientName = (clientId: Invoice['clientId']) => (clientId as { name?: string }).name;
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen max-w-7xl mx-auto">
@@ -75,7 +76,7 @@ export default function Dashboard() {
                 {today}
             </div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
-            <p className="text-gray-500 mt-1">Welcome back, here's what's happening today.</p>
+            <p className="text-gray-500 mt-1">Welcome back, here&apos;s what&apos;s happening today.</p>
         </div>
         <div className="flex items-center gap-3">
              <div className="text-right hidden sm:block mr-2">
@@ -270,10 +271,10 @@ export default function Dashboard() {
                                 <td className="py-4">
                                     <div className="flex items-center gap-4">
                                         <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
-                                            {getInitials((inv.clientId as any)?.name)}
+                                            {getInitials(getClientName(inv.clientId))}
                                         </div>
-                                        <span className="text-sm text-gray-700 truncate max-w-[140px]" title={(inv.clientId as any)?.name}>
-                                            {(inv.clientId as any)?.name || 'Unknown'}
+                                        <span className="text-sm text-gray-700 truncate max-w-[140px]" title={getClientName(inv.clientId)}>
+                                            {getClientName(inv.clientId) || 'Unknown'}
                                         </span>
                                     </div>
                                 </td>

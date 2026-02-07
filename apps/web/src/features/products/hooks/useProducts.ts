@@ -12,7 +12,7 @@ export function useProducts() {
     try {
       const res = await api.get('/products');
       setProducts(res.data.data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load products");
     } finally {
       setIsLoading(false);

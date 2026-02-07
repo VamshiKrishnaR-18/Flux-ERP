@@ -54,7 +54,7 @@ export default function InvoicePublic() {
         // Reload data to show paid status
         const res = await api.get(`/public/invoices/${id}`);
         setData(res.data.data);
-    } catch (err) {
+    } catch {
         toast.error("Payment failed. Please try again.");
     } finally {
         setIsProcessing(false);

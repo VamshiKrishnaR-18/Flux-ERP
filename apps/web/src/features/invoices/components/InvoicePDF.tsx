@@ -1,4 +1,5 @@
 import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
+import type { Invoice, InvoiceItem, SettingsDTO } from '@erp/types';
 
 // Register a standard font (optional, helps with currency symbols)
 Font.register({
@@ -33,14 +34,15 @@ const styles = StyleSheet.create({
 });
 
 interface InvoicePDFProps {
-  invoice: any;
-  settings: any; // <--- ✅ Added Settings Prop
+  invoice: Invoice;
+  settings?: SettingsDTO;
 }
 
-// 1. Destructure settings here 👇
-export const InvoicePDF = ({ invoice, settings }: InvoicePDFProps) => (
-  <Document>
-    <Page size="A4" style={styles.page}>
+export const InvoicePDF = ({ invoice, settings }: InvoicePDFProps) => {
+  const client = invoice.clientId as unknown as { name?: string; email?: string };
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
       
       {/* Header */}
       <View style={styles.header}>
@@ -49,9 +51,6 @@ export const InvoicePDF = ({ invoice, settings }: InvoicePDFProps) => (
           <Text style={styles.logo}>{settings?.companyName || 'My Company'}</Text>
           <Text style={{ marginTop: 4, color: '#666' }}>{settings?.companyAddress}</Text>
           <Text style={{ color: '#666' }}>{settings?.companyEmail}</Text>
-          {settings?.taxId && (
-            <Text style={{ color: '#666', marginTop: 2 }}>Tax ID: {settings?.taxId}</Text>
-          )}
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           <Text style={styles.title}>INVOICE</Text>
@@ -66,8 +65,8 @@ export const InvoicePDF = ({ invoice, settings }: InvoicePDFProps) => (
       <View style={styles.section}>
         <View>
           <Text style={styles.label}>BILL TO</Text>
-          <Text style={styles.value}>{invoice.clientId?.name || 'Unknown Client'}</Text>
-          <Text style={styles.value}>{invoice.clientId?.email}</Text>
+          <Text style={styles.value}>{client?.name || 'Unknown Client'}</Text>
+          <Text style={styles.value}>{client?.email}</Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           <View style={{ marginBottom: 8 }}>
@@ -91,7 +90,7 @@ export const InvoicePDF = ({ invoice, settings }: InvoicePDFProps) => (
         </View>
 
         {/* Table Rows */}
-        {invoice.items.map((item: any, i: number) => (
+        {invoice.items.map((item: InvoiceItem, i: number) => (
           <View key={i} style={styles.tableRow}>
             <Text style={styles.col1}>{item.itemName}</Text>
             <Text style={styles.col2}>{item.quantity}</Text>
@@ -123,6 +122,7 @@ export const InvoicePDF = ({ invoice, settings }: InvoicePDFProps) => (
         </View>
       </View>
 
-    </Page>
-  </Document>
-);
+      </Page>
+    </Document>
+  );
+};

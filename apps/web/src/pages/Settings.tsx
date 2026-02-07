@@ -83,7 +83,8 @@ export default function Settings() {
             updateUser(data.data);
             toast.success("Profile updated successfully");
         }
-    } catch (err: any) {
+    } catch (error: unknown) {
+        const err = error as { response?: { data?: { message?: string } } };
         toast.error(err.response?.data?.message || "Failed to update profile");
     } finally {
         setProfileLoading(false);

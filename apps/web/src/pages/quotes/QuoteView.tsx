@@ -68,8 +68,9 @@ export default function QuoteView() {
 			toast.success(`Marked as ${status}`);
 			const res = await api.get(`/quotes/${id}`);
 			setQuote(res.data.data);
-		} catch (error: any) {
-			toast.error(error.response?.data?.message || 'Failed to update status');
+		} catch (error: unknown) {
+			const err = error as { response?: { data?: { message?: string } } };
+			toast.error(err.response?.data?.message || 'Failed to update status');
 		} finally {
 			setIsUpdatingStatus(false);
 		}
@@ -150,7 +151,7 @@ export default function QuoteView() {
 
             {/* Download PDF Button */}
             <PDFDownloadLink
-              document={<QuotePDF quote={quote} settings={settings} />}
+              document={<QuotePDF quote={quote} settings={settings ?? undefined} />}
               fileName={`quote-${quote.number}.pdf`}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 font-medium shadow-sm"
             >

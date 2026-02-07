@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/axios';
 import { toast } from 'sonner';
 import { Search, User, Plus, Download, Loader2 } from 'lucide-react';
@@ -60,7 +60,7 @@ export default function Clients() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
 
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
     setIsLoading(true);
     try {
         // ✅ Server-side Pagination & Search
@@ -76,12 +76,12 @@ export default function Clients() {
     } finally {
         setIsLoading(false);
     }
-  };
+  }, [page, debouncedSearch]);
 
   // Trigger fetch when Page OR Search changes
   useEffect(() => {
     fetchClients();
-  }, [page, debouncedSearch]);
+  }, [fetchClients]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure?")) return;
@@ -173,8 +173,9 @@ export default function Clients() {
       const url = `${window.location.origin}/portal/${token}`;
       await copyToClipboard(url);
       toast.success('Portal link copied to clipboard');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to generate portal link');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Failed to generate portal link');
     } finally {
       setPortalLoadingId(null);
     }

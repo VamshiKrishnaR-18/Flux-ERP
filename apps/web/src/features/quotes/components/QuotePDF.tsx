@@ -1,6 +1,6 @@
 import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
 import { format } from 'date-fns';
-import type { Quote } from '@erp/types';
+import type { Quote, SettingsDTO } from '@erp/types';
 
 const styles = StyleSheet.create({
   page: { padding: 40, fontFamily: 'Helvetica', fontSize: 10, color: '#333' },
@@ -21,11 +21,11 @@ const styles = StyleSheet.create({
 
 interface QuotePDFProps {
   quote: Quote;
-  settings?: any;
+  settings?: SettingsDTO;
 }
 
 export const QuotePDF = ({ quote, settings }: QuotePDFProps) => {
-  const client = quote.clientId as any;
+  const client = quote.clientId as unknown as { name?: string; email?: string };
 
   return (
     <Document>
