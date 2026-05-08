@@ -17,11 +17,10 @@ provider:
 build:
   esbuild:
     bundle: true
-    minify: true
+    minify: false
     sourcemap: true
-    target: 'node20'
-    packager: 'npm'
-    exclude:
+    target: node20
+    external:
       - '@aws-sdk/*'
 
 functions:

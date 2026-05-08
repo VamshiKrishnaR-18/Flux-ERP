@@ -1,18 +1,17 @@
-import serverlessExpress from '@vendia/serverless-express';
-import { APIGatewayProxyHandler } from 'aws-lambda';
-
 console.log('LAMBDA_LOAD: Starting to load lambda.ts');
 
+import serverlessExpress from '@vendia/serverless-express';
+import { APIGatewayProxyHandler } from 'aws-lambda';
 import mongoose from 'mongoose';
+import app from './app';
 import { config } from './config/env';
 import { logger } from './utils/logger';
 
-console.log('LAMBDA_LOAD: Finished loading basic imports');
+console.log('LAMBDA_LOAD: Finished loading imports');
 
 // 1. CACHING VARIABLES
 let cachedServer: any;
 let conn: Promise<typeof mongoose> | null = null;
-let app: any;
 
 // Catch unhandled rejections/exceptions for better CloudWatch logs
 process.on('unhandledRejection', (reason, promise) => {
@@ -48,7 +47,12 @@ const connectToDatabase = async () => {
 export const handler: APIGatewayProxyHandler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false;
 
-  console.log(`Lambda Event: ${event.httpMethod} ${event.path} [RequestId: ${event.requestContext.requestId}]`);
+  // Log minimal event info for debugging in CloudWatch
+  const method = event.httpMethod || (event as any).method || 'UNKNOWN';
+  const path = event.path || (event as any).url || 'UNKNOWN';
+  const requestId = event.requestContext?.requestId || context.awsRequestId;
+  
+  console.log(`Lambda Event: ${method} ${path} [RequestId: ${requestId}]`);
 
   try {
     // 1. Ensure Database Connection
@@ -62,41 +66,18 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
           success: false, 
           message: 'Service Unavailable: Database connection failed'
         }),
-        headers: { 'Content-Type': 'application/json' },
-        isBase64Encoded: false
+        headers: { 'Content-Type': 'application/json' }
       };
     }
 
     // 2. Initialize Serverless Express if not cached
     if (!cachedServer) {
-      logger.info('Initializing App and Serverless Express...');
-      if (!app) {
-        try {
-          const appModule = await import('./app.js');
-          app = appModule.default;
-        } catch (importError: any) {
-          logger.error('Failed to import app module:', importError);
-          return {
-            statusCode: 500,
-            body: JSON.stringify({ 
-              success: false, 
-              message: 'App Initialization Error',
-              error: importError.message
-            }),
-            headers: { 'Content-Type': 'application/json' },
-            isBase64Encoded: false
-          };
-        }
-      }
+      logger.info('Initializing Serverless Express...');
       cachedServer = serverlessExpress({ app });
     }
 
     // 3. Proxy the request
-    const response = await cachedServer(event, context);
-    return {
-      ...response,
-      isBase64Encoded: response.isBase64Encoded ?? false
-    };
+    return await cachedServer(event, context);
   } catch (error: any) {
     logger.error('Lambda Execution Error:', error);
     return {
@@ -106,8 +87,7 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
         message: 'Internal Server Error',
         error: error.message
       }),
-      headers: { 'Content-Type': 'application/json' },
-      isBase64Encoded: false
+      headers: { 'Content-Type': 'application/json' }
     };
   }
 };
