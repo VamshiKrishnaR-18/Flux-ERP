@@ -2,7 +2,7 @@ service: flux-erp-api
 
 provider:
   name: aws
-  runtime: nodejs24.x
+  runtime: nodejs20.x
   region: ap-south-2
   memorySize: 512
   timeout: 29
@@ -37,6 +37,6 @@ custom:
     bundle: true
     minify: true
     sourcemap: true
-    target: 'node24'
+    target: 'node20'
     packager: 'npm'
     exclude: ['aws-sdk']

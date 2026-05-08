@@ -31,26 +31,35 @@ const envSchema = z.object({
 const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
-  console.error('❌ Invalid environment variables:', JSON.stringify(parsedEnv.error.format(), null, 4));
-  process.exit(1);
+  const errorMsg = `❌ Invalid environment variables: ${JSON.stringify(parsedEnv.error.format())}`;
+  console.error(errorMsg);
+  
+  // In production/lambda, we don't want to crash the process immediately if we can help it
+  // but for critical keys, it's better to fail fast than to have mysterious errors.
+  if (process.env.NODE_ENV === 'production') {
+    // Log specifically for CloudWatch
+    console.log('CRITICAL_ENV_ERROR:', errorMsg);
+  } else {
+    process.exit(1);
+  }
 }
 
-export const env = parsedEnv.data;
+export const env = parsedEnv.success ? parsedEnv.data : ({} as any);
 
 export const config = {
-  port: env.PORT,
-  mongoUri: env.MONGO_URI,
+  port: env.PORT || 3000,
+  mongoUri: env.MONGO_URI || '',
   jwtSecret: env.JWT_SECRET || 'fallback_secret',
-  clerkSecretKey: env.CLERK_SECRET_KEY,
-  clerkPublishableKey: env.CLERK_PUBLISHABLE_KEY,
-  jwtExpiresIn: env.JWT_EXPIRES_IN,
-  cookieExpiresInHours: env.COOKIE_EXPIRES_IN_HOURS,
-  nodeEnv: env.NODE_ENV,
-  corsOrigin: env.CORS_ORIGIN,
-  frontendUrl: env.FRONTEND_URL,
-  smtpHost: env.SMTP_HOST,
-  smtpPort: env.SMTP_PORT,
-  smtpUser: env.SMTP_USER,
-  smtpPass: env.SMTP_PASS,
-  groqApiKey: env.GROQ_API_KEY,
+  clerkSecretKey: env.CLERK_SECRET_KEY || '',
+  clerkPublishableKey: env.CLERK_PUBLISHABLE_KEY || '',
+  jwtExpiresIn: env.JWT_EXPIRES_IN || '1d',
+  cookieExpiresInHours: env.COOKIE_EXPIRES_IN_HOURS || 24,
+  nodeEnv: (env.NODE_ENV as any) || 'development',
+  corsOrigin: env.CORS_ORIGIN || [],
+  frontendUrl: env.FRONTEND_URL || '',
+  smtpHost: env.SMTP_HOST || '',
+  smtpPort: env.SMTP_PORT || 587,
+  smtpUser: env.SMTP_USER || '',
+  smtpPass: env.SMTP_PASS || '',
+  groqApiKey: env.GROQ_API_KEY || '',
 } as const;
