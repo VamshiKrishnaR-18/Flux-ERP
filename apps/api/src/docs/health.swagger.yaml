@@ -1,0 +1,57 @@
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the status of the API and its dependencies (like MongoDB)
+      tags: [System]
+      responses:
+        200:
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Service Healthy
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: up
+                      uptime:
+                        type: number
+                        example: 123.45
+                      timestamp:
+                        type: string
+                        example: "2023-10-27T10:00:00.000Z"
+                      dbStatus:
+                        type: string
+                        example: up
+                      version:
+                        type: string
+                        example: 1.0.0
+                  requestId:
+                    type: string
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+        503:
+          description: API is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Service Unhealthy
+                  requestId:
+                    type: string
+                    example: "550e8400-e29b-41d4-a716-446655440000"

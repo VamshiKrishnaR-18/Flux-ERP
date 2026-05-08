@@ -5,6 +5,15 @@ export interface IExpense extends Document {
   amount: number;
   date: Date;
   category: string;
+  notes?: string;
+  attachments?: {
+    name?: string;
+    url?: string;
+    type?: string;
+    size?: number;
+    uploadedAt?: Date;
+  }[];
+  removed: boolean;
   createdBy: string;
   createdAt: Date;
 }
@@ -12,12 +21,19 @@ export interface IExpense extends Document {
 const ExpenseSchema: Schema = new Schema({
   description: { type: String, required: true },
   amount: { type: Number, required: true },
-  date: { type: Date, required: true, default: Date.now },
+  date: { type: Date, required: true, default: Date.now, index: true },
   
   
-  category: { type: String, required: true, default: 'Operational' },
-
-  
+  category: { type: String, required: true, default: 'Operational', index: true },
+  notes: { type: String },
+  attachments: [{
+    name: { type: String },
+    url: { type: String },
+    type: { type: String },
+    size: { type: Number },
+    uploadedAt: { type: Date, default: Date.now }
+  }],
+  removed: { type: Boolean, default: false, index: true },
   createdBy: { type: String, required: true, index: true }
 }, { 
   timestamps: true 

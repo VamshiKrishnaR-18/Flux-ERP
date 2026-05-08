@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { ProductModel } from '../models/product.model';
-import { ProductSchema } from '@erp/types';
 import { asyncHandler } from '../utils/asyncHandler';
+import { productService } from '../services/product.service';
+import { parse } from 'csv-parse/sync';
+import fs from 'fs';
 
 export const ProductController = {
   // Search + Pagination
@@ -15,22 +17,8 @@ export const ProductController = {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const search = req.query.search as string || '';
-    const skip = (page - 1) * limit;
 
-    const query: any = { createdBy: userId };
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { sku: { $regex: search, $options: 'i' } }
-      ];
-    }
-
-    const products = await ProductModel.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    const total = await ProductModel.countDocuments(query);
+    const { products, total } = await productService.getAllProducts(userId, { page, limit, search });
 
     res.json({ 
       success: true, 
@@ -47,9 +35,7 @@ export const ProductController = {
       throw new Error('Unauthorized');
     }
 
-    const parsed = ProductSchema.safeParse(req.body); 
-    if (!parsed.success) { res.status(400); throw new Error("Invalid data"); }
-    const product = await ProductModel.create({ ...parsed.data, createdBy: userId });
+    const product = await productService.createProduct(userId, req.body);
     res.status(201).json({ success: true, data: product });
   }),
 
@@ -60,12 +46,7 @@ export const ProductController = {
       throw new Error('Unauthorized');
     }
 
-    const product = await ProductModel.findOneAndUpdate(
-      { _id: req.params.id, createdBy: userId },
-      req.body,
-      { new: true }
-    );
-    if (!product) { res.status(404); throw new Error("Product not found"); }
+    const product = await productService.updateProduct(String(req.params.id), userId, req.body);
     res.json({ success: true, data: product });
   }),
 
@@ -76,8 +57,7 @@ export const ProductController = {
       throw new Error('Unauthorized');
     }
 
-    const product = await ProductModel.findOneAndDelete({ _id: req.params.id, createdBy: userId });
-    if (!product) { res.status(404); throw new Error("Product not found"); }
+    await productService.deleteProduct(String(req.params.id), userId);
     res.json({ success: true, message: "Product deleted" });
   }),
 
@@ -88,8 +68,21 @@ export const ProductController = {
       throw new Error('Unauthorized');
     }
 
-    const product = await ProductModel.findOne({ _id: req.params.id, createdBy: userId });
+    const product = await ProductModel.findOne({ _id: req.params.id, createdBy: userId, removed: { $ne: true } });
     if (!product) { res.status(404); throw new Error("Product not found"); }
     res.json({ success: true, data: product });
+  }),
+
+  bulkImport: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.file) { res.status(400); throw new Error("No file uploaded"); }
+    const userId = req.user?.id;
+    if (!userId) { res.status(401); throw new Error("Unauthorized"); }
+
+    const content = fs.readFileSync(req.file.path, 'utf8');
+    const records = parse(content, { columns: true, skip_empty_lines: true });
+
+    const result = await productService.bulkImport(userId, records);
+
+    res.json({ success: true, message: `Imported ${result.length} products` });
   })
 };

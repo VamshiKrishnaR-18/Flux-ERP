@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { SettingsModel } from '../models/settings.model';
 import { SettingsSchema } from '@erp/types';
 import { asyncHandler } from '../utils/asyncHandler';
+import { logActivity } from '../utils/activity';
 
 export const SettingsController = {
   
@@ -32,6 +33,15 @@ export const SettingsController = {
       }, 
       { new: true, upsert: true }
     );
+
+    await logActivity({
+        userId: String(req.user?.id),
+        action: 'updated',
+        resourceType: 'Settings',
+        resourceId: settings._id as string,
+        resourceName: 'Company Settings',
+        details: Object.keys(req.body)
+    });
 
     res.json({ success: true, message: "Settings saved", data: settings });
   })

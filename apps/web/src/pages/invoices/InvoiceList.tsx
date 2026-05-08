@@ -1,12 +1,17 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/axios';
-import { Plus, FileText, ChevronLeft, ChevronRight, Loader2, Download } from 'lucide-react';
+import { Plus, FileText, ChevronLeft, ChevronRight, Download, Loader2, X } from 'lucide-react';
 import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { toast } from 'sonner';
 
 import { type Invoice } from '@erp/types';
 import { EmptyState } from '../../components/EmptyState'; 
+import { TableSkeleton } from '../../components/Skeleton';
+import { StatusBadge } from '../../components/StatusBadge';
+import { useQuery } from '@tanstack/react-query';
+
+type Density = 'compact' | 'relaxed';
 
 const invoiceListStyles = StyleSheet.create({
   page: { padding: 24, fontSize: 10, color: '#111', fontFamily: 'Helvetica' },
@@ -50,45 +55,51 @@ const InvoiceListPDF = ({ invoices, currencySymbol }: { invoices: Invoice[]; cur
 
 export default function InvoiceList() {
   const navigate = useNavigate();
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
-  const [currencySymbol, setCurrencySymbol] = useState('$');
-  
-  // Pagination State
+  const [density, setDensity] = useState<Density>('relaxed');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    
-    api.get('/settings').then(res => {
-       const curr = res.data.data?.currency;
-       if (curr === 'EUR') setCurrencySymbol('€');
-       else if (curr === 'GBP') setCurrencySymbol('£');
-       else if (curr === 'INR') setCurrencySymbol('₹');
-       else setCurrencySymbol('$');
-    }).catch(() => {});
-  }, []);
+  const month = searchParams.get('month');
+  const year = searchParams.get('year');
 
-  useEffect(() => {
-    
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const { data } = await api.get(`/invoices?page=${page}&limit=10`); 
-        setInvoices(data.data);
-        if (data.pagination) {
-          setTotalPages(data.pagination.totalPages);
-        }
-      } catch {
-        toast.error("Failed to load invoices");
-      } finally {
-        setIsLoading(false);
+  const filterLabel = useMemo(() => {
+    if (month && year) {
+      const date = new Date(parseInt(year), parseInt(month) - 1);
+      return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    }
+    return null;
+  }, [month, year]);
+
+  // Settings for Currency
+  const { data: settingsData } = useQuery({
+    queryKey: ['settings'],
+    queryFn: async () => {
+      const res = await api.get('/settings');
+      return res.data.data;
+    }
+  });
+
+  const currencySymbol = settingsData?.currency === 'EUR' ? '€' : 
+                         settingsData?.currency === 'GBP' ? '£' : 
+                         settingsData?.currency === 'INR' ? '₹' : '$';
+
+  // Fetch Invoices
+  const { data: invoicesData, isLoading } = useQuery({
+    queryKey: ['invoices', page, month, year],
+    queryFn: async () => {
+      let url = `/invoices?page=${page}&limit=10`;
+      if (month && year) {
+        url += `&month=${month}&year=${year}`;
       }
-    };
-    fetchData();
-  }, [page]);
+      const res = await api.get(url);
+      return res.data;
+    }
+  });
+
+  const invoices = invoicesData?.data || [];
+  const totalPages = invoicesData?.pagination?.totalPages || 1;
 
   const handleExportCsv = async () => {
     setIsExporting(true);
@@ -140,20 +151,51 @@ export default function InvoiceList() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 lg:p-10">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-200">
       <main className="max-w-7xl mx-auto">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Invoices</h1>
-            <p className="text-gray-500 mt-1">Manage and track your client billings</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">Invoices</h1>
+            <p className="text-gray-500 dark:text-slate-400 mt-1">Manage and track your client billings</p>
+            {filterLabel && (
+              <div className="flex items-center gap-2 mt-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-xs font-bold border border-blue-100 dark:border-blue-500/20 animate-in zoom-in duration-300">
+                  Showing invoices for {filterLabel}
+                  <button 
+                    onClick={() => {
+                      searchParams.delete('month');
+                      searchParams.delete('year');
+                      setSearchParams(searchParams);
+                    }}
+                    className="hover:bg-blue-100 dark:hover:bg-blue-500/20 p-0.5 rounded transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              </div>
+            )}
           </div>
-	      <div className="flex items-center gap-3 w-full sm:w-auto">
+	      <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-1 shadow-sm">
+            <button
+              onClick={() => setDensity('compact')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${density === 'compact' ? 'bg-black dark:bg-slate-100 text-white dark:text-slate-900' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
+            >
+              Compact
+            </button>
+            <button
+              onClick={() => setDensity('relaxed')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${density === 'relaxed' ? 'bg-black dark:bg-slate-100 text-white dark:text-slate-900' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
+            >
+              Relaxed
+            </button>
+          </div>
           <button
             onClick={handleExportPdf}
             disabled={isExportingPdf}
-            className="bg-white border border-gray-200 text-gray-900 px-4 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition-all shadow-sm disabled:opacity-60 w-full sm:w-auto"
+            className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-slate-100 px-4 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all shadow-sm disabled:opacity-60 w-full sm:w-auto"
           >
             {isExportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             Export PDF
@@ -161,14 +203,14 @@ export default function InvoiceList() {
 	        <button
 	          onClick={handleExportCsv}
 	          disabled={isExporting}
-	          className="bg-white border border-gray-200 text-gray-900 px-4 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition-all shadow-sm disabled:opacity-60 w-full sm:w-auto"
+	          className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-slate-100 px-4 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all shadow-sm disabled:opacity-60 w-full sm:w-auto"
 	        >
 	          {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
 	          Export CSV
 	        </button>
 	        <button 
 	          onClick={() => navigate('/invoices/new')} 
-	          className="bg-black text-white px-5 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-800 transition-all shadow-md hover:shadow-lg active:scale-95 w-full sm:w-auto"
+	          className="bg-black dark:bg-slate-100 text-white dark:text-slate-900 px-5 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-800 dark:hover:bg-slate-200 transition-all shadow-md hover:shadow-lg active:scale-95 w-full sm:w-auto"
 	        >
 	          <Plus className="w-5 h-5" /> New Invoice
 	        </button>
@@ -177,65 +219,72 @@ export default function InvoiceList() {
 
         {/* Content */}
         {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="animate-spin text-gray-400 w-8 h-8" />
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-slate-800">
+            <TableSkeleton rows={10} cols={6} />
           </div>
-        ) : invoices.length === 0 ? (
-          <EmptyState 
-            title="No invoices yet"
-            description="Create your first invoice to get started."
-            icon={FileText}
-            actionLabel="Create Invoice"
-            onAction={() => navigate('/invoices/new')}
-          />
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden animate-in fade-in duration-500">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-gray-50/50 text-gray-500 font-medium border-b border-gray-100">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-hidden animate-in fade-in duration-500">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-gray-50/50 dark:bg-slate-800/50 text-gray-500 dark:text-slate-400 font-medium border-b border-gray-100 dark:border-slate-800">
                   <tr>
-                    <th className="px-6 py-4 text-xs uppercase tracking-wider">Number</th>
-                    <th className="px-6 py-4 text-xs uppercase tracking-wider">Client</th>
-                    <th className="px-6 py-4 text-xs uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-4 text-xs uppercase tracking-wider">Due Date</th>
-                    <th className="px-6 py-4 text-xs uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-xs uppercase tracking-wider text-right">Amount</th>
+                    <th className={`px-6 text-xs uppercase tracking-wider font-semibold ${density === 'compact' ? 'py-3' : 'py-5'}`}>Number</th>
+                    <th className={`px-6 text-xs uppercase tracking-wider font-semibold ${density === 'compact' ? 'py-3' : 'py-5'}`}>Client</th>
+                    <th className={`px-6 text-xs uppercase tracking-wider font-semibold ${density === 'compact' ? 'py-3' : 'py-5'}`}>Date</th>
+                    <th className={`px-6 text-xs uppercase tracking-wider font-semibold ${density === 'compact' ? 'py-3' : 'py-5'}`}>Due Date</th>
+                    <th className={`px-6 text-xs uppercase tracking-wider font-semibold ${density === 'compact' ? 'py-3' : 'py-5'}`}>Status</th>
+                    <th className={`px-6 text-xs uppercase tracking-wider font-semibold text-right ${density === 'compact' ? 'py-3' : 'py-5'}`}>Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {invoices.map((inv) => {
-                    const client = inv.clientId as unknown as { name: string };
-                    return (
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                  {invoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-20 text-center">
+                      <EmptyState 
+                        title="No invoices found"
+                        description="Once you've added clients and products, you can create your first invoice here to start tracking revenue."
+                        icon={FileText}
+                        actionLabel="Create Invoice"
+                        onAction={() => navigate('/invoices/new')}
+                        stepNumber={3}
+                        secondaryActionLabel="Learn about billing"
+                        onSecondaryAction={() => window.open('https://docs.example.com/billing', '_blank')}
+                      />
+                    </td>
+                  </tr>
+                ) : invoices.map((inv: Invoice) => {
+                  const client = inv.clientId as unknown as { name: string };
+                  return (
                       <tr 
                         key={inv._id} 
                         onClick={() => navigate(`/invoices/${inv._id}`)}
-                        className="group hover:bg-gray-50 cursor-pointer transition-colors"
+                        className="group hover:bg-gray-50/80 dark:hover:bg-slate-800/50 cursor-pointer transition-all duration-200"
                       >
-                        <td className="px-6 py-4">
-                          <span className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                              {inv.number}
+                        <td className={`px-6 ${density === 'compact' ? 'py-2.5' : 'py-5'}`}>
+                          <span className="font-bold text-gray-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              #{(inv as any).invoicePrefix || ''}{inv.number}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-gray-700 font-medium">
-                          {client?.name || <span className="text-gray-400 italic">Unknown Client</span>}
+                        <td className={`px-6 ${density === 'compact' ? 'py-2.5' : 'py-5'}`}>
+                          <div className="flex flex-col">
+                            <span className="text-gray-900 dark:text-slate-100 font-semibold">{client?.name || 'Unknown Client'}</span>
+                            {density === 'relaxed' && <span className="text-xs text-gray-400 dark:text-slate-500 font-normal">ID: {inv._id.slice(-6)}</span>}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 text-gray-500 text-sm">
-                          {new Date(inv.date).toLocaleDateString()}
+                        <td className={`px-6 text-gray-600 dark:text-slate-400 text-sm ${density === 'compact' ? 'py-2.5' : 'py-5'}`}>
+                          {new Date(inv.date).toLocaleDateString(undefined, { dateStyle: 'medium' })}
                         </td>
-                        <td className="px-6 py-4 text-gray-500 text-sm">
-                          {new Date(inv.expiredDate).toLocaleDateString()}
+                        <td className={`px-6 text-gray-600 dark:text-slate-400 text-sm ${density === 'compact' ? 'py-2.5' : 'py-5'}`}>
+                          {new Date(inv.expiredDate).toLocaleDateString(undefined, { dateStyle: 'medium' })}
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize border
-                            ${inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 
-                              inv.status === 'sent' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
-                              inv.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' :
-                              'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                            {inv.status}
+                        <td className={`px-6 ${density === 'compact' ? 'py-2.5' : 'py-5'}`}>
+                          <StatusBadge status={inv.status} />
+                        </td>
+                        <td className={`px-6 text-right ${density === 'compact' ? 'py-2.5' : 'py-5'}`}>
+                          <span className="font-black text-gray-900 dark:text-slate-100 text-base">
+                            {currencySymbol}{inv.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold text-gray-900">
-                          {currencySymbol} {inv.total.toFixed(2)}
                         </td>
                       </tr>
                     );
@@ -244,24 +293,79 @@ export default function InvoiceList() {
               </table>
             </div>
 
+            {/* Mobile Card Layout */}
+            <div className="md:hidden divide-y divide-gray-100 dark:divide-slate-800">
+              {invoices.length === 0 ? (
+                <div className="py-20 text-center px-6">
+                  <EmptyState 
+                    title="No invoices found"
+                    description="Once you've added clients and products, you can create your first invoice here."
+                    icon={FileText}
+                    actionLabel="Create Invoice"
+                    onAction={() => navigate('/invoices/new')}
+                  />
+                </div>
+              ) : (
+                invoices.map((inv: Invoice) => {
+                  const client = inv.clientId as unknown as { name: string };
+                  return (
+                    <div 
+                      key={inv._id} 
+                      onClick={() => navigate(`/invoices/${inv._id}`)}
+                      className="p-6 active:bg-gray-50 dark:active:bg-slate-800 transition-colors"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+                            #{(inv as any).invoicePrefix || ''}{inv.number}
+                          </span>
+                          <span className="text-lg font-bold text-gray-900 dark:text-slate-100">
+                            {client?.name || 'Unknown Client'}
+                          </span>
+                        </div>
+                        <StatusBadge status={inv.status} />
+                      </div>
+                      <div className="flex justify-between items-end">
+                        <div className="space-y-1">
+                          <p className="text-xs text-gray-500 dark:text-slate-400">
+                            Issued: {new Date(inv.date).toLocaleDateString(undefined, { dateStyle: 'short' })}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400">
+                            Due: {new Date(inv.expiredDate).toLocaleDateString(undefined, { dateStyle: 'short' })}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-black text-gray-900 dark:text-slate-100">
+                            {currencySymbol}{inv.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
-                <span className="text-sm text-gray-500">
-                    Page <span className="font-medium text-gray-900">{page}</span> of {totalPages}
+              <div className="px-6 py-4 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between bg-gray-50/50 dark:bg-slate-800/20">
+                <span className="text-sm text-gray-500 dark:text-slate-400">
+                    Page <span className="font-medium text-gray-900 dark:text-slate-100">{page}</span> of {totalPages}
                 </span>
                 <div className="flex gap-2">
                     <button
                       disabled={page === 1}
                       onClick={() => setPage(p => p - 1)}
-                      className="p-2 border border-gray-300 rounded-lg hover:bg-white hover:text-blue-600 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-gray-400 transition-all bg-white shadow-sm"
+                      className="p-2 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-gray-400 transition-all bg-white dark:bg-slate-900 shadow-sm"
+                      aria-label="Previous page"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <button
                       disabled={page === totalPages}
                       onClick={() => setPage(p => p + 1)}
-                      className="p-2 border border-gray-300 rounded-lg hover:bg-white hover:text-blue-600 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-gray-400 transition-all bg-white shadow-sm"
+                      className="p-2 border border-gray-300 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-gray-400 transition-all bg-white dark:bg-slate-900 shadow-sm"
+                      aria-label="Next page"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>

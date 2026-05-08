@@ -2,13 +2,16 @@ import mongoose, { Schema, Document } from 'mongoose';
 import { Invoice as IInvoiceDTO } from "@erp/types";
 
 
-export interface IInvoiceDocument extends Document, Omit<IInvoiceDTO, '_id' | 'createdAt' | 'updatedAt'> {
+export interface IInvoiceDocument extends Document, Omit<IInvoiceDTO, '_id' | 'createdAt' | 'updatedAt' | 'date' | 'expiredDate'> {
   createdAt: Date;
   updatedAt: Date;
+  date: Date;
+  expiredDate: Date;
   amountPaid: number;
   removed: boolean;
   createdBy: string;
   invoicePrefix?: string;
+  lastRecurringAt?: Date;
   auditLogs?: { action: 'created' | 'updated'; userId: string; at: Date; changes?: string[] }[];
 }
 
@@ -23,18 +26,22 @@ const InvoiceSchema: Schema = new Schema({
     enum: ['daily', 'weekly', 'monthly', 'annually', 'quarter', 'none'], 
     default: 'none' 
   },
+  lastRecurringAt: { type: Date },
+  exchangeRate: { type: Number, default: 1 },
+  baseCurrency: { type: String, default: 'USD' },
 
   
-  date: { type: Date, required: true },
-  expiredDate: { type: Date, required: true },
+  date: { type: Date, required: true, index: true },
+  expiredDate: { type: Date, required: true, index: true },
   
   
   clientId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Client',
-    required: true
+    required: true,
+    index: true
   },
-  createdBy: { type: String, required: true },
+  createdBy: { type: String, required: true, index: true },
 
   // Content
   items: [{
@@ -61,17 +68,19 @@ const InvoiceSchema: Schema = new Schema({
   status: { 
     type: String, 
     enum: ['draft', 'pending', 'sent', 'paid', 'overdue'], 
-    default: 'draft' 
+    default: 'draft',
+    index: true
   },
   paymentStatus: { 
     type: String, 
     enum: ['unpaid', 'paid', 'partially'], 
-    default: 'unpaid' 
+    default: 'unpaid',
+    index: true
   },
   
   // System
   pdf: { type: String },
-  removed: { type: Boolean, default: false },
+  removed: { type: Boolean, default: false, index: true },
   auditLogs: [{
     action: { type: String, enum: ['created', 'updated'], required: true },
     userId: { type: String, required: true },

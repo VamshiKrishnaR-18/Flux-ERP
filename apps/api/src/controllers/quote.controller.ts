@@ -1,22 +1,11 @@
 import { Request, Response } from 'express';
 import { QuoteModel } from '../models/quote.model';
 import { ClientModel } from '../models/client.model';
-import { InvoiceModel } from '../models/invoice.model';
-import { EmailService } from '../services/email.service';
 import { asyncHandler } from '../utils/asyncHandler';
-import { generateInvoiceNumber } from '../utils/generators';
+import { quoteService } from '../services/quote.service';
 import { buildCsv } from '../utils/csv';
-import { ProductService } from '../services/product.service';
-import { SettingsModel } from '../models/settings.model';
-
-const generateQuoteNumber = async (userId?: string) => {
-  const last = await QuoteModel.findOne({ createdBy: userId }).sort({ number: -1 });
-  return ((last as any)?.number ?? 1000) + 1;
-};
 
 export const QuoteController = {
-  
-  
   getAll: asyncHandler(async (req: Request, res: Response) => {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
@@ -24,7 +13,7 @@ export const QuoteController = {
     const clientId = req.query.clientId as string;
     const skip = (page - 1) * limit;
 
-    const query: any = { createdBy: req.user?.id };
+    const query: any = { createdBy: req.user?.id, removed: { $ne: true } };
 
     if (clientId) {
         query.clientId = clientId;
@@ -32,25 +21,18 @@ export const QuoteController = {
 
     if (search) {
       const searchNum = Number(search);
-      // 1. Search by Number
       if (!isNaN(searchNum)) {
         query.number = searchNum;
-      } 
-      // 2. Search by Title
-      else {
-        
+      } else {
         if (clientId) {
              query.title = { $regex: search, $options: 'i' };
         } else {
-            
             const clients = await ClientModel.find({
                 userId: req.user?.id,
-                removed: false,
+                removed: { $ne: true },
                 name: { $regex: search, $options: 'i' }
             }).select('_id');
-            
             const clientIds = clients.map(c => c._id);
-    
             query.$or = [
                 { title: { $regex: search, $options: 'i' } },
                 { clientId: { $in: clientIds } }          
@@ -87,49 +69,27 @@ export const QuoteController = {
     }
 
     const search = (req.query.search as string) || '';
-
-    const query: any = { createdBy: userId };
+    const query: any = { createdBy: userId, removed: { $ne: true } };
 
     if (search) {
       const searchNum = Number(search);
       if (!isNaN(searchNum)) {
         query.number = searchNum;
       } else {
-        const clients = await ClientModel.find({
-          userId,
-          removed: false,
-          name: { $regex: search, $options: 'i' }
-        }).select('_id');
-
-        const clientIds = clients.map((c: any) => c._id);
-
-        query.$or = [
-          { title: { $regex: search, $options: 'i' } },
-          { clientId: { $in: clientIds } }
-        ];
+        const clients = await ClientModel.find({ userId, name: { $regex: search, $options: 'i' } }).select('_id');
+        query.$or = [{ title: { $regex: search, $options: 'i' } }, { clientId: { $in: clients.map(c => c._id) } }];
       }
     }
 
-    const quotes: any[] = await QuoteModel.find(query)
-      .populate('clientId', 'name email')
-      .sort({ createdAt: -1 })
-      .lean();
+    const quotes: any[] = await QuoteModel.find(query).populate('clientId').sort({ createdAt: -1 }).lean();
 
     const csv = buildCsv(quotes, [
       { header: 'Quote Number', value: (q: any) => q.number ?? '' },
       { header: 'Title', value: (q: any) => q.title ?? '' },
-      { header: 'Client Name', value: (q: any) => q.clientId?.name ?? '' },
-      { header: 'Client Email', value: (q: any) => q.clientId?.email ?? '' },
-      { header: 'Date', value: (q: any) => (q.date ? new Date(q.date).toISOString().slice(0, 10) : '') },
-      { header: 'Valid Until', value: (q: any) => (q.expiredDate ? new Date(q.expiredDate).toISOString().slice(0, 10) : '') },
+      { header: 'Client', value: (q: any) => q.clientId?.name ?? '' },
+      { header: 'Total', value: (q: any) => q.total ?? 0 },
       { header: 'Status', value: (q: any) => q.status ?? '' },
-      { header: 'Currency', value: (q: any) => q.currency ?? '' },
-      { header: 'Subtotal', value: (q: any) => q.subTotal ?? '' },
-      { header: 'Tax', value: (q: any) => q.taxTotal ?? '' },
-      { header: 'Discount', value: (q: any) => q.discount ?? '' },
-      { header: 'Total', value: (q: any) => q.total ?? '' },
-      { header: 'Notes', value: (q: any) => q.notes ?? '' },
-      { header: 'Quote ID', value: (q: any) => q._id ?? '' }
+      { header: 'Date', value: (q: any) => (q.date ? new Date(q.date).toISOString().slice(0, 10) : '') }
     ]);
 
     const dateTag = new Date().toISOString().slice(0, 10);
@@ -138,54 +98,72 @@ export const QuoteController = {
     res.status(200).send(csv);
   }),
 
-  
+  create: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
+    const quote = await quoteService.createQuote(userId, req.body);
+    res.status(201).json({ success: true, data: quote });
+  }),
+
+  update: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
+    const quote = await quoteService.updateQuote(String(req.params.id), userId, req.body);
+    res.json({ success: true, data: quote });
+  }),
+
+  delete: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
+    await quoteService.deleteQuote(String(req.params.id), userId);
+    res.json({ success: true, message: "Quote deleted" });
+  }),
+
   getOne: asyncHandler(async (req: Request, res: Response) => {
-    const quote = await QuoteModel.findOne({ _id: req.params.id, createdBy: req.user?.id }).populate('clientId');
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
+    }
+
+    const quote = await QuoteModel.findOne({ _id: req.params.id, createdBy: userId, removed: { $ne: true } }).populate('clientId');
     if (!quote) { res.status(404); throw new Error("Quote not found"); }
     res.json({ success: true, data: quote });
   }),
 
-  create: asyncHandler(async (req: Request, res: Response) => {
-    const client = await ClientModel.findOne({ _id: req.body?.clientId, userId: req.user?.id, removed: false });
-    if (!client) {
-      res.status(404);
-      throw new Error('Client not found');
+  send: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
     }
 
-    const nextNumber = await generateQuoteNumber(req.user?.id);
-    const newQuote = await QuoteModel.create({
-      ...req.body,
-      number: nextNumber,
-      createdBy: req.user?.id
-    });
-    res.status(201).json({ success: true, data: newQuote });
+    await quoteService.sendQuote(String(req.params.id), userId);
+    res.json({ success: true, message: "Quote sent" });
   }),
 
   updateStatus: asyncHandler(async (req: Request, res: Response) => {
-    const { status } = req.body as { status?: string };
-    if (!status) {
-      res.status(400);
-      throw new Error('Status is required');
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401);
+      throw new Error('Unauthorized');
     }
 
-    if (!['accepted', 'rejected'].includes(status)) {
-      res.status(400);
-      throw new Error('Only accepted/rejected status updates are supported');
-    }
-
-    const quote = await QuoteModel.findOne({ _id: req.params.id, createdBy: req.user?.id }).populate('clientId');
-    if (!quote) { res.status(404); throw new Error('Quote not found'); }
-
-    
-    if (quote.status !== 'sent') {
-      res.status(400);
-      throw new Error(`Cannot mark quote as ${status} when status is ${quote.status}`);
-    }
-
-    quote.status = status as any;
-    await quote.save();
-
-    res.json({ success: true, message: 'Quote status updated', data: quote });
+    const { status } = req.body;
+    const quote = await quoteService.updateStatus(String(req.params.id), userId, status);
+    res.json({ success: true, data: quote });
   }),
 
   convertToInvoice: asyncHandler(async (req: Request, res: Response) => {
@@ -195,68 +173,7 @@ export const QuoteController = {
       throw new Error('Unauthorized');
     }
 
-    const quote = await QuoteModel.findOne({ _id: req.params.id, createdBy: req.user?.id });
-    if (!quote) { res.status(404); throw new Error("Quote not found"); }
-    if (quote.status === 'converted') { res.status(400); throw new Error("Already converted"); }
-    if (quote.status !== 'accepted') {
-      res.status(400);
-      throw new Error('Quote must be accepted before converting to an invoice');
-    }
-
-    const nextInvNumber = await generateInvoiceNumber(String(quote.createdBy || userId));
-    const settings = await SettingsModel.findOne({ userId }).select('invoicePrefix').lean();
-    const quoteData = quote as any; 
-
-    const newInvoice = await InvoiceModel.create({
-      number: nextInvNumber,
-      year: new Date().getFullYear(),
-      date: new Date(),
-      expiredDate: quoteData.expiredDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      clientId: quoteData.clientId,
-      items: quoteData.items,
-      subTotal: quoteData.subTotal,
-      taxRate: quoteData.taxRate,
-      taxTotal: quoteData.taxTotal,
-      total: quoteData.total,
-      discount: quoteData.discount,
-      notes: `Converted from Quote #${quoteData.number}`,
-      status: 'draft',
-      createdBy: String(quote.createdBy || userId),
-      invoicePrefix: settings?.invoicePrefix,
-      converted: { from: 'quote', quoteId: quote._id }
-    });
-
-    await ProductService.adjustStock(quoteData.items || [], 'deduct', userId);
-
-    quote.status = 'converted';
-    quote.convertedInvoiceId = newInvoice._id as any;
-    await quote.save();
-
-    res.json({ success: true, message: "Converted to Invoice", data: newInvoice });
-  }),
-  
-  delete: asyncHandler(async (req: Request, res: Response) => {
-    const deleted = await QuoteModel.findOneAndDelete({ _id: req.params.id, createdBy: req.user?.id });
-    if (!deleted) { res.status(404); throw new Error('Quote not found'); }
-    res.json({ success: true, message: "Quote deleted" });
-  }),
-
-  send: asyncHandler(async (req: Request, res: Response) => {
-    const quote = await QuoteModel.findOne({ _id: req.params.id, createdBy: req.user?.id }).populate('clientId');
-    if (!quote) { res.status(404); throw new Error("Quote not found"); }
-    if (quote.status === 'converted') {
-      res.status(400);
-      throw new Error('Already converted');
-    }
-
-    const client = quote.clientId as any;
-    if (client?.email) {
-      await EmailService.sendQuote(quote, client);
-    }
-
-    if (quote.status === 'draft') quote.status = 'sent';
-    await quote.save();
-
-    res.json({ success: true, message: "Quote sent", data: quote });
-  }),
+    const invoice = await quoteService.convertToInvoice(String(req.params.id), userId);
+    res.json({ success: true, data: invoice, message: "Converted to invoice" });
+  })
 };

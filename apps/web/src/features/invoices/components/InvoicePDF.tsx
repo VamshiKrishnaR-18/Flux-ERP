@@ -1,4 +1,4 @@
-import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import type { Invoice, InvoiceItem, SettingsDTO } from '@erp/types';
 
 
@@ -40,6 +40,15 @@ interface InvoicePDFProps {
 
 export const InvoicePDF = ({ invoice, settings }: InvoicePDFProps) => {
   const client = invoice.clientId as unknown as { name?: string; email?: string };
+  const primaryColor = settings?.primaryColor || '#2563EB';
+  const logoUrl = settings?.logo ? `http://localhost:3001${settings.logo}` : null;
+
+  const dynamicStyles = StyleSheet.create({
+    logo: { fontSize: 20, fontWeight: 'bold', color: primaryColor },
+    grandTotal: { width: 80, textAlign: 'right', fontWeight: 'bold', fontSize: 12, color: primaryColor },
+    stamp: { color: primaryColor, borderColor: primaryColor }
+  });
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -47,8 +56,11 @@ export const InvoicePDF = ({ invoice, settings }: InvoicePDFProps) => {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          {/* 2. Use Dynamic Settings  */}
-          <Text style={styles.logo}>{settings?.companyName || 'My Company'}</Text>
+          {logoUrl ? (
+            <Image src={logoUrl} style={{ width: 100, marginBottom: 10 }} />
+          ) : (
+            <Text style={[styles.logo, dynamicStyles.logo]}>{settings?.companyName || 'My Company'}</Text>
+          )}
           <Text style={{ marginTop: 4, color: '#666' }}>{settings?.companyAddress}</Text>
           <Text style={{ color: '#666' }}>{settings?.companyEmail}</Text>
         </View>
@@ -117,7 +129,7 @@ export const InvoicePDF = ({ invoice, settings }: InvoicePDFProps) => {
           </View>
           <View style={[styles.totalRow, { marginTop: 4, borderTop: '1px solid #E5E7EB', paddingTop: 4 }]}>
             <Text style={styles.totalLabel}>Total:</Text>
-            <Text style={styles.grandTotal}>${invoice.total.toFixed(2)}</Text>
+            <Text style={[styles.grandTotal, dynamicStyles.grandTotal]}>${invoice.total.toFixed(2)}</Text>
           </View>
         </View>
       </View>

@@ -18,12 +18,21 @@ export type LoginDTO = z.infer<typeof LoginSchema>;
 
 
 // 2. CLIENTS 
+export const AttachmentSchema = z.object({
+  name: z.string(),
+  url: z.string(),
+  type: z.string(),
+  size: z.number(),
+  uploadedAt: z.string().or(z.date()).optional(),
+});
+
 export const ClientSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   phoneNumber: z.string().optional(),
   status: z.enum(['active', 'inactive']).default('active'),
   address: z.string().optional(),
+  attachments: z.array(AttachmentSchema).optional().default([]),
   removed: z.boolean().optional().default(false), 
 });
 export type ClientDTO = z.infer<typeof ClientSchema>;
@@ -41,6 +50,7 @@ export const UserSchema = z.object({
   email: z.string().email(),
   password: z.string().optional(), 
   role: z.enum(['admin', 'user']).default('user'),
+  dashboardConfig: z.array(z.string()).optional(),
   createdAt: z.date().optional(),
   resetPasswordToken: z.string().optional(),
   resetPasswordExpire: z.date().optional(),
@@ -73,6 +83,8 @@ export const CreateInvoiceSchema = z.object({
   items: z.array(InvoiceItemSchema).min(1, "Add at least one item"),
   notes: z.string().optional(),
   currency: z.string().default('USD'),
+  exchangeRate: z.number().default(1),
+  baseCurrency: z.string().default('USD'),
   subTotal: z.number().default(0),
   taxRate: z.number().min(0).default(0),
   taxTotal: z.number().default(0),
@@ -116,6 +128,7 @@ export const ProductSchema = z.object({
   description: z.string().optional(),
   price: z.number().min(0, "Price cannot be negative"),
   stock: z.number().int().default(0),
+  minStock: z.number().int().default(5),
   sku: z.string().optional(), 
 });
 
@@ -135,6 +148,7 @@ export const ExpenseSchema = z.object({
   category: z.string().default('Operational'),
   date: z.coerce.date(), 
   receipt: z.string().optional(),
+  attachments: z.array(AttachmentSchema).optional().default([]),
 });
 
 export type CreateExpenseDTO = z.infer<typeof ExpenseSchema>;
@@ -178,9 +192,28 @@ export const SettingsSchema = z.object({
   invoiceStartNumber: z.coerce.number().min(1).default(1000), 
   defaultPaymentTerms: z.coerce.number().min(0).default(14), 
   defaultNotes: z.string().optional().default('Thank you for your business!'),
+  logo: z.string().optional(),
+  primaryColor: z.string().default('#2563EB'),
 });
 
 export type SettingsDTO = z.infer<typeof SettingsSchema>;
+
+// 9. CALCULATIONS
+export const calculateInvoiceTotals = (params: {
+  items: { quantity: number; price: number }[];
+  taxRate: number;
+  discount: number;
+}) => {
+  const subTotal = params.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+  const taxTotal = subTotal * (params.taxRate / 100);
+  const total = subTotal + taxTotal - params.discount;
+  
+  return {
+    subTotal: Math.round(subTotal * 100) / 100,
+    taxTotal: Math.round(taxTotal * 100) / 100,
+    total: Math.round(total * 100) / 100,
+  };
+};
 
 // GLOBAL CONSTANTS
 export const CURRENCIES = [

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { InvoiceModel } from '../models/invoice.model';
 import { ExpenseModel } from '../models/expense.model';
 import { asyncHandler } from '../utils/asyncHandler';
+import { buildCsv } from '../utils/csv';
 
 export const ReportsController = {
   
@@ -26,7 +27,7 @@ export const ReportsController = {
         { 
           $group: { 
             _id: { $month: "$date" }, 
-            total: { $sum: "$total" } 
+            total: { $sum: { $divide: ["$total", { $ifNull: ["$exchangeRate", 1] }] } } 
           } 
         },
         { $sort: { "_id": 1 } }
@@ -35,6 +36,7 @@ export const ReportsController = {
         { 
           $match: { 
             createdBy: userId,
+            removed: { $ne: true },
             date: { $gte: startOfYear, $lt: endOfYear }
           } 
         },
@@ -61,6 +63,18 @@ export const ReportsController = {
       };
     });
 
+    if (req.query.export === 'csv') {
+      const csv = buildCsv(data, [
+        { header: 'Month', value: (d: any) => d.month },
+        { header: 'Revenue', value: (d: any) => d.revenue.toFixed(2) },
+        { header: 'Expenses', value: (d: any) => d.expenses.toFixed(2) },
+        { header: 'Profit', value: (d: any) => d.profit.toFixed(2) }
+      ]);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="revenue-report.csv"');
+      return res.status(200).send(csv);
+    }
+
     res.json({ success: true, data });
   }),
 
@@ -70,7 +84,7 @@ export const ReportsController = {
     if (!userId) { res.status(401); throw new Error('Unauthorized'); }
 
     const breakdown = await ExpenseModel.aggregate([
-      { $match: { createdBy: userId } },
+      { $match: { createdBy: userId, removed: { $ne: true } } },
       { 
         $group: { 
           _id: "$category", 
@@ -100,9 +114,9 @@ export const ReportsController = {
       {
         $group: {
           _id: null,
-          totalTax: { $sum: "$taxTotal" },
-          totalTaxable: { $sum: "$subTotal" },
-          totalRevenue: { $sum: "$total" }
+          totalTax: { $sum: { $divide: ["$taxTotal", { $ifNull: ["$exchangeRate", 1] }] } },
+          totalTaxable: { $sum: { $divide: ["$subTotal", { $ifNull: ["$exchangeRate", 1] }] } },
+          totalRevenue: { $sum: { $divide: ["$total", { $ifNull: ["$exchangeRate", 1] }] } }
         }
       }
     ]);

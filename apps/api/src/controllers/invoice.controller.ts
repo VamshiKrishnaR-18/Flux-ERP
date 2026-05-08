@@ -1,22 +1,20 @@
 import { Request, Response } from 'express';
 import { InvoiceModel } from '../models/invoice.model';
 import { asyncHandler } from '../utils/asyncHandler';
-import { generateInvoiceNumber } from '../utils/generators';
-import { ProductService } from '../services/product.service';
-import { CreateInvoiceSchema } from '@erp/types';
+import { invoiceService } from '../services/invoice.service';
+import { CreateInvoiceSchema } from "@erp/types";
 import { ClientModel } from '../models/client.model';
-import { EmailService } from '../services/email.service';
 import { buildCsv } from '../utils/csv';
-import { SettingsModel } from '../models/settings.model';
+import { emailService } from '../services/email.service';
 
 export const InvoiceController = {
-  
-
   getAll: asyncHandler(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const search = req.query.search as string || '';
     const clientId = req.query.clientId as string;
+    const month = req.query.month as string;
+    const year = req.query.year as string;
     const skip = (page - 1) * limit;
 
     const query: any = { createdBy: req.user?.id, removed: { $ne: true } };
@@ -25,12 +23,17 @@ export const InvoiceController = {
         query.clientId = clientId;
     }
 
+    if (month && year) {
+        const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+        const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+        query.date = { $gte: startDate, $lte: endDate };
+    }
+
     if (search) {
         const searchNum = Number(search);
         if (!isNaN(searchNum)) {
             query.number = searchNum;
         } else {
-             // Find clients matching name (if not already filtering by client)
              if (!clientId) {
                 const clients = await ClientModel.find({
                     userId: req.user?.id,
@@ -102,7 +105,11 @@ export const InvoiceController = {
   }),
 
   getOne: asyncHandler(async (req: Request, res: Response) => {
-    const invoice = await InvoiceModel.findOne({ _id: req.params.id, createdBy: req.user?.id }).populate('clientId');
+    const invoice = await InvoiceModel.findOne({ 
+      _id: req.params.id, 
+      createdBy: req.user?.id,
+      removed: { $ne: true }
+    }).populate('clientId');
     if (!invoice) { res.status(404); throw new Error("Invoice not found"); }
     res.json({ success: true, data: invoice });
   }),
@@ -119,27 +126,8 @@ export const InvoiceController = {
       res.status(400);
       throw new Error(validation.error.errors[0]?.message || "Invalid Input");
     }
-    const { clientId, items } = validation.data;
     
-    // Validate Client
-    const clientExists = await ClientModel.findOne({ _id: clientId, userId, removed: false });
-    if (!clientExists) { res.status(404); throw new Error("Client not found"); }
-
-    const nextNumber = await generateInvoiceNumber(userId);
-    const settings = await SettingsModel.findOne({ userId }).select('invoicePrefix').lean();
-    
-    const newInvoice = await InvoiceModel.create({
-      ...validation.data,
-      number: nextNumber,
-      year: new Date().getFullYear(),
-      createdBy: userId,
-      invoicePrefix: settings?.invoicePrefix,
-      auditLogs: [{ action: 'created', userId, at: new Date(), changes: [] }]
-    });
-
-    // Adjust Stock
-    await ProductService.adjustStock(items, 'deduct', userId);
-
+    const newInvoice = await invoiceService.createInvoice(userId, validation.data);
     res.status(201).json({ success: true, message: "Invoice created", data: newInvoice });
   }),
 
@@ -151,28 +139,7 @@ export const InvoiceController = {
       throw new Error('Unauthorized');
     }
 
-    const existing = await InvoiceModel.findOne({ _id: id, createdBy: userId });
-    if (!existing) { res.status(404); throw new Error("Invoice not found"); }
-
-    const updateData = { ...(req.body || {}) } as Record<string, unknown>;
-    delete updateData.auditLogs;
-    const changes = Object.keys(updateData);
-
-    const invoice = await InvoiceModel.findOneAndUpdate(
-      { _id: id, createdBy: userId },
-      { 
-        $set: updateData,
-        $push: { auditLogs: { action: 'updated', userId, at: new Date(), changes } }
-      },
-      { new: true }
-    );
-    if (!invoice) { res.status(404); throw new Error("Invoice not found"); }
-
-    if (Array.isArray(req.body?.items)) {
-      await ProductService.adjustStock(existing.items, 'restore', userId);
-      await ProductService.adjustStock(req.body.items, 'deduct', userId);
-    }
-
+    const invoice = await invoiceService.updateInvoice(String(id), userId, req.body);
     res.json({ success: true, message: "Invoice updated", data: invoice });
   }),
 
@@ -183,16 +150,11 @@ export const InvoiceController = {
       throw new Error('Unauthorized');
     }
 
-    const invoice = await InvoiceModel.findOne({ _id: req.params.id, createdBy: userId });
-    if (!invoice) { res.status(404); throw new Error("Invoice not found"); }
-
-    await ProductService.adjustStock(invoice.items, 'restore', userId);
-    await InvoiceModel.deleteOne({ _id: req.params.id, createdBy: userId });
-
+    await invoiceService.deleteInvoice(String(req.params.id), userId);
     res.json({ success: true, message: "Invoice deleted" });
   }),
 
-  
+  // Add Payment
   addPayment: asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const { amount } = req.body;
@@ -200,9 +162,7 @@ export const InvoiceController = {
     const invoice = await InvoiceModel.findOne({ _id: id, createdBy: req.user?.id });
     if (!invoice) { res.status(404); throw new Error("Invoice not found"); }
 
-    const newPaid = (invoice.amountPaid || 0) + Number(amount);
-    
-    
+    const newPaid = (invoice.amountPaid || 0) + amount;
     const newStatus = newPaid >= invoice.total ? 'paid' : 'partially';
 
     invoice.amountPaid = newPaid;
@@ -212,32 +172,65 @@ export const InvoiceController = {
     }
     
     await invoice.save();
+
     res.json({ success: true, message: "Payment recorded", data: invoice });
   }),
 
   // Send Invoice Email
   send: asyncHandler(async (req: Request, res: Response) => {
-    const invoice = await InvoiceModel.findOne({ _id: req.params.id, createdBy: req.user?.id }).populate('clientId');
-    if (!invoice) { res.status(404); throw new Error("Invoice not found"); }
+    const { id } = req.params;
+    const userId = req.user?.id;
 
-    const client = invoice.clientId as any; // Populated
+    const invoice = await InvoiceModel.findOne({ _id: id, createdBy: userId }).populate('clientId');
+    if (!invoice) {
+      res.status(404);
+      throw new Error("Invoice not found");
+    }
+
+    const client = invoice.clientId as any;
     if (!client || !client.email) {
       res.status(400);
       throw new Error("Client email not found");
     }
 
-    const sent = await EmailService.sendInvoice(invoice, client);
+    const sent = await emailService.sendInvoice(invoice, client);
     if (!sent) {
       res.status(500);
       throw new Error("Failed to send email");
     }
 
-    
+    // Update status to 'sent' if it was 'draft'
     if (invoice.status === 'draft') {
       invoice.status = 'sent';
       await invoice.save();
     }
 
     res.json({ success: true, message: "Invoice sent successfully" });
+  }),
+
+  // Send Overdue Reminder
+  remind: asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    const invoice = await InvoiceModel.findOne({ _id: id, createdBy: userId }).populate('clientId');
+    if (!invoice) {
+      res.status(404);
+      throw new Error("Invoice not found");
+    }
+
+    const client = invoice.clientId as any;
+    if (!client || !client.email) {
+      res.status(400);
+      throw new Error("Client email not found");
+    }
+
+    const sent = await emailService.sendReminder(invoice, client);
+    if (!sent) {
+      res.status(500);
+      throw new Error("Failed to send reminder");
+    }
+
+    res.json({ success: true, message: "Reminder sent successfully" });
   })
 };

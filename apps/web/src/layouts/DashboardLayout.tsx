@@ -4,6 +4,9 @@ import { Search, FileText, Package, Users } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useDebounce } from '../hooks/useDebounce';
 import { api } from '../lib/axios';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useDemoMode } from '../context/DemoModeContext';
+import { AIChatbot } from '../components/AIChatbot';
 
 type SearchResults = {
   clients: Array<{ _id: string; name: string; email?: string; phoneNumber?: string }>;
@@ -13,12 +16,24 @@ type SearchResults = {
 
 export const Layout = () => {
   const navigate = useNavigate();
+  const { isDemoMode } = useDemoMode();
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<SearchResults>({ clients: [], invoices: [], products: [] });
   const debouncedQuery = useDebounce(query, 300);
   const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useKeyboardShortcuts({
+    '/': () => searchInputRef.current?.focus(),
+    'mod+k': () => searchInputRef.current?.focus(),
+    'i': () => navigate('/invoices'),
+    'p': () => navigate('/products'),
+    'c': () => navigate('/clients'),
+    'd': () => navigate('/dashboard'),
+    'n': () => navigate('/invoices/new'),
+  });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -62,18 +77,24 @@ export const Layout = () => {
   const hasResults = results.clients.length + results.invoices.length + results.products.length > 0;
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-200">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main Content Area (Scrollable) */}
       <div className="flex-1 ml-64 overflow-auto">
-        <div className="sticky top-0 z-20 bg-white border-b border-gray-200">
+        {isDemoMode && (
+          <div className="bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest py-1 text-center sticky top-0 z-30">
+            Demo Mode Active &bull; Data is simulated and will reset on page reload
+          </div>
+        )}
+        <div className={`sticky ${isDemoMode ? 'top-[20px]' : 'top-0'} z-20 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 transition-colors duration-200`}>
           <div className="px-6 py-4">
             <div className="max-w-7xl mx-auto">
               <div ref={searchRef} className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 w-4 h-4" />
                 <input
+                  ref={searchInputRef}
                   value={query}
                   onChange={(e) => {
                     setQuery(e.target.value);
@@ -82,19 +103,23 @@ export const Layout = () => {
                     if (debouncedQuery.trim()) setIsOpen(true);
                   }}
                   placeholder="Search clients, invoices, products..."
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl outline-none bg-white shadow-sm"
+                  className="w-full pl-10 pr-16 py-2.5 border border-gray-200 dark:border-slate-800 rounded-xl outline-none bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 shadow-sm focus:ring-2 focus:ring-black/5 dark:focus:ring-white/5 transition-all"
                 />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
+                  <kbd className="px-1.5 py-0.5 text-[10px] font-bold text-gray-400 dark:text-slate-500 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-md">⌘</kbd>
+                  <kbd className="px-1.5 py-0.5 text-[10px] font-bold text-gray-400 dark:text-slate-500 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-md">K</kbd>
+                </div>
                 {isOpen && (
-                  <div className="absolute z-30 mt-2 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+                  <div className="absolute z-30 mt-2 w-full rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg overflow-hidden">
                     {isLoading ? (
-                      <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
+                      <div className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">Searching...</div>
                     ) : !hasResults ? (
-                      <div className="px-4 py-3 text-sm text-gray-500">No matches found</div>
+                      <div className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">No matches found</div>
                     ) : (
                       <div className="max-h-96 overflow-auto">
                         {results.clients.length > 0 && (
-                          <div className="border-b border-gray-100">
-                            <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                          <div className="border-b border-gray-100 dark:border-slate-800">
+                            <div className="px-4 py-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
                               <Users className="w-3.5 h-3.5" />
                               Clients
                             </div>
@@ -106,17 +131,17 @@ export const Layout = () => {
                                   setIsOpen(false);
                                   setQuery('');
                                 }}
-                                className="w-full text-left px-4 py-2 hover:bg-gray-50"
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                               >
-                                <div className="text-sm font-medium text-gray-900">{client.name}</div>
-                                <div className="text-xs text-gray-500">{client.email || client.phoneNumber || 'No contact info'}</div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-slate-100">{client.name}</div>
+                                <div className="text-xs text-gray-500 dark:text-slate-400">{client.email || client.phoneNumber || 'No contact info'}</div>
                               </button>
                             ))}
                           </div>
                         )}
                         {results.invoices.length > 0 && (
-                          <div className="border-b border-gray-100">
-                            <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                          <div className="border-b border-gray-100 dark:border-slate-800">
+                            <div className="px-4 py-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
                               <FileText className="w-3.5 h-3.5" />
                               Invoices
                             </div>
@@ -128,12 +153,12 @@ export const Layout = () => {
                                   setIsOpen(false);
                                   setQuery('');
                                 }}
-                                className="w-full text-left px-4 py-2 hover:bg-gray-50"
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                               >
-                                <div className="text-sm font-medium text-gray-900">
+                                <div className="text-sm font-medium text-gray-900 dark:text-slate-100">
                                   {(invoice.invoicePrefix || '') + invoice.number}
                                 </div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-gray-500 dark:text-slate-400">
                                   {invoice.clientId?.name || 'Unknown Client'}
                                 </div>
                               </button>
@@ -142,7 +167,7 @@ export const Layout = () => {
                         )}
                         {results.products.length > 0 && (
                           <div>
-                            <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                            <div className="px-4 py-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-2">
                               <Package className="w-3.5 h-3.5" />
                               Products
                             </div>
@@ -154,10 +179,10 @@ export const Layout = () => {
                                   setIsOpen(false);
                                   setQuery('');
                                 }}
-                                className="w-full text-left px-4 py-2 hover:bg-gray-50"
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                               >
-                                <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                                <div className="text-xs text-gray-500">{product.sku || 'No SKU'}</div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-slate-100">{product.name}</div>
+                                <div className="text-xs text-gray-500 dark:text-slate-400">{product.sku || 'No SKU'}</div>
                               </button>
                             ))}
                           </div>
@@ -172,6 +197,9 @@ export const Layout = () => {
         </div>
         <Outlet />
       </div>
+
+      {/* Floating AI Chatbot */}
+      <AIChatbot />
     </div>
   );
 };

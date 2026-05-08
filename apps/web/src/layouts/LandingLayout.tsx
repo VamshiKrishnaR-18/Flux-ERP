@@ -7,8 +7,9 @@ export default function LandingLayout({ children }: { children: ReactNode }) {
       <nav className="fixed w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="flex-shrink-0 flex items-center">
-              <span className="ml-2 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+            <div className="flex-shrink-0 flex items-center gap-2">
+              <img src="/logo.svg" alt="Logo" className="w-8 h-8 rounded-lg" />
+              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
                 FluxERP
               </span>
             </div>

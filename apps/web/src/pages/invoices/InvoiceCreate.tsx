@@ -1,37 +1,38 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/axios';
 import { toast } from 'sonner';
 import { InvoiceForm } from '../../features/invoices/components/InvoiceForm'; 
 import { type CreateInvoiceDTO } from "@erp/types";
-import axios from 'axios';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function InvoiceCreate() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (data: CreateInvoiceDTO) => api.post('/invoices', data),
+    onSuccess: (res) => {
+      const newInvoice = res.data.data;
+      toast.success('Invoice created successfully!');
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      navigate(`/invoices/${newInvoice._id}`);
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Creation failed';
+      toast.error(message);
+    }
+  });
 
   const handleSubmit = async (data: CreateInvoiceDTO) => {
-    setIsLoading(true);
-    try {
-      const { data: newInvoice } = await api.post('/invoices', data);
-      toast.success('Invoice created successfully!');
-      navigate(`/invoices/${newInvoice.id}`);
-    } catch (error: unknown) {
-      const message = axios.isAxiosError(error) 
-        ? error.response?.data?.message 
-        : 'Creation failed';
-      toast.error(message || 'Creation failed');
-    } finally {
-      setIsLoading(false);
-    }
+    await mutation.mutateAsync(data);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-12 transition-colors">
       <main className="max-w-5xl mx-auto p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">New Invoice</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-6 tracking-tight">New Invoice</h1>
         
-        <InvoiceForm onSubmit={handleSubmit} isLoading={isLoading} />
+        <InvoiceForm onSubmit={handleSubmit} isLoading={mutation.isPending} />
       </main>
     </div>
   );

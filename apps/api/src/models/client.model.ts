@@ -10,6 +10,13 @@ const ClientSchema = new Schema({
     
     portalToken: { type: String, unique: true, sparse: true, index: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    attachments: [{
+        name: { type: String },
+        url: { type: String },
+        type: { type: String },
+        size: { type: Number },
+        uploadedAt: { type: Date, default: Date.now }
+    }],
     removed: { type: Boolean, default: false }
 }, {
     timestamps: true

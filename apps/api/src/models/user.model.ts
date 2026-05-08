@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema<UserType>(
       enum: ["admin", "user"], 
       default: "user" 
     },
+    dashboardConfig: { type: [String], default: ["stats", "cashflow", "aging", "recentInvoices", "topClients"] },
     resetPasswordToken: { type: String },
     resetPasswordExpire: { type: Date }
   },

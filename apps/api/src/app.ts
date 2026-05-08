@@ -21,51 +21,42 @@ import productRoutes from './routes/product.routes';
 import expenseRoutes from './routes/expense.routes';
 import quoteRoutes from './routes/quote.routes';
 import publicRoutes from './routes/public.routes';
+import reportsRoutes from './routes/reports.routes';
+import healthRoutes from './routes/health.routes';
+import activityRoutes from './routes/activity.routes';
+import currencyRoutes from './routes/currency.routes';
+import uploadRoutes from './routes/upload.routes';
+import userRoutes from './routes/user.routes';
+import aiRoutes from './routes/ai.routes';
 
 // Middleware
 import { authMiddleware } from './middleware/auth.middleware';
 import { errorHandler } from './middleware/error.middleware';
 import { requireAdmin } from './middleware/admin.middleware';
+import { requestIdMiddleware } from './middleware/request-id.middleware';
 
 const app = express();
 
+// REQUEST ID
+app.use(requestIdMiddleware);
 
-// SECURITY HEADERS
-app.use(helmet());
-
-// LOGGING
-const morganFormat = ':method :url :status :response-time ms';
-app.use(morgan(morganFormat, {
-  stream: {
-    write: (message) => {
-      const logObject = {
-        method: message.split(' ')[0],
-        url: message.split(' ')[1],
-        status: message.split(' ')[2],
-        responseTime: message.split(' ')[3],
-      };
-      logger.http(JSON.stringify(logObject));
-    },
-  },
-}));
-
-// CORS
+// CORS - Move to top and make more robust
 app.use(cors({
   origin: (origin, callback) => {
-    
+    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    
     const allowedOrigins = [
-      'http://localhost:5173',                  
-      'http://localhost:3000',                  
-      /\.vercel\.app$/                          // Matches ANY Vercel deployment
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:5174',
+      ...(config.corsOrigin || []),
+      /\.vercel\.app$/
     ];
 
-    
     const isAllowed = allowedOrigins.some(rule => {
       if (rule instanceof RegExp) return rule.test(origin);
-      return rule === origin; 
+      return rule === origin;
     });
 
     if (isAllowed) {
@@ -75,14 +66,43 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, 
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Set-Cookie'],
+  optionsSuccessStatus: 204
+}));
+
+// SECURITY HEADERS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// LOGGING
+morgan.token('requestId', (req: any) => req.requestId);
+const morganFormat = ':requestId :method :url :status :response-time ms';
+app.use(morgan(morganFormat, {
+  stream: {
+    write: (message) => {
+      const parts = message.split(' ');
+      const logObject = {
+        requestId: parts[0],
+        method: parts[1],
+        url: parts[2],
+        status: parts[3],
+        responseTime: parts[4],
+      };
+      logger.http(JSON.stringify(logObject));
+    },
+  },
 }));
 
 // BODY PARSING
 app.use(express.json());
 app.use(cookieParser() as unknown as RequestHandler);
+
+// Serve uploads
+app.use('/uploads', express.static('uploads'));
 
 // SECURITY SANITIZATION
 app.use(mongoSanitize() as unknown as RequestHandler);
@@ -113,6 +133,9 @@ app.use('/api-docs', ...(swaggerUi.serve as unknown as RequestHandler[]), swagge
 // API V1 Router
 const apiV1 = express.Router();
 
+// Health Check (Public)
+apiV1.use('/health', healthRoutes);
+
 // Public Routes
 apiV1.use('/auth', authRoutes);
 apiV1.use('/public', publicRoutes); 
@@ -124,19 +147,41 @@ apiV1.use('/dashboard', authMiddleware as unknown as RequestHandler, dashboardRo
 apiV1.use('/products', authMiddleware as unknown as RequestHandler, productRoutes);
 apiV1.use('/quotes', authMiddleware as unknown as RequestHandler, quoteRoutes);
 
-// ADMIN ROUTES
+// ADMIN & ANALYTICS ROUTES
 apiV1.use('/expenses', 
   authMiddleware as unknown as RequestHandler, 
   requireAdmin as unknown as RequestHandler, 
   expenseRoutes
 );
 
+apiV1.use('/reports', 
+  authMiddleware as unknown as RequestHandler, 
+  requireAdmin as unknown as RequestHandler, 
+  reportsRoutes
+);
+
+apiV1.use('/activity', 
+  authMiddleware as unknown as RequestHandler, 
+  activityRoutes
+);
+
+apiV1.use('/currency', 
+  authMiddleware as unknown as RequestHandler, 
+  currencyRoutes
+);
 
 apiV1.use('/settings', 
   authMiddleware as unknown as RequestHandler, 
-  requireAdmin as unknown as RequestHandler, 
   settingsRoutes
 );
+
+apiV1.use('/upload', 
+  authMiddleware as unknown as RequestHandler, 
+  uploadRoutes
+);
+
+apiV1.use('/users', userRoutes);
+apiV1.use('/ai', authMiddleware as unknown as RequestHandler, aiRoutes);
 
 // Mount API V1
 app.use('/api/v1', apiV1);

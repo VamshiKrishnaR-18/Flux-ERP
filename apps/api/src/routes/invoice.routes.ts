@@ -21,5 +21,6 @@ router.post('/:id/payment', InvoiceController.addPayment);
 
 
 router.post('/:id/send', InvoiceController.send);
+router.post('/:id/remind', InvoiceController.remind);
 
 export default router;

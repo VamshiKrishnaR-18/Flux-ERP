@@ -25,7 +25,7 @@ export const DashboardController = {
 		const invoiceBaseMatch = { createdBy: userId, removed: { $ne: true } };
 		const revenueMatch = { ...invoiceBaseMatch, status: { $ne: 'draft' } };
 		const outstandingMatch = { ...invoiceBaseMatch, status: { $nin: ['draft', 'paid'] } };
-		const expenseBaseMatch = { createdBy: userId };
+		const expenseBaseMatch = { createdBy: userId, removed: { $ne: true } };
 
     // 1. Total Revenue
 		const [
@@ -39,6 +39,8 @@ export const DashboardController = {
 			monthlyExpenses,
 			thisMonthRevenueResult,
 			lastMonthRevenueResult,
+			thisMonthExpenseResult,
+			lastMonthExpenseResult,
 			invoiceAgingFacet,
 			topClients
 		] = await Promise.all([
@@ -75,6 +77,14 @@ export const DashboardController = {
 			InvoiceModel.aggregate([
 				{ $match: { ...revenueMatch, date: { $gte: startLastMonth, $lt: endLastMonth } } },
 				{ $group: { _id: null, total: { $sum: "$total" } } }
+			]),
+			ExpenseModel.aggregate([
+				{ $match: { ...expenseBaseMatch, date: { $gte: startThisMonth, $lt: startNextMonth } } },
+				{ $group: { _id: null, total: { $sum: "$amount" } } }
+			]),
+			ExpenseModel.aggregate([
+				{ $match: { ...expenseBaseMatch, date: { $gte: startLastMonth, $lt: endLastMonth } } },
+				{ $group: { _id: null, total: { $sum: "$amount" } } }
 			]),
 			InvoiceModel.aggregate([
 				{ $match: outstandingMatch },
@@ -141,13 +151,17 @@ export const DashboardController = {
 
 		const thisMonthIncome = thisMonthRevenueResult[0]?.total || 0;
 		const lastMonthIncome = lastMonthRevenueResult[0]?.total || 0;
+		const thisMonthExpense = thisMonthExpenseResult[0]?.total || 0;
+		const lastMonthExpense = lastMonthExpenseResult[0]?.total || 0;
 
-		let trendPercentage = 0;
-		if (lastMonthIncome > 0) {
-			trendPercentage = ((thisMonthIncome - lastMonthIncome) / lastMonthIncome) * 100;
-		} else if (thisMonthIncome > 0) {
-			trendPercentage = 100;
-		}
+		const calculateTrend = (current: number, previous: number) => {
+			if (previous === 0) return current > 0 ? 100 : 0;
+			return ((current - previous) / Math.abs(previous)) * 100;
+		};
+
+		const revenueTrend = calculateTrend(thisMonthIncome, lastMonthIncome);
+		const expenseTrend = calculateTrend(thisMonthExpense, lastMonthExpense);
+		const profitTrend = calculateTrend(thisMonthIncome - thisMonthExpense, lastMonthIncome - lastMonthExpense);
 
 		const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 		const chartData = months.map((name, index) => {
@@ -194,13 +208,45 @@ export const DashboardController = {
         totalClients, 
         recentInvoices,
         chartData,
-				trendPercentage,
+				revenueTrend,
+				expenseTrend,
+				profitTrend,
 				invoiceAging,
 				overdueAmount,
 				overdueCount,
 				topClients
       }
     });
+  }),
+  getDrilldown: asyncHandler(async (req: Request, res: Response) => {
+		const userId = String(req.user?.id || '');
+		const { month, type } = req.query; // month is 1-12, type is 'income' or 'expense'
+
+		if (!userId) {
+			res.status(401);
+			throw new Error('Unauthorized');
+		}
+
+		const year = new Date().getFullYear();
+		const startDate = new Date(year, Number(month) - 1, 1);
+		const endDate = new Date(year, Number(month), 1);
+
+		if (type === 'income') {
+			const invoices = await InvoiceModel.find({
+				createdBy: userId,
+				removed: { $ne: true },
+				status: { $ne: 'draft' },
+				date: { $gte: startDate, $lt: endDate }
+			}).populate('clientId', 'name').sort({ date: -1 });
+			res.json({ success: true, data: invoices });
+		} else {
+			const expenses = await ExpenseModel.find({
+				createdBy: userId,
+				removed: { $ne: true },
+				date: { $gte: startDate, $lt: endDate }
+			}).sort({ date: -1 });
+			res.json({ success: true, data: expenses });
+		}
   }),
   search: asyncHandler(async (req: Request, res: Response) => {
 		const userId = String(req.user?.id || '');

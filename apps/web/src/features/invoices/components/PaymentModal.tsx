@@ -51,13 +51,13 @@ export default function PaymentModal({ invoiceId, totalDue, isOpen, onClose, onS
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border border-transparent dark:border-slate-800">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-          <h3 className="font-bold text-gray-800">Record Payment</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+          <h3 className="font-bold text-gray-800 dark:text-slate-100">Record Payment</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -66,7 +66,7 @@ export default function PaymentModal({ invoiceId, totalDue, isOpen, onClose, onS
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Amount ($)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Amount ($)</label>
             <input 
               type="number" 
               required
@@ -75,28 +75,28 @@ export default function PaymentModal({ invoiceId, totalDue, isOpen, onClose, onS
               max={totalDue}
               value={formData.amount}
               onChange={e => setFormData({...formData, amount: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               placeholder={`Max: $${totalDue.toFixed(2)}`}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Date</label>
               <input 
                 type="date" 
                 required
                 value={formData.date}
                 onChange={e => setFormData({...formData, date: e.target.value})}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Method</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Method</label>
               <select 
                 value={formData.method}
                 onChange={e => setFormData({...formData, method: e.target.value as typeof formData.method})}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               >
                 <option>Bank Transfer</option>
                 <option>Cash</option>
@@ -108,12 +108,12 @@ export default function PaymentModal({ invoiceId, totalDue, isOpen, onClose, onS
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Notes (Optional)</label>
             <textarea 
               rows={2}
               value={formData.notes}
               onChange={e => setFormData({...formData, notes: e.target.value})}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+              className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
               placeholder="e.g. Received via wire transfer..."
             />
           </div>
@@ -121,7 +121,7 @@ export default function PaymentModal({ invoiceId, totalDue, isOpen, onClose, onS
           <button 
             type="submit" 
             disabled={isLoading}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg transition-colors disabled:opacity-50 mt-2"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-bold py-2.5 rounded-lg transition-colors disabled:opacity-50 mt-2"
           >
             {isLoading ? 'Processing...' : 'Confirm Payment'}
           </button>

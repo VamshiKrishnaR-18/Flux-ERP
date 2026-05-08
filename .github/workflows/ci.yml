@@ -36,13 +36,16 @@ jobs:
       run: npm ci
 
     - name: Lint Code
-      run: npm run lint
+      run: npx turbo run lint
 
     - name: Type Check
-      run: npx turbo run check-types --filter=api
+      run: npx turbo run check-types
 
-    - name: Build API
-      run: npx turbo run build --filter=api...
+    - name: Security Audit
+      run: npm audit --audit-level=high
+
+    - name: Build
+      run: npx turbo run build
 
     - name: Create Test .env File
       run: |
@@ -50,8 +53,11 @@ jobs:
         echo "JWT_SECRET=test_secret_for_ci_pipeline" >> apps/api/.env
         echo "NODE_ENV=test" >> apps/api/.env
 
-    - name: Run Tests
+    - name: Run API Tests
       run: npx turbo run test --filter=api
+
+    - name: Run Web Tests
+      run: npx turbo run test --filter=web
 
   # DEPLOY 
   deploy-api:

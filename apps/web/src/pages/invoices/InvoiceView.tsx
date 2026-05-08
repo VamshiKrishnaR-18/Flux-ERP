@@ -4,7 +4,8 @@ import { api } from '../../lib/axios';
 import { toast } from 'sonner';
 import { InvoicePDF } from '../../features/invoices/components/InvoicePDF';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { ArrowLeft, Printer, Pencil, Download, CreditCard, X, Link as LinkIcon } from 'lucide-react'; 
+import { ArrowLeft, Pencil, Download, CreditCard, X, Link as LinkIcon, Loader2, Mail, MapPin } from 'lucide-react'; 
+import { StatusBadge } from '../../components/StatusBadge';
 import type { Invoice, SettingsDTO } from '@erp/types';
 import axios from 'axios';
 
@@ -21,6 +22,8 @@ export default function InvoiceView() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [isReminding, setIsReminding] = useState(false);
 
   // Data Loader
   const loadData = useCallback(async () => {
@@ -71,6 +74,31 @@ export default function InvoiceView() {
     }
   };
 
+  const handleSendEmail = async () => {
+    setIsSending(true);
+    try {
+      await api.post(`/invoices/${id}/send`);
+      toast.success("Invoice sent to client!");
+      await loadData(); // Refresh to update status
+    } catch {
+      toast.error("Failed to send email");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleRemind = async () => {
+    setIsReminding(true);
+    try {
+      await api.post(`/invoices/${id}/remind`);
+      toast.success("Reminder sent to client!");
+    } catch {
+      toast.error("Failed to send reminder");
+    } finally {
+      setIsReminding(false);
+    }
+  };
+
   
   const copyPublicLink = () => {
     
@@ -79,7 +107,14 @@ export default function InvoiceView() {
     toast.success("Public link copied to clipboard!");
   };
 
-  if (isLoading || !invoice) return <div className="p-10 text-center text-gray-500">Loading invoice...</div>;
+  if (isLoading || !invoice) return (
+    <div className="p-20 text-center bg-gray-50/30 dark:bg-slate-950 min-h-screen flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600 dark:text-blue-400" />
+        <p className="text-gray-500 dark:text-slate-400 font-medium">Loading invoice...</p>
+      </div>
+    </div>
+  );
 
   const client = invoice.clientId as unknown as { name: string, email: string, address?: string, phoneNumber?: string };
   const amountPaid = invoice.amountPaid || 0;
@@ -87,45 +122,65 @@ export default function InvoiceView() {
   const isPaid = invoice.status === 'paid';
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 pb-20 transition-colors duration-200">
       <main className="max-w-4xl mx-auto">
         
         {/* --- HEADER ACTIONS --- */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <button 
             onClick={() => navigate('/invoices')} 
-            className="text-gray-500 hover:text-gray-800 flex items-center gap-2 transition-colors"
+            className="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 flex items-center gap-2 transition-colors font-medium"
           >
             <ArrowLeft className="w-4 h-4" /> Back to List
           </button>
           
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3 w-full md:w-auto">
              
              {/* Share Button */}
              <button 
                 onClick={copyPublicLink}
-                className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2 font-medium transition-colors"
+                className="flex-1 md:flex-none px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center justify-center gap-2 font-bold text-sm transition-all shadow-sm"
                 title="Copy Client Link"
              >
                 <LinkIcon className="w-4 h-4" /> Share
              </button>
 
+             {/* Email Button */}
+             <button 
+                onClick={handleSendEmail}
+                disabled={isSending}
+                className="flex-1 md:flex-none px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center justify-center gap-2 font-bold text-sm transition-all shadow-sm disabled:opacity-50"
+             >
+                <Mail className="w-4 h-4" /> {isSending ? 'Sending...' : 'Email'}
+             </button>
+
              {/* Record Payment Button  */}
              {!isPaid && (
-                <button 
-                    onClick={() => {
-                        setPaymentAmount(balanceDue.toFixed(2));
-                        setIsPaymentModalOpen(true);
-                    }}
-                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 font-medium shadow-sm transition-all"
-                >
-                    <CreditCard className="w-4 h-4" /> Pay
-                </button>
+                <div className="flex gap-2 flex-1 md:flex-none">
+                    {invoice.status === 'overdue' && (
+                        <button 
+                            onClick={handleRemind}
+                            disabled={isReminding}
+                            className="flex-1 px-4 py-2.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-500/20 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-500/20 flex items-center justify-center gap-2 font-bold text-sm transition-all"
+                        >
+                            <Mail className="w-4 h-4" /> {isReminding ? 'Reminding...' : 'Remind'}
+                        </button>
+                    )}
+                    <button 
+                        onClick={() => {
+                            setPaymentAmount(balanceDue.toFixed(2));
+                            setIsPaymentModalOpen(true);
+                        }}
+                        className="flex-1 md:flex-none px-6 py-2.5 bg-emerald-600 dark:bg-emerald-500 text-white rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-600 flex items-center justify-center gap-2 font-bold text-sm shadow-lg shadow-emerald-600/10 transition-all"
+                    >
+                        <CreditCard className="w-4 h-4" /> Pay
+                    </button>
+                </div>
              )}
 
             <button 
               onClick={() => navigate(`/invoices/${id}/edit`)}
-              className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2 font-medium transition-colors"
+              className="flex-1 md:flex-none px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center justify-center gap-2 font-bold text-sm transition-all shadow-sm"
             >
               <Pencil className="w-4 h-4" /> Edit
             </button>
@@ -133,11 +188,11 @@ export default function InvoiceView() {
             <PDFDownloadLink
               document={<InvoicePDF invoice={invoice} settings={settings ?? undefined} />}
               fileName={`invoice-${invoice.number}.pdf`}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 font-medium shadow-sm transition-all"
+              className="flex-1 md:flex-none px-6 py-2.5 bg-blue-600 dark:bg-blue-500 text-white rounded-xl hover:bg-blue-700 dark:hover:bg-blue-600 flex items-center justify-center gap-2 font-bold text-sm shadow-lg shadow-blue-600/10 transition-all"
             >
               {({ loading }) => (
                 <>
-                  {loading ? <Printer className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                   Download
                 </>
               )}
@@ -146,87 +201,81 @@ export default function InvoiceView() {
         </div>
 
         {/* --- INVOICE PAPER UI --- */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative print:shadow-none">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl shadow-black/5 dark:shadow-none border border-gray-200 dark:border-slate-800 overflow-hidden relative print:shadow-none transition-colors">
           
           {/* PAID STAMP */}
           {isPaid && (
-            <div className="absolute top-10 right-10 transform rotate-12 border-4 border-green-500 text-green-500 text-5xl font-black px-4 py-2 rounded opacity-50 select-none pointer-events-none z-10">
-                PAID
+            <div className="absolute top-12 right-12 transform rotate-12 border-8 border-green-500/30 text-green-500/30 text-6xl font-black px-8 py-4 rounded-2xl opacity-50 select-none pointer-events-none z-10 uppercase tracking-tighter">
+                Paid
             </div>
           )}
 
           {/* Top Banner */}
-          <div className="p-8 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
+          <div className="p-10 border-b border-gray-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start gap-8 bg-gray-50/50 dark:bg-slate-800/30">
               <div>
-                 <h1 className="text-2xl font-bold text-gray-900 mb-1">{settings?.companyName || 'Flux ERP'}</h1>
-                 <div className="text-gray-500 text-sm space-y-1">
-                   <p>{settings?.companyEmail}</p>
-                   <p className="whitespace-pre-line">{settings?.companyAddress}</p>
+                 <h1 className="text-3xl font-black text-gray-900 dark:text-slate-100 mb-3 tracking-tight">{settings?.companyName || 'Flux ERP'}</h1>
+                 <div className="text-gray-500 dark:text-slate-400 text-sm space-y-1.5 font-medium">
+                   <p className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> {settings?.companyEmail}</p>
+                   <p className="flex items-start gap-2 whitespace-pre-line"><MapPin className="w-3.5 h-3.5 mt-1" /> {settings?.companyAddress}</p>
                  </div>
               </div>
-              <div className="text-right">
-                 <h2 className="text-4xl font-extrabold text-gray-200 uppercase tracking-widest mb-2">Invoice</h2>
-                 <p className="text-lg font-bold text-gray-700">#{invoice.number}</p>
+              <div className="text-left md:text-right">
+                 <h2 className="text-5xl font-black text-gray-200 dark:text-slate-800 uppercase tracking-tighter mb-4">Invoice</h2>
+                 <p className="text-2xl font-black text-gray-800 dark:text-slate-200">#{invoice.number}</p>
                  
                  {/* Status Badge */}
-                 <div className="flex justify-end gap-2 mt-2">
-                     <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
-                         isPaid ? 'bg-green-100 text-green-700' : 
-                         invoice.status === 'overdue' ? 'bg-red-100 text-red-700' :
-                         invoice.status === 'sent' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
-                     }`}>
-                         {invoice.status}
-                     </span>
+                 <div className="flex md:justify-end gap-2 mt-4">
+                    <StatusBadge status={invoice.status} />
                  </div>
               </div>
           </div>
 
           {/* Bill To & Dates */}
-          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="p-10 grid grid-cols-1 md:grid-cols-2 gap-16">
             <div>
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Bill To</h3>
-              <div className="text-gray-800">
-                <p className="font-bold text-lg">{client?.name}</p>
-                <p className="text-gray-500">{client?.email}</p>
-                {client?.address && <p className="text-gray-500 mt-1">{client.address}</p>}
+              <h3 className="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">Bill To</h3>
+              <div className="space-y-1.5">
+                <p className="font-black text-xl text-gray-900 dark:text-slate-100">{client?.name}</p>
+                <p className="text-gray-500 dark:text-slate-400 font-medium">{client?.email}</p>
+                {client?.address && <p className="text-gray-500 dark:text-slate-400 mt-2 whitespace-pre-line text-sm leading-relaxed">{client.address}</p>}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-8">
                <div>
-                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Issued Date</h3>
-                 <p className="font-medium text-gray-900">{new Date(invoice.date).toLocaleDateString()}</p>
+                 <h3 className="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3">Issued Date</h3>
+                 <p className="font-bold text-gray-900 dark:text-slate-100">{new Date(invoice.date).toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
                </div>
                <div>
-                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Due Date</h3>
-                 <p className={`font-medium ${invoice.status === 'overdue' ? 'text-red-600 font-bold' : 'text-gray-900'}`}>
-                    {new Date(invoice.expiredDate).toLocaleDateString()}
+                 <h3 className="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3">Due Date</h3>
+                 <p className={`font-black ${invoice.status === 'overdue' ? 'text-rose-600' : 'text-gray-900 dark:text-slate-100'}`}>
+                    {new Date(invoice.expiredDate).toLocaleDateString(undefined, { dateStyle: 'long' })}
                  </p>
                </div>
             </div>
           </div>
 
           {/* Items Table */}
-          <div className="px-8 pb-8 overflow-x-auto">
-            <table className="w-full text-left min-w-[500px]">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
+          <div className="px-10 pb-10 overflow-x-auto">
+            <table className="w-full text-left min-w-[600px]">
+              <thead className="bg-gray-50/50 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 text-[10px] uppercase font-black tracking-widest">
                 <tr>
-                  <th className="px-4 py-3 rounded-l-lg">Item</th>
-                  <th className="px-4 py-3 text-right">Qty</th>
-                  <th className="px-4 py-3 text-right">Price</th>
-                  <th className="px-4 py-3 text-right rounded-r-lg">Total</th>
+                  <th className="px-6 py-4 rounded-l-2xl">Item & Description</th>
+                  <th className="px-6 py-4 text-center">Qty</th>
+                  <th className="px-6 py-4 text-right">Price</th>
+                  <th className="px-6 py-4 text-right rounded-r-2xl">Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                 {invoice.items.map((item, idx) => (
-                  <tr key={idx}>
-                    <td className="px-4 py-4">
-                      <p className="font-medium text-gray-900">{item.itemName}</p>
-                      {item.description && <p className="text-sm text-gray-400">{item.description}</p>}
+                  <tr key={idx} className="group transition-colors">
+                    <td className="px-6 py-6">
+                      <p className="font-bold text-gray-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{item.itemName}</p>
+                      {item.description && <p className="text-xs text-gray-400 dark:text-slate-500 mt-1 font-medium">{item.description}</p>}
                     </td>
-                    <td className="px-4 py-4 text-right text-gray-600">{item.quantity}</td>
-                    <td className="px-4 py-4 text-right text-gray-600">${item.price.toFixed(2)}</td>
-                    <td className="px-4 py-4 text-right font-medium text-gray-900">
-                      ${(item.quantity * item.price).toFixed(2)}
+                    <td className="px-6 py-6 text-center text-gray-600 dark:text-slate-400 font-bold">{item.quantity}</td>
+                    <td className="px-6 py-6 text-right text-gray-600 dark:text-slate-400 font-bold">${item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td className="px-6 py-6 text-right font-black text-gray-900 dark:text-slate-100">
+                      ${(item.quantity * item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                 ))}
@@ -235,16 +284,24 @@ export default function InvoiceView() {
           </div>
 
           {/* Footer Totals */}
-          <div className="p-8 bg-gray-50 border-t border-gray-100 flex justify-end">
-            <div className="w-72 space-y-3">
-               <div className="flex justify-between text-gray-600">
+          <div className="p-10 bg-gray-50/50 dark:bg-slate-800/30 border-t border-gray-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-end gap-10">
+            <div className="flex-1 w-full">
+               {invoice.notes && (
+                 <div className="max-w-md">
+                    <h4 className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Notes</h4>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed italic">{invoice.notes}</p>
+                 </div>
+               )}
+            </div>
+            <div className="w-full md:w-80 space-y-4">
+               <div className="flex justify-between text-gray-500 dark:text-slate-400 font-medium">
                  <span>Subtotal</span>
-                 <span>${invoice.subTotal.toFixed(2)}</span>
+                 <span className="text-gray-900 dark:text-slate-200 font-bold">${invoice.subTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                </div>
                {invoice.taxTotal > 0 && (
-                 <div className="flex justify-between text-gray-600">
+                 <div className="flex justify-between text-gray-500 dark:text-slate-400 font-medium">
                    <span>Tax ({invoice.taxRate}%)</span>
-                   <span>+${invoice.taxTotal.toFixed(2)}</span>
+                   <span className="text-gray-900 dark:text-slate-200 font-bold">+${invoice.taxTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                  </div>
                )}
                {invoice.discount > 0 && (
@@ -253,15 +310,15 @@ export default function InvoiceView() {
                    <span>-${invoice.discount.toFixed(2)}</span>
                  </div>
                )}
-               <div className="flex justify-between text-gray-900 font-bold text-xl pt-3 border-t border-gray-200">
+               <div className="flex justify-between text-gray-900 dark:text-slate-100 font-bold text-xl pt-3 border-t border-gray-200 dark:border-slate-800">
                  <span>Total</span>
                  <span>${invoice.total.toFixed(2)}</span>
                </div>
-               <div className="flex justify-between text-emerald-600 font-medium pt-2">
+               <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium pt-2">
                  <span>Amount Paid</span>
                  <span>-${amountPaid.toFixed(2)}</span>
                </div>
-               <div className="flex justify-between text-gray-900 font-black text-lg pt-2 border-t border-gray-200">
+               <div className="flex justify-between text-gray-900 dark:text-slate-100 font-black text-lg pt-2 border-t border-gray-200 dark:border-slate-800">
                  <span>Balance Due</span>
                  <span>${balanceDue.toFixed(2)}</span>
                </div>
@@ -274,16 +331,16 @@ export default function InvoiceView() {
       {/* --- PAYMENT MODAL --- */}
       {isPaymentModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden scale-100">
-                <div className="bg-gray-50 p-4 border-b flex justify-between items-center">
-                    <h3 className="font-bold text-gray-900">Record Payment</h3>
-                    <button onClick={() => setIsPaymentModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden scale-100 border border-transparent dark:border-slate-800">
+                <div className="bg-gray-50 dark:bg-slate-800/50 p-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center">
+                    <h3 className="font-bold text-gray-900 dark:text-slate-100">Record Payment</h3>
+                    <button onClick={() => setIsPaymentModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition-colors">
                         <X className="w-5 h-5"/>
                     </button>
                 </div>
                 <form onSubmit={handlePayment} className="p-6">
                     <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Amount Received ($)</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Amount Received ($)</label>
                         <input 
                             type="number" 
                             step="0.01" 
@@ -291,23 +348,23 @@ export default function InvoiceView() {
                             autoFocus
                             value={paymentAmount}
                             onChange={(e) => setPaymentAmount(e.target.value)}
-                            className="w-full border-gray-300 border p-3 rounded-lg text-2xl font-bold text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full border-gray-300 dark:border-slate-700 border p-3 rounded-lg text-2xl font-bold text-gray-900 dark:text-slate-100 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             placeholder="0.00"
                         />
-                        <p className="text-xs text-gray-500 mt-2">Max allowed: ${balanceDue.toFixed(2)}</p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">Max allowed: ${balanceDue.toFixed(2)}</p>
                     </div>
                     <div className="flex justify-end gap-3">
                         <button 
                             type="button" 
                             onClick={() => setIsPaymentModalOpen(false)} 
-                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
+                            className="px-4 py-2 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg font-medium transition-colors"
                         >
                             Cancel
                         </button>
                         <button 
                             type="submit" 
                             disabled={isSubmitting}
-                            className="px-6 py-2 bg-black text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                            className="px-6 py-2 bg-black dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-slate-200 disabled:opacity-50 transition-colors"
                         >
                             {isSubmitting ? 'Processing...' : 'Confirm Payment'}
                         </button>

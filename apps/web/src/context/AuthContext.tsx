@@ -1,19 +1,21 @@
 import { createContext, useState, useEffect, type ReactNode } from 'react';
-import { api } from '../lib/axios';
+import { useUser, useClerk, useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../lib/axios';
 
 interface User {
   id: string;
   name: string;
   email: string;
   role: string;
+  dashboardConfig?: string[];
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, pass: string) => Promise<void>;
   logout: () => void;
-  updateUser: (userData: User) => void;
+  updateDashboardConfig: (config: string[]) => Promise<void>;
+  updateUser: (user: User) => void;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -21,59 +23,66 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { user: clerkUser, isLoaded: isUserLoaded, isSignedIn } = useUser();
+  const { getToken } = useClerkAuth();
+  const { signOut } = useClerk();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  const updateUser = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem('flux_user', JSON.stringify(userData));
-  };
+  // Axios Interceptor to inject Clerk Token
+  useEffect(() => {
+    const interceptor = api.interceptors.request.use(async (config) => {
+      const token = await getToken({ template: 'flux-erp' });
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+
+    return () => api.interceptors.request.eject(interceptor);
+  }, [getToken]);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const storedUser = localStorage.getItem('flux_user');
-        const token = localStorage.getItem('token');
-        if (storedUser && token) {
-            try {
-                const parsedUser = JSON.parse(storedUser);
-                if (parsedUser) {
-                    setUser(parsedUser);
-                }
-            } catch (e) {
-                console.error("Failed to parse user from storage", e);
-                localStorage.removeItem('flux_user');
-            }
-        }
-      } catch (error) {
-        console.error("Auth check failed", error);
-      } finally {
-        setIsLoading(false);
+    if (isUserLoaded) {
+      if (isSignedIn && clerkUser) {
+        setUser({
+          id: clerkUser.id,
+          name: clerkUser.fullName || clerkUser.username || 'User',
+          email: clerkUser.primaryEmailAddress?.emailAddress || '',
+          role: (clerkUser.publicMetadata.role as string) || 'user',
+          dashboardConfig: (clerkUser.unsafeMetadata.dashboardConfig as string[]) || ["stats", "cashflow", "aging", "recentInvoices", "topClients"],
+        });
+      } else {
+        setUser(null);
       }
-    };
-    checkAuth();
-  }, []);
-
-  const login = async (email: string, password: string) => {
-    const { data } = await api.post('/auth/login', { email, password });
-    if (data.success) {
-      setUser(data.data);
-      localStorage.setItem('token', data.token); 
-      localStorage.setItem('flux_user', JSON.stringify(data.data)); 
+      setIsLoading(false);
     }
-  };
+  }, [clerkUser, isUserLoaded, isSignedIn]);
 
   const logout = async () => {
-    try { await api.post('/auth/logout'); } catch(e) { console.error(e); }
+    await signOut();
     setUser(null);
-    localStorage.removeItem('flux_user');
-    localStorage.removeItem('token');
     navigate('/login');
   };
 
+  const updateDashboardConfig = async (config: string[]) => {
+    if (!clerkUser) return;
+    await clerkUser.update({
+      unsafeMetadata: {
+        ...clerkUser.unsafeMetadata,
+        dashboardConfig: config,
+      },
+    });
+    setUser(prev => prev ? { ...prev, dashboardConfig: config } : null);
+  };
+
+  const updateUser = (userData: User) => {
+    setUser(userData);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser, isLoading, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, logout, updateDashboardConfig, updateUser, isLoading, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

@@ -10,6 +10,7 @@ export interface ISettings extends Document {
   companyWebsite?: string;
   currency: string;
   taxRate: number;
+  primaryColor: string;
   invoicePrefix: string;
   invoiceStartNumber: number;
   defaultPaymentTerms: number;
@@ -25,6 +26,7 @@ const SettingsSchema: Schema = new Schema({
   companyWebsite: { type: String },
   currency: { type: String, default: 'USD' },
   taxRate: { type: Number, default: 0 },
+  primaryColor: { type: String, default: '#2563EB' },
   invoicePrefix: { type: String, default: 'INV-' },
   invoiceStartNumber: { type: Number, default: 1000 },
   defaultPaymentTerms: { type: Number, default: 14 },

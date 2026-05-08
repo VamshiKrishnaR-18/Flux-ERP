@@ -4,9 +4,10 @@ import { toast } from 'sonner';
 import { Search, ArrowUpDown, Plus, DollarSign, Calendar, Tag, Trash2, ChevronLeft, ChevronRight, Loader2, Download } from 'lucide-react';
 import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { useSortableData } from '../hooks/useSortableData';
-import { useDebounce } from '../hooks/useDebounce'; // 
+import { useDebounce } from '../hooks/useDebounce'; 
+import { AttachmentList } from '../components/AttachmentList';
 import axios from 'axios';
-import { EmptyState } from '../components/EmptyState'; // 
+import { EmptyState } from '../components/EmptyState'; 
 
 interface Expense {
   _id: string;
@@ -14,6 +15,7 @@ interface Expense {
   amount: number;
   date: string;
   category: string;
+  attachments?: any[];
 }
 
 const expenseListStyles = StyleSheet.create({
@@ -55,7 +57,13 @@ export default function Expenses() {
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ description: '', amount: '', date: new Date().toISOString().split('T')[0], category: 'Operational' });
+  const [formData, setFormData] = useState<{ description: string; amount: string; date: string; category: string; attachments: any[] }>({ 
+    description: '', 
+    amount: '', 
+    date: new Date().toISOString().split('T')[0], 
+    category: 'Operational',
+    attachments: [] 
+  });
 
   //  Pagination & Search State
   const [page, setPage] = useState(1);
@@ -101,7 +109,13 @@ export default function Expenses() {
       await api.post('/expenses', { ...formData, amount: Number(formData.amount) });
       fetchExpenses(); // Reload
       setShowModal(false);
-      setFormData({ description: '', amount: '', date: new Date().toISOString().split('T')[0], category: 'Operational' });
+      setFormData({ 
+        description: '', 
+        amount: '', 
+        date: new Date().toISOString().split('T')[0], 
+        category: 'Operational',
+        attachments: [] 
+      });
       toast.success('Expense recorded');
     } catch { toast.error('Failed to add expense'); }
   };
@@ -171,24 +185,29 @@ export default function Expenses() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="flex justify-between items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><DollarSign className="w-6 h-6" /> Expenses</h1>
-        <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 transition-colors duration-200">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+            <DollarSign className="w-8 h-8 text-red-600 dark:text-red-400" /> Expenses
+          </h1>
+          <p className="text-gray-500 dark:text-slate-400 mt-1">Track and manage your business expenditures</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 w-4 h-4" />
                 <input 
                     type="text" 
                     placeholder="Search expenses..." 
                     value={search} 
                     onChange={handleSearchChange} 
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg outline-none" 
+                    className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl outline-none text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-red-500/20 transition-all shadow-sm" 
                 />
              </div>
             <button
               onClick={handleExportPdf}
               disabled={isExportingPdf}
-              className="bg-white border border-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition flex items-center gap-2 whitespace-nowrap disabled:opacity-60"
+              className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-slate-100 px-4 py-2.5 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-all flex items-center gap-2 whitespace-nowrap disabled:opacity-60 shadow-sm"
             >
               {isExportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               Export PDF
@@ -196,19 +215,19 @@ export default function Expenses() {
             <button
               onClick={handleExportCsv}
               disabled={isExporting}
-              className="bg-white border border-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition flex items-center gap-2 whitespace-nowrap disabled:opacity-60"
+              className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-slate-100 px-4 py-2.5 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-all flex items-center gap-2 whitespace-nowrap disabled:opacity-60 shadow-sm"
             >
               {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               Export CSV
             </button>
-            <button onClick={() => setShowModal(true)} className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition flex items-center gap-2"><Plus className="w-4 h-4" /> Add Expense</button>
+            <button onClick={() => setShowModal(true)} className="bg-red-600 dark:bg-red-500 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-red-700 dark:hover:bg-red-600 transition-all flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95"><Plus className="w-5 h-5" /> Add Expense</button>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-hidden flex flex-col transition-colors">
         {isLoading ? (
-          <div className="p-12 text-center text-gray-500 flex items-center justify-center gap-2">
-              <Loader2 className="animate-spin w-5 h-5" /> Loading expenses...
+          <div className="p-20 text-center text-gray-500 dark:text-slate-400 flex items-center justify-center gap-2">
+              <Loader2 className="animate-spin w-6 h-6 text-red-600 dark:text-red-400" /> Loading expenses...
           </div>
         ) : expenses.length === 0 ? (
           <EmptyState 
@@ -220,35 +239,56 @@ export default function Expenses() {
           />
         ) : (
           <>
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-semibold cursor-pointer select-none">
-                <tr>
-                  <th className="px-6 py-4 hover:bg-gray-100" onClick={() => requestSort('description')}>Description <SortIcon column="description" /></th>
-                  <th className="px-6 py-4 hover:bg-gray-100" onClick={() => requestSort('category')}>Category <SortIcon column="category" /></th>
-                  <th className="px-6 py-4 hover:bg-gray-100" onClick={() => requestSort('date')}>Date <SortIcon column="date" /></th>
-                  <th className="px-6 py-4 text-right hover:bg-gray-100" onClick={() => requestSort('amount')}>Amount <SortIcon column="amount" /></th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {sortedExpenses.map((expense) => (
-                  <tr key={expense._id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 font-medium text-gray-900">{expense.description}</td>
-                    <td className="px-6 py-4"><span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-xs font-medium text-gray-600 border border-gray-200"><Tag className="w-3 h-3" /> {expense.category}</span></td>
-                    <td className="px-6 py-4 text-gray-500 text-sm"><div className="flex items-center gap-2"><Calendar className="w-3 h-3 text-gray-400" />{new Date(expense.date).toLocaleDateString()}</div></td>
-                    <td className="px-6 py-4 text-right font-medium text-red-600">-${expense.amount.toFixed(2)}</td>
-                    <td className="px-6 py-4 text-right"><button onClick={() => handleDelete(expense._id)} className="text-gray-400 hover:text-red-600 transition"><Trash2 className="w-4 h-4" /></button></td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800 text-xs uppercase text-gray-500 dark:text-slate-400 font-semibold cursor-pointer select-none">
+                  <tr>
+                    <th className="px-6 py-4 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors" onClick={() => requestSort('description')}>Description <SortIcon column="description" /></th>
+                    <th className="px-6 py-4 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors" onClick={() => requestSort('category')}>Category <SortIcon column="category" /></th>
+                    <th className="px-6 py-4 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors" onClick={() => requestSort('date')}>Date <SortIcon column="date" /></th>
+                    <th className="px-6 py-4 text-right hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors" onClick={() => requestSort('amount')}>Amount <SortIcon column="amount" /></th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                  {sortedExpenses.map((expense) => (
+                    <tr key={expense._id} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-all group">
+                      <td className="px-6 py-5 font-bold text-gray-900 dark:text-slate-100">{expense.description}</td>
+                      <td className="px-6 py-5"><span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-xs font-bold text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-slate-700 uppercase tracking-wider"><Tag className="w-3 h-3" /> {expense.category}</span></td>
+                      <td className="px-6 py-5 text-gray-500 dark:text-slate-400 text-sm"><div className="flex items-center gap-2 font-medium"><Calendar className="w-4 h-4 text-gray-400 dark:text-slate-500" />{new Date(expense.date).toLocaleDateString(undefined, { dateStyle: 'medium' })}</div></td>
+                      <td className="px-6 py-5 text-right font-black text-red-600 dark:text-red-400 text-base">-${expense.amount.toFixed(2)}</td>
+                      <td className="px-6 py-5 text-right">
+                        <button 
+                          onClick={() => handleDelete(expense._id)} 
+                          className="p-2 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {/* Pagination Controls */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-              <div className="text-sm text-gray-500">Page <span className="font-medium text-gray-900">{page}</span> of <span className="font-medium text-gray-900">{totalPages}</span></div>
+            <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/20 flex items-center justify-between">
+              <div className="text-sm text-gray-500 dark:text-slate-400">Page <span className="font-bold text-gray-900 dark:text-slate-100">{page}</span> of <span className="font-bold text-gray-900 dark:text-slate-100">{totalPages}</span></div>
               <div className="flex gap-2">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 text-sm border rounded hover:bg-white disabled:opacity-50 flex items-center gap-1"><ChevronLeft className="w-4 h-4" /> Prev</button>
-                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 text-sm border rounded hover:bg-white disabled:opacity-50 flex items-center gap-1">Next <ChevronRight className="w-4 h-4" /></button>
+                <button 
+                  onClick={() => setPage(p => Math.max(1, p - 1))} 
+                  disabled={page === 1} 
+                  className="p-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 transition-all shadow-sm text-gray-600 dark:text-slate-400"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
+                  disabled={page === totalPages} 
+                  className="p-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 transition-all shadow-sm text-gray-600 dark:text-slate-400"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
             </div>
           </>
@@ -257,24 +297,32 @@ export default function Expenses() {
 
       {/* Modal  */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
-            <h2 className="text-xl font-bold mb-4">Add Expense</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-               <div><label className="block text-sm font-medium mb-1">Description</label><input required type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border p-2 rounded-lg" /></div>
-               <div className="grid grid-cols-2 gap-4">
-                 <div><label className="block text-sm font-medium mb-1">Amount ($)</label><input required type="number" step="0.01" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full border p-2 rounded-lg" /></div>
-                 <div><label className="block text-sm font-medium mb-1">Date</label><input required type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full border p-2 rounded-lg" /></div>
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-slate-100 tracking-tight">Add Expense</h2>
+            <form onSubmit={handleSubmit} className="space-y-5">
+               <div><label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Description</label><input required type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 p-3 rounded-xl outline-none focus:ring-2 focus:ring-red-500/20 transition-all" placeholder="Office Supplies..." /></div>
+               <div className="grid grid-cols-2 gap-5">
+                 <div><label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Amount ($)</label><input required type="number" step="0.01" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 p-3 rounded-xl outline-none focus:ring-2 focus:ring-red-500/20 transition-all" placeholder="0.00" /></div>
+                 <div><label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Date</label><input required type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 p-3 rounded-xl outline-none focus:ring-2 focus:ring-red-500/20 transition-all" /></div>
                </div>
                <div>
-                  <label className="block text-sm font-medium mb-1">Category</label>
-                  <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full border p-2 rounded-lg bg-white">
+                  <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Category</label>
+                  <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 p-3 rounded-xl outline-none focus:ring-2 focus:ring-red-500/20 transition-all">
                      {['Operational', 'Marketing', 'Salary', 'Software', 'Office', 'Travel'].map(c => <option key={c}>{c}</option>)}
                   </select>
                </div>
-               <div className="flex justify-end gap-2 mt-6">
-                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-                 <button type="submit" className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Save</button>
+
+               <div className="pt-4 border-t border-gray-100 dark:border-slate-800">
+                 <AttachmentList 
+                    attachments={formData.attachments} 
+                    onUpdate={async (attachments) => setFormData({ ...formData, attachments })} 
+                 />
+               </div>
+
+               <div className="flex justify-end gap-3 mt-8">
+                 <button type="button" onClick={() => setShowModal(false)} className="px-6 py-2.5 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl font-bold transition-all">Cancel</button>
+                 <button type="submit" className="px-8 py-2.5 bg-red-600 dark:bg-red-500 text-white rounded-xl font-bold hover:bg-red-700 dark:hover:bg-red-600 shadow-md transition-all active:scale-95">Save Expense</button>
                </div>
             </form>
           </div>

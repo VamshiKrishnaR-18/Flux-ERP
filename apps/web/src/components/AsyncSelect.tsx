@@ -12,6 +12,8 @@ interface AsyncSelectProps<T> {
   error?: string;
   initialLabel?: string; 
   getOptionLabel: (item: T) => string;
+  name?: string;
+  id?: string;
 }
 
 export function AsyncSelect<T extends { _id: string }>({ 
@@ -23,7 +25,9 @@ export function AsyncSelect<T extends { _id: string }>({
   placeholder = "Search...",
   error,
   initialLabel,
-  getOptionLabel
+  getOptionLabel,
+  name,
+  id
 }: AsyncSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -33,6 +37,9 @@ export function AsyncSelect<T extends { _id: string }>({
   
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query, 500);
+
+  const internalId = id || `async-select-${Math.random().toString(36).substr(2, 9)}`;
+  const searchInputId = `search-${internalId}`;
 
   
   useEffect(() => {
@@ -83,28 +90,48 @@ export function AsyncSelect<T extends { _id: string }>({
 
   return (
     <div className="relative" ref={wrapperRef}>
-      <label className="block text-sm font-medium mb-1 text-gray-700">{label}</label>
+      {label && <label htmlFor={internalId} className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">{label}</label>}
       
       {/* Trigger Input */}
       <div 
+        id={internalId}
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-controls={`listbox-${internalId}`}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }
+          if (e.key === 'Escape') {
+            setIsOpen(false);
+          }
+        }}
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          flex items-center justify-between w-full border p-2 rounded-lg cursor-pointer bg-white transition-all
-          ${error ? 'border-red-500 ring-1 ring-red-100' : 'border-gray-200 hover:border-gray-300'}
-          ${isOpen ? 'ring-2 ring-blue-100 border-blue-400' : ''}
+          flex items-center justify-between w-full border p-2 rounded-lg cursor-pointer bg-white dark:bg-slate-900 transition-all outline-none
+          ${error ? 'border-red-500 ring-1 ring-red-100 dark:ring-red-900/20' : 'border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700'}
+          ${isOpen ? 'ring-2 ring-blue-100 dark:ring-blue-900/20 border-blue-400 dark:border-blue-500' : 'focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/20 focus:border-blue-400'}
         `}
       >
-        <span className={`text-sm ${selectedLabel ? 'text-gray-900' : 'text-gray-400'}`}>
+        <span className={`text-sm ${selectedLabel ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-slate-500'}`}>
           {selectedLabel || placeholder}
         </span>
         
         <div className="flex items-center gap-2">
           {value && (
-            <div onClick={handleClear} className="p-1 hover:bg-gray-100 rounded-full text-gray-400">
+            <button 
+              type="button"
+              aria-label="Clear selection"
+              onClick={handleClear} 
+              className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-400 dark:text-slate-500"
+            >
               <X size={14} />
-            </div>
+            </button>
           )}
-          <ChevronDown size={16} className="text-gray-400" />
+          <ChevronDown size={16} className="text-gray-400 dark:text-slate-500" />
         </div>
       </div>
 
@@ -112,16 +139,24 @@ export function AsyncSelect<T extends { _id: string }>({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-100 rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+        <div 
+          id={`listbox-${internalId}`}
+          role="listbox"
+          className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg shadow-xl dark:shadow-2xl dark:shadow-black/50 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+        >
           
           {/* Search Bar */}
-          <div className="p-2 border-b border-gray-50 bg-gray-50/50">
+          <div className="p-2 border-b border-gray-50 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
             <div className="relative">
-              <Search className="absolute left-2 top-2.5 text-gray-400" size={14} />
+              <label htmlFor={searchInputId} className="sr-only">Search</label>
+              <Search className="absolute left-2 top-2.5 text-gray-400 dark:text-slate-500" size={14} />
               <input
                 autoFocus
+                id={searchInputId}
+                name={`${name || internalId}-search`}
                 type="text"
-                className="w-full pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                autoComplete="off"
+                className="w-full pl-8 pr-3 py-1.5 text-sm bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all dark:text-gray-100 dark:placeholder-slate-500"
                 placeholder="Type to search..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -132,21 +167,23 @@ export function AsyncSelect<T extends { _id: string }>({
           {/* Results List */}
           <div className="max-h-60 overflow-y-auto">
             {loading ? (
-              <div className="p-4 text-center text-gray-400 flex items-center justify-center gap-2 text-sm">
+              <div className="p-4 text-center text-gray-400 dark:text-slate-500 flex items-center justify-center gap-2 text-sm">
                 <Loader2 className="animate-spin" size={16} /> Loading...
               </div>
             ) : options.length > 0 ? (
               options.map((item) => (
                 <div
                   key={item._id}
+                  role="option"
+                  aria-selected={value === item._id}
                   onClick={() => handleSelect(item)}
-                  className="px-3 py-2.5 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-50 last:border-0 transition-colors"
+                  className="px-3 py-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer text-sm border-b border-gray-50 dark:border-slate-800 last:border-0 transition-colors dark:text-gray-300"
                 >
                   {renderOption(item)}
                 </div>
               ))
             ) : (
-              <div className="p-4 text-center text-gray-400 text-sm">No results found</div>
+              <div className="p-4 text-center text-gray-400 dark:text-slate-500 text-sm">No results found</div>
             )}
           </div>
         </div>

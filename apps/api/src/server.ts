@@ -24,19 +24,33 @@ const startServer = async () => {
     logger.info(`📚 Swagger Docs available at http://localhost:${config.port}/api-docs`);
   });
 
-  
-  const shutdown = async () => {
-    logger.info('🛑 SIGTERM/SIGINT received. Shutting down gracefully...');
-    server.close(() => {
-      mongoose.connection.close(false).then(() => {
+  // Graceful Shutdown
+  const shutdown = async (signal: string) => {
+    logger.info(`🛑 ${signal} received. Shutting down gracefully...`);
+    
+    // Set a timeout to force shutdown if it takes too long
+    const forceShutdown = setTimeout(() => {
+      logger.error('🔥 Could not close connections in time, forcefully shutting down');
+      process.exit(1);
+    }, 10000);
+
+    server.close(async () => {
+      logger.info('✅ HTTP server closed.');
+      
+      try {
+        await mongoose.connection.close(false);
         logger.info('✅ MongoDB connection closed.');
+        clearTimeout(forceShutdown);
         process.exit(0);
-      });
+      } catch (err) {
+        logger.error('❌ Error during MongoDB shutdown:', err);
+        process.exit(1);
+      }
     });
   };
 
-  process.on('SIGTERM', shutdown);
-  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 };
 
 startServer();

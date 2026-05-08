@@ -6,7 +6,8 @@ import { RegisterSchema, LoginSchema } from '@erp/types';
 import { UserModel } from '../models/user.model';
 import { asyncHandler } from '../utils/asyncHandler';
 import { config } from '../config/env';
-import { EmailService } from '../services/email.service';
+import { emailService } from '../services/email.service';
+import { successResponse } from '../utils/response';
 
 const generateToken = (id: string, role: string) => {
   const options: SignOptions = { expiresIn: config.jwtExpiresIn as any };
@@ -49,11 +50,13 @@ export const AuthController = {
     const token = generateToken(user.id, user.role);
     res.cookie('token', token, cookieOptions);
 
-    res.status(201).json({
-      success: true,
-      data: { id: user.id, name: user.name, email: user.email, role: user.role },
-      token
-    });
+    return successResponse(res, { 
+      id: user.id, 
+      name: user.name, 
+      email: user.email, 
+      role: user.role,
+      token 
+    }, "User registered", 201);
   }),
 
   login: asyncHandler(async (req: Request, res: Response) => {
@@ -75,16 +78,18 @@ export const AuthController = {
     const token = generateToken(user.id, user.role);
     res.cookie('token', token, cookieOptions);
 
-    res.json({
-      success: true,
-      data: { id: user.id, name: user.name, email: user.email, role: user.role },
-      token
-    });
+    return successResponse(res, { 
+      id: user.id, 
+      name: user.name, 
+      email: user.email, 
+      role: user.role,
+      token 
+    }, "Logged in successfully");
   }),
 
   logout: asyncHandler(async (req: Request, res: Response) => {
     res.cookie('token', '', { ...cookieOptions, maxAge: 0 });
-    res.json({ success: true, message: "Logged out" });
+    return successResponse(res, null, "Logged out");
   }),
 
   getMe: asyncHandler(async (req: Request, res: Response) => {
@@ -93,7 +98,7 @@ export const AuthController = {
       res.status(404);
       throw new Error("User not found");
     }
-    res.json({ success: true, data: user });
+    return successResponse(res, user);
   }),
 
   updateProfile: asyncHandler(async (req: Request, res: Response) => {
@@ -122,7 +127,34 @@ export const AuthController = {
     res.json({
       success: true,
       message: "Profile updated successfully",
-      data: { id: user.id, name: user.name, email: user.email, role: user.role }
+      data: { id: user.id, name: user.name, email: user.email, role: user.role, dashboardConfig: user.dashboardConfig }
+    });
+  }),
+
+  updateDashboardConfig: asyncHandler(async (req: Request, res: Response) => {
+    const { dashboardConfig } = req.body;
+    const userId = req.user?.id;
+
+    if (!Array.isArray(dashboardConfig)) {
+      res.status(400);
+      throw new Error("Invalid dashboard configuration");
+    }
+
+    const user = await UserModel.findByIdAndUpdate(
+      userId, 
+      { dashboardConfig }, 
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+
+    res.json({
+      success: true,
+      message: "Dashboard configuration updated",
+      data: user
     });
   }),
 
@@ -170,7 +202,7 @@ export const AuthController = {
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
 
     try {
-      await EmailService.sendPasswordReset(user.email, resetUrl);
+      await emailService.sendPasswordReset(user.email, resetUrl);
       res.status(200).json({ success: true, data: "Email sent" });
     } catch (err) {
       user.resetPasswordToken = undefined;
