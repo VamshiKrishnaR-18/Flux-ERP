@@ -3,12 +3,14 @@ import { z } from 'zod';
 
 dotenv.config();
 
+const isTest = process.env.NODE_ENV === 'test';
+
 const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
-  MONGO_URI: z.string().min(1, "MONGO_URI is required"),
+  MONGO_URI: z.string().min(1, "MONGO_URI is required").default(isTest ? 'mongodb://localhost:27017/test' : ''),
   JWT_SECRET: z.string().optional(),
   CLERK_PUBLISHABLE_KEY: z.string().optional(),
-  CLERK_SECRET_KEY: z.string().min(1, "CLERK_SECRET_KEY is required"),
+  CLERK_SECRET_KEY: z.string().min(1, "CLERK_SECRET_KEY is required").default(isTest ? 'test_clerk_secret' : ''),
   
   JWT_EXPIRES_IN: z.string().default('1d').transform(val => val.trim() === '' ? '1d' : val),
   COOKIE_EXPIRES_IN_HOURS: z.coerce.number().default(24),
