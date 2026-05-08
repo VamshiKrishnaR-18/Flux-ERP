@@ -2,8 +2,9 @@ import { Router } from 'express';
 import { ClientController } from '../controllers/client.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import multer from 'multer';
+import os from 'os';
 
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: os.tmpdir() });
 const router = Router();
 
 router.use(authMiddleware);

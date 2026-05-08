@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
+import os from 'os';
+import path from 'path';
 import { asyncHandler } from '../utils/asyncHandler';
 import { StorageService } from '../services/storage.service';
 
@@ -7,7 +9,7 @@ const router = Router();
 
 // Configure multer for temporary storage
 const upload = multer({ 
-  dest: 'uploads/tmp/',
+  dest: os.tmpdir(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
 

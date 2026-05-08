@@ -102,8 +102,13 @@ app.use(morgan(morganFormat, {
 app.use(express.json());
 app.use(cookieParser() as unknown as RequestHandler);
 
-// Serve uploads
-app.use('/uploads', express.static('uploads'));
+// Serve uploads - Only if the directory exists to avoid errors in serverless environments
+import fs from 'fs';
+import path from 'path';
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (fs.existsSync(uploadsDir)) {
+  app.use('/uploads', express.static('uploads'));
+}
 
 // SECURITY SANITIZATION
 app.use(mongoSanitize() as unknown as RequestHandler);
