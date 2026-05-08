@@ -2,12 +2,16 @@ import { calculateInvoiceTotals } from '@erp/types';
 import { processRecurringInvoices } from '../jobs/cron';
 import { InvoiceModel } from '../models/invoice.model';
 import { ClientModel } from '../models/client.model';
-import { EmailService } from '../services/email.service';
+import { emailService } from '../services/email.service';
 import { generateInvoiceNumber } from '../utils/generators';
 
 jest.mock('../models/invoice.model');
 jest.mock('../models/client.model');
-jest.mock('../services/email.service');
+jest.mock('../services/email.service', () => ({
+  emailService: {
+    sendInvoice: jest.fn().mockResolvedValue(true)
+  }
+}));
 jest.mock('../utils/generators');
 jest.mock('../utils/logger');
 
@@ -92,13 +96,13 @@ describe('Business Logic - Recurring Invoices', () => {
     (InvoiceModel.find as jest.Mock).mockResolvedValue([mockInvoice]);
     (generateInvoiceNumber as jest.Mock).mockResolvedValue(101);
     (ClientModel.findById as jest.Mock).mockResolvedValue({ _id: 'client-id', email: 'test@example.com' });
-    (EmailService.sendInvoice as jest.Mock).mockResolvedValue(true);
+    (emailService.sendInvoice as jest.Mock).mockResolvedValue(true);
 
     await processRecurringInvoices();
 
     expect(InvoiceModel.prototype.constructor).toHaveBeenCalled;
     expect(mockInvoice.save).toHaveBeenCalled(); // Original invoice updated
-    expect(EmailService.sendInvoice).toHaveBeenCalled();
+    expect(emailService.sendInvoice).toHaveBeenCalled();
   });
 
   it('should not generate an invoice if the next date is in the future', async () => {

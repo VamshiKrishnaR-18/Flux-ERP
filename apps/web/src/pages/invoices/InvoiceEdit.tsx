@@ -55,7 +55,7 @@ export default function InvoiceEdit() {
         
         <InvoiceForm 
             initialValues={invoiceData} 
-            onSubmit={mutation.mutate} 
+            onSubmit={async (data) => { await mutation.mutateAsync(data); }} 
             isLoading={mutation.isPending} 
             isEditMode 
         />

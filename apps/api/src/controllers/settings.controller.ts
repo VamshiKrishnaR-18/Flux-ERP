@@ -38,7 +38,7 @@ export const SettingsController = {
         userId: String(req.user?.id),
         action: 'updated',
         resourceType: 'Settings',
-        resourceId: settings._id as string,
+        resourceId: String(settings._id),
         resourceName: 'Company Settings',
         details: Object.keys(req.body)
     });

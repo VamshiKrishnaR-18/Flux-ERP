@@ -38,7 +38,7 @@ export const UserController = {
           userId: adminId as any,
           action: 'updated',
           resourceType: 'Settings', // Using Settings as a catch-all for system changes
-          resourceId: id,
+          resourceId: String(id),
           resourceName: `User Role: ${user.name}`,
           details: [`Role changed to ${role}`]
         });
@@ -68,7 +68,7 @@ export const UserController = {
           userId: adminId as any,
           action: 'deleted',
           resourceType: 'Settings',
-          resourceId: id,
+          resourceId: String(id),
           resourceName: `User: ${deleted.name}`
         });
     }

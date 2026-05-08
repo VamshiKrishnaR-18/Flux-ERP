@@ -36,7 +36,7 @@ describe('Auth API Integration Tests', () => {
     }
 
     expect(res.statusCode).toEqual(201);
-    expect(res.body).toHaveProperty('token');
+    expect(res.body.data).toHaveProperty('token');
   });
 
   it('POST /api/v1/auth/login - Should login the user', async () => {
@@ -50,6 +50,6 @@ describe('Auth API Integration Tests', () => {
     }
 
     expect(res.statusCode).toEqual(200);
-    expect(res.body).toHaveProperty('token');
+    expect(res.body.data).toHaveProperty('token');
   });
 });
