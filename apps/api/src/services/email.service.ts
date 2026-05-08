@@ -137,6 +137,10 @@ export class EmailService {
   }
 
   async sendPasswordReset(email: string, resetUrl: string) {
+    if (!this.transporter) {
+      console.error("❌ Reset failed: Transporter not initialized (missing credentials)");
+      return false;
+    }
     try {
       const info = await this.transporter.sendMail({
         from: `"Flux ERP Support" <${config.smtpUser}>`,
@@ -163,6 +167,10 @@ export class EmailService {
   }
 
   async sendInventoryAlert(product: any, adminEmail: string) {
+    if (!this.transporter) {
+      console.error("❌ Inventory Alert failed: Transporter not initialized (missing credentials)");
+      return false;
+    }
     try {
       await this.transporter.sendMail({
         from: `"Flux ERP Alerts" <${config.smtpUser}>`,
