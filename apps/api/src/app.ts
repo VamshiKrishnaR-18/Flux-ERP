@@ -27,6 +27,7 @@ import activityRoutes from './routes/activity.routes';
 import currencyRoutes from './routes/currency.routes';
 import uploadRoutes from './routes/upload.routes';
 import userRoutes from './routes/user.routes';
+import aiRoutes from './routes/ai.routes';
 
 // Middleware
 import { authMiddleware } from './middleware/auth.middleware';
@@ -179,6 +180,8 @@ apiV1.use('/upload',
   authMiddleware as unknown as RequestHandler,
   uploadRoutes
 );
+
+apiV1.use('/ai', aiRoutes);
 
 apiV1.use('/users', userRoutes);
 

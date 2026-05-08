@@ -5,11 +5,13 @@ provider:
   runtime: nodejs24.x
   region: ap-south-2
   memorySize: 512
-  timeout: 10
+  timeout: 29
   environment:
     NODE_ENV: production
     MONGO_URI: ${param:MONGO_URI}
     JWT_SECRET: ${param:JWT_SECRET}
+    CLERK_SECRET_KEY: ${param:CLERK_SECRET_KEY}
+    GROQ_API_KEY: ${param:GROQ_API_KEY}
     CORS_ORIGIN: 'https://flux-erp-web.vercel.app'
 
 build:
