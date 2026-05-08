@@ -168,6 +168,15 @@ api.interceptors.request.use((config) => {
            } 
          };
        }
+       if (url.includes('/invoices') && url.includes('/send')) {
+         return { success: true, message: 'Invoice sent successfully (Demo)' };
+       }
+       if (url.includes('/quotes') && url.includes('/send')) {
+         return { success: true, message: 'Quote sent successfully (Demo)' };
+       }
+       if (url.includes('/remind')) {
+         return { success: true, message: 'Reminder sent successfully (Demo)' };
+       }
        if (url.includes('/invoices') && config.method === 'post') {
          return { message: 'Invoice created successfully (Demo)', data: { _id: id, number: 999, total: 0, status: 'draft' } };
        }

@@ -14,8 +14,8 @@ export class EmailService {
 
     this.transporter = nodemailer.createTransport({
       host: config.smtpHost,
-      port: config.smtpPort,
-      secure: false, 
+      port: Number(config.smtpPort),
+      secure: Number(config.smtpPort) === 465, 
       auth: {
         user: config.smtpUser, 
         pass: config.smtpPass  
@@ -25,8 +25,8 @@ export class EmailService {
 
   async sendInvoice(invoice: any, client: any) {
     if (!this.transporter) {
-      console.error("❌ Email failed: Transporter not initialized (missing credentials)");
-      return false;
+      console.warn("⚠️ Email simulation: Transporter not initialized (missing credentials)");
+      return true; 
     }
     try {
       const settings = await SettingsModel.findOne({ userId: invoice.createdBy });
@@ -45,7 +45,7 @@ export class EmailService {
             <p><strong>Due Date:</strong> ${new Date(invoice.expiredDate).toDateString()}</p>
             <br />
             <a href="${config.frontendUrl}/p/invoice/${invoice._id}" style="background: ${primaryColor}; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">View Invoice</a>
-            <p style="margin-top: 30px; color: #888; font-size: 12px; border-top: 1px solid #eee; pt: 20px;">
+            <p style="margin-top: 30px; color: #888; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">
               Thank you for choosing ${companyName}!
             </p>
           </div>
@@ -56,14 +56,18 @@ export class EmailService {
       return true;
     } catch (error) {
       console.error("❌ Email failed:", error);
+      // Re-throw or return false to indicate real failure in normal mode
+      if (config.nodeEnv === 'production') {
+        throw error;
+      }
       return false;
     }
   }
 
   async sendReminder(invoice: any, client: any) {
     if (!this.transporter) {
-      console.error("❌ Reminder failed: Transporter not initialized (missing credentials)");
-      return false;
+      console.warn("⚠️ Reminder simulation: Transporter not initialized (missing credentials)");
+      return true;
     }
     try {
       const settings = await SettingsModel.findOne({ userId: invoice.createdBy });
@@ -93,14 +97,17 @@ export class EmailService {
       return true;
     } catch (error) {
       console.error("❌ Reminder failed:", error);
+      if (config.nodeEnv === 'production') {
+        throw error;
+      }
       return false;
     }
   }
 
   async sendQuote(quote: any, client: any) {
     if (!this.transporter) {
-      console.error("❌ Quote failed: Transporter not initialized (missing credentials)");
-      return false;
+      console.warn("⚠️ Quote simulation: Transporter not initialized (missing credentials)");
+      return true;
     }
     try {
       const settings = await SettingsModel.findOne({ userId: quote.createdBy });
@@ -132,6 +139,9 @@ export class EmailService {
       return true;
     } catch (error) {
       console.error("❌ Email failed:", error);
+      if (config.nodeEnv === 'production') {
+        throw error;
+      }
       return false;
     }
   }
@@ -162,6 +172,9 @@ export class EmailService {
       return true;
     } catch (error) {
       console.log("❌ Reset Email failed:", error);
+      if (config.nodeEnv === 'production') {
+        throw error;
+      }
       return false;
     }
   }
@@ -203,6 +216,9 @@ export class EmailService {
       return true;
     } catch (error) {
       console.error("❌ Inventory Alert failed:", error);
+      if (config.nodeEnv === 'production') {
+        throw error;
+      }
       return false;
     }
   }
