@@ -45,21 +45,72 @@ api.interceptors.request.use((config) => {
         ]
       }};
       if (url.includes('/stats')) return { data: MOCK_DATA.stats };
+      
+      // Handle single item views
+      if (url.match(/\/invoices\/demo-[a-z0-9]+$/)) return { data: { data: MOCK_DATA.invoices[0] } };
+      if (url.match(/\/quotes\/demo-[a-z0-9]+$/)) return { data: { data: MOCK_DATA.quotes[0] } };
+      if (url.match(/\/clients\/demo-[a-z0-9]+$/)) return { data: { data: MOCK_DATA.clients[0] } };
+      if (url.match(/\/products\/demo-[a-z0-9]+$/)) return { data: { data: MOCK_DATA.products[0] } };
+
       if (url.includes('/clients')) return { data: MOCK_DATA.clients, pagination: { totalPages: 1 } };
       if (url.includes('/products')) return { data: MOCK_DATA.products };
       if (url.includes('/invoices')) return { data: MOCK_DATA.invoices, pagination: { totalPages: 1 } };
       if (url.includes('/quotes')) return { data: MOCK_DATA.quotes, pagination: { totalPages: 1 } };
       if (url.includes('/activity')) return { data: MOCK_DATA.activities, pagination: { totalPages: 1 } };
+      if (url.includes('/expenses')) return { data: [
+        { _id: '1', date: new Date().toISOString(), category: 'Rent', amount: 2000, description: 'Office rent', paymentMethod: 'bank_transfer' },
+        { _id: '2', date: new Date().toISOString(), category: 'Software', amount: 150, description: 'SaaS subscriptions', paymentMethod: 'credit_card' },
+      ], pagination: { totalPages: 1 } };
+
+      if (url.includes('/public/invoice')) return { data: { data: MOCK_DATA.invoices[0] } };
+      if (url.includes('/public/client')) return { data: { data: MOCK_DATA.clients[0], invoices: MOCK_DATA.invoices } };
+
       if (url.includes('/search')) return { data: { 
         clients: MOCK_DATA.clients.slice(0, 2),
         invoices: MOCK_DATA.invoices.slice(0, 2),
         products: MOCK_DATA.products.slice(0, 2)
       }};
       if (url.includes('/settings')) return { data: { 
-        currency: 'USD',
-        taxRate: 10,
-        companyName: 'Demo Corp'
+        data: {
+          currency: 'USD',
+          taxRate: 10,
+          companyName: 'Demo Corp',
+          address: '123 Demo St, San Francisco, CA',
+          email: 'hello@democorp.com',
+          phone: '+1 (555) 000-0000'
+        }
       }};
+
+      if (url.includes('/reports/revenue-vs-expenses')) return { data: { data: [
+        { month: 'Jan', revenue: 4000, profit: 2400 },
+        { month: 'Feb', revenue: 3000, profit: 1398 },
+        { month: 'Mar', revenue: 2000, profit: 9800 },
+        { month: 'Apr', revenue: 2780, profit: 3908 },
+        { month: 'May', revenue: 1890, profit: 4800 },
+        { month: 'Jun', revenue: 2390, profit: 3800 },
+      ]}};
+
+      if (url.includes('/reports/expense-breakdown')) return { data: { data: [
+        { _id: 'Rent', total: 2400 },
+        { _id: 'Utilities', total: 1398 },
+        { _id: 'Software', total: 9800 },
+        { _id: 'Marketing', total: 3908 },
+        { _id: 'Payroll', total: 4800 },
+      ]}};
+
+      if (url.includes('/reports/tax')) return { data: { data: {
+        totalTax: 1250.50,
+        totalTaxable: 12505.00,
+        totalRevenue: 25000.00
+      }}};
+
+      if (url.includes('/currencies')) return { data: { data: [
+        { code: 'USD', symbol: '$', name: 'US Dollar' },
+        { code: 'EUR', symbol: '€', name: 'Euro' },
+        { code: 'GBP', symbol: '£', name: 'British Pound' },
+        { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+      ]}};
+
       if (url.includes('/ai/insights')) return { 
         data: {
           insights: "### 💡 Demo Mode AI Insights\n\n1. **Revenue is healthy**: Your revenue is up 12.5% this month, driven by Stark Industries.\n2. **Monitor Overdue Invoices**: You have 3 overdue invoices totaling $4,200. Consider sending reminders.\n3. **Client Growth**: 5 new clients added in the last 30 days shows strong business momentum."
@@ -104,10 +155,39 @@ api.interceptors.request.use((config) => {
         return config; 
      }
 
+     // Generate realistic response data based on the URL
+     const getMockActionResponse = () => {
+       const id = `demo-${Math.random().toString(36).substr(2, 9)}`;
+       
+       if (url.includes('/upload')) {
+         return { 
+           success: true, 
+           data: { 
+             url: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?w=100&h=100&fit=crop',
+             publicId: 'demo-logo'
+           } 
+         };
+       }
+       if (url.includes('/invoices') && config.method === 'post') {
+         return { message: 'Invoice created successfully (Demo)', data: { _id: id, number: 999, total: 0, status: 'draft' } };
+       }
+       if (url.includes('/quotes') && config.method === 'post') {
+         return { message: 'Quote created successfully (Demo)', data: { _id: id, number: 999, total: 0, status: 'draft' } };
+       }
+       if (url.includes('/clients') && config.method === 'post') {
+         return { message: 'Client created successfully (Demo)', data: { _id: id, name: 'New Demo Client' } };
+       }
+       if (url.includes('/products') && config.method === 'post') {
+         return { message: 'Product created successfully (Demo)', data: { _id: id, name: 'New Demo Product' } };
+       }
+       
+       return { success: true, message: 'Demo Mode: Action simulated successfully', data: { _id: id } };
+     };
+
      return Promise.reject({
         isMock: true,
         response: {
-          data: { message: 'Demo Mode: Action simulated successfully', data: {} },
+          data: getMockActionResponse(),
           status: 200,
           statusText: 'OK',
           headers: {},

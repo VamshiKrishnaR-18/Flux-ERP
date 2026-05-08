@@ -219,10 +219,10 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                                         {...register("currency")} 
                                         id="currency"
                                         autoComplete="transaction-currency"
-                                        className="w-full px-4 py-3 border border-gray-100 dark:border-slate-800 rounded-xl bg-gray-50/50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-black/5 dark:focus:ring-white/5 outline-none transition-all font-medium text-gray-900 dark:text-slate-100"
+                                        className="w-full px-4 py-3 border border-gray-100 dark:border-slate-800 rounded-xl bg-gray-50/50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-black/5 dark:focus:ring-white/5 outline-none transition-all font-medium text-gray-900 dark:text-slate-100"
                                     >
                                         {CURRENCIES.map((c) => (
-                                            <option key={c.code} value={c.code}>{c.label}</option>
+                                            <option key={c.code} value={c.code} className="dark:bg-slate-900">{c.label}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -246,17 +246,17 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                             {watch("recurring") !== 'none' && (
                                 <div className="animate-in slide-in-from-top-2 duration-300">
                                     <label htmlFor="recurring" className="block text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">Frequency</label>
-                                    <select 
-                                        {...register("recurring")} 
-                                        id="recurring"
-                                        className="w-full px-4 py-3 border border-gray-100 dark:border-slate-800 rounded-xl bg-gray-50/50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-black/5 dark:focus:ring-white/5 transition-all font-medium text-gray-900 dark:text-slate-100"
-                                    >
-                                        <option value="daily">Daily</option>
-                                        <option value="weekly">Weekly</option>
-                                        <option value="monthly">Monthly</option>
-                                        <option value="quarter">Quarterly</option>
-                                        <option value="annually">Annually</option>
-                                    </select>
+                                        <select 
+                                            {...register("recurring")} 
+                                            id="recurring"
+                                            className="w-full px-4 py-3 border border-gray-100 dark:border-slate-800 rounded-xl bg-gray-50/50 dark:bg-slate-900/50 outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-black/5 dark:focus:ring-white/5 transition-all font-medium text-gray-900 dark:text-slate-100"
+                                        >
+                                            <option value="daily" className="dark:bg-slate-900">Daily</option>
+                                            <option value="weekly" className="dark:bg-slate-900">Weekly</option>
+                                            <option value="monthly" className="dark:bg-slate-900">Monthly</option>
+                                            <option value="quarter" className="dark:bg-slate-900">Quarterly</option>
+                                            <option value="annually" className="dark:bg-slate-900">Annually</option>
+                                        </select>
                                 </div>
                             )}
                         </div>
@@ -294,12 +294,12 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                                 <select 
                                     {...register("status")} 
                                     id="status"
-                                    className="w-full px-4 py-3 border border-gray-100 dark:border-slate-800 rounded-xl bg-gray-50/50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-black/5 dark:focus:ring-white/5 outline-none transition-all font-medium text-gray-900 dark:text-slate-100"
+                                    className="w-full px-4 py-3 border border-gray-100 dark:border-slate-800 rounded-xl bg-gray-50/50 dark:bg-slate-900/50 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-black/5 dark:focus:ring-white/5 outline-none transition-all font-medium text-gray-900 dark:text-slate-100"
                                 >
-                                    <option value="draft">Draft</option>
-                                    <option value="sent">Sent</option>
-                                    <option value="paid">Paid</option>
-                                    <option value="overdue">Overdue</option>
+                                    <option value="draft" className="dark:bg-slate-900">Draft</option>
+                                    <option value="sent" className="dark:bg-slate-900">Sent</option>
+                                    <option value="paid" className="dark:bg-slate-900">Paid</option>
+                                    <option value="overdue" className="dark:bg-slate-900">Overdue</option>
                                 </select>
                             </div>
                         </div>
@@ -324,7 +324,7 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                             <tbody className="space-y-4">
                                 {fields.map((field, index) => (
                                     <tr key={field.id} className="group transition-all">
-                                        <td className="bg-gray-50 dark:bg-slate-800/50 rounded-l-2xl p-4 border-y border-l border-gray-100 dark:border-slate-800 focus-within:bg-white dark:focus-within:bg-slate-800 focus-within:ring-2 focus-within:ring-black/5 transition-all">
+                                        <td className="bg-gray-50 dark:bg-slate-900/50 rounded-l-2xl p-4 border-y border-l border-gray-100 dark:border-slate-800 focus-within:bg-white dark:focus-within:bg-slate-800 focus-within:ring-2 focus-within:ring-black/5 transition-all">
                                             <div className="space-y-2">
                                                 <AsyncSelect 
                                                     label="Product"
@@ -334,7 +334,7 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                                                     fetcher={fetchProducts} 
                                                     renderOption={(p: any) => (
                                                         <div className="flex justify-between items-center w-full">
-                                                            <span className="font-bold">{p.name}</span>
+                                                            <span className="font-bold text-gray-900 dark:text-slate-100">{p.name}</span>
                                                             <span className="text-[10px] bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-black uppercase">{p.sku}</span>
                                                         </div>
                                                     )}
@@ -352,7 +352,7 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                                                 />
                                             </div>
                                         </td>
-                                        <td className="bg-gray-50 dark:bg-slate-800/50 border-y border-gray-100 dark:border-slate-800 p-4">
+                                        <td className="bg-gray-50 dark:bg-slate-900/50 border-y border-gray-100 dark:border-slate-800 p-4">
                                             <label htmlFor={`item-quantity-${index}`} className="sr-only">Quantity</label>
                                             <input 
                                                 type="number" 
@@ -362,7 +362,7 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                                                 className="w-full text-center bg-transparent font-bold text-gray-900 dark:text-slate-100 outline-none" 
                                             />
                                         </td>
-                                        <td className="bg-gray-50 dark:bg-slate-800/50 border-y border-gray-100 dark:border-slate-800 p-4 text-right">
+                                        <td className="bg-gray-50 dark:bg-slate-900/50 border-y border-gray-100 dark:border-slate-800 p-4 text-right">
                                             <div className="flex items-center justify-end gap-1">
                                                 <span className="text-gray-400 dark:text-slate-500 font-bold">$</span>
                                                 <label htmlFor={`item-price-${index}`} className="sr-only">Price</label>
@@ -376,10 +376,10 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                                                 />
                                             </div>
                                         </td>
-                                        <td className="bg-gray-50 dark:bg-slate-800/50 border-y border-gray-100 dark:border-slate-800 p-4 text-right font-black text-gray-900 dark:text-slate-100">
+                                        <td className="bg-gray-50 dark:bg-slate-900/50 border-y border-gray-100 dark:border-slate-800 p-4 text-right font-black text-gray-900 dark:text-slate-100">
                                             ${((watch(`items.${index}.quantity`) || 0) * (watch(`items.${index}.price`) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </td>
-                                        <td className="bg-gray-50 dark:bg-slate-800/50 rounded-r-2xl border-y border-r border-gray-100 dark:border-slate-800 p-4 text-center">
+                                        <td className="bg-gray-50 dark:bg-slate-900/50 rounded-r-2xl border-y border-r border-gray-100 dark:border-slate-800 p-4 text-center">
                                             <button 
                                                 type="button" 
                                                 onClick={() => remove(index)} 
@@ -411,7 +411,7 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                         <div className="space-y-8">
                             <div>
                                 <h4 className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">Invoice Settings</h4>
-                                <div className="p-6 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-800 space-y-4">
+                                <div className="p-6 bg-gray-50/50 dark:bg-slate-900/50 rounded-2xl border border-gray-100 dark:border-slate-800 space-y-4">
                                     <div className="flex justify-between items-center">
                                         <span className="text-sm text-gray-500 dark:text-slate-400 font-medium">Currency</span>
                                         <span className="font-bold text-gray-900 dark:text-slate-100">{watch("currency")}</span>
@@ -425,7 +425,7 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                                                 step="0.01"
                                                 autoComplete="off"
                                                 {...register("taxRate", { valueAsNumber: true })} 
-                                                className="w-16 text-right bg-transparent font-bold text-gray-900 dark:text-slate-100 outline-none border-b border-gray-200 dark:border-slate-700" 
+                                                className="w-16 text-right bg-transparent font-bold text-gray-900 dark:text-slate-100 outline-none border-b border-gray-200 dark:border-slate-700 focus:border-blue-500 transition-colors" 
                                             />
                                             <span className="text-gray-400 dark:text-slate-500 font-bold">%</span>
                                         </div>
@@ -439,7 +439,7 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                                                 step="0.01"
                                                 autoComplete="off"
                                                 {...register("discount", { valueAsNumber: true })} 
-                                                className="w-16 text-right bg-transparent font-bold text-gray-900 dark:text-slate-100 outline-none border-b border-gray-200 dark:border-slate-700" 
+                                                className="w-16 text-right bg-transparent font-bold text-gray-900 dark:text-slate-100 outline-none border-b border-gray-200 dark:border-slate-700 focus:border-blue-500 transition-colors" 
                                             />
                                             <span className="text-gray-400 dark:text-slate-500 font-bold">$</span>
                                         </div>
@@ -455,12 +455,12 @@ export function InvoiceForm({ initialValues, onSubmit, isLoading, isEditMode }: 
                                     rows={5}
                                     autoComplete="off"
                                     placeholder="Add any specific payment instructions or a thank you message..."
-                                    className="w-full p-5 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-800 rounded-2xl outline-none focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-black/5 dark:focus:ring-white/5 transition-all text-sm text-gray-700 dark:text-slate-300 resize-none"
+                                    className="w-full p-5 bg-gray-50/50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-800 rounded-2xl outline-none focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-black/5 dark:focus:ring-white/5 transition-all text-sm text-gray-700 dark:text-slate-300 resize-none"
                                 />
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 dark:bg-slate-800/50 p-8 rounded-3xl border border-gray-100 dark:border-slate-800 h-fit">
+                        <div className="bg-gray-50/50 dark:bg-slate-900/50 p-8 rounded-3xl border border-gray-100 dark:border-slate-800 h-fit">
                             <h4 className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-6 text-center">Summary</h4>
                             <div className="space-y-5">
                                 <div className="flex justify-between items-center text-gray-600 dark:text-slate-400 font-medium">

@@ -177,7 +177,7 @@ export function AsyncSelect<T extends { _id: string }>({
                   role="option"
                   aria-selected={value === item._id}
                   onClick={() => handleSelect(item)}
-                  className="px-3 py-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer text-sm border-b border-gray-50 dark:border-slate-800 last:border-0 transition-colors dark:text-gray-300"
+                  className="px-3 py-2.5 hover:bg-blue-50 dark:hover:bg-blue-500/10 cursor-pointer text-sm border-b border-gray-50 dark:border-slate-800/50 last:border-0 transition-colors dark:text-slate-100"
                 >
                   {renderOption(item)}
                 </div>

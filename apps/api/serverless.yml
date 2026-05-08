@@ -12,6 +12,10 @@ provider:
     JWT_SECRET: ${param:JWT_SECRET}
     CLERK_SECRET_KEY: ${param:CLERK_SECRET_KEY, ''}
     GROQ_API_KEY: ${param:GROQ_API_KEY, ''}
+    SMTP_HOST: ${param:SMTP_HOST, 'smtp.ethereal.email'}
+    SMTP_PORT: ${param:SMTP_PORT, '587'}
+    SMTP_USER: ${param:SMTP_USER, ''}
+    SMTP_PASS: ${param:SMTP_PASS, ''}
     CORS_ORIGIN: 'https://flux-erp-web.vercel.app'
 
 build:

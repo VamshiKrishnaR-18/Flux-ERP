@@ -301,7 +301,7 @@ export default function Dashboard() {
                 <div className="h-80 w-full min-h-[320px] relative"> 
                     {loading ? (
                       <Skeleton className="w-full h-full rounded-2xl" />
-                    ) : isMounted && stats ? (
+                    ) : (isMounted && stats ? (
                         <ErrorBoundary>
                             <ResponsiveContainer width="100%" height="100%" minHeight={320}>
                                 <AreaChart 
@@ -377,7 +377,7 @@ export default function Dashboard() {
                                 </AreaChart>
                             </ResponsiveContainer>
                         </ErrorBoundary>
-                    ) : null}
+                    ) : null)}
                 </div>
             </div>
           )}

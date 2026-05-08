@@ -112,7 +112,7 @@ export default function Reports() {
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 transition-colors">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-8 tracking-tight">Monthly Revenue vs Profit</h3>
                     <div className="h-80 w-full min-h-[320px] relative">
-                        {isMounted && revenueData && revenueData.length > 0 ? (
+                        {(isMounted && revenueData && revenueData.length > 0) ? (
                             <ErrorBoundary>
                                 <ResponsiveContainer width="100%" height="100%" minHeight={320}>
                                     <BarChart data={revenueData}>
@@ -162,7 +162,7 @@ export default function Reports() {
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 transition-colors">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-8 tracking-tight">Expense Breakdown</h3>
                     <div className="h-80 flex items-center justify-center w-full min-h-[320px] relative">
-                        {expenseData && expenseData.length > 0 && isMounted ? (
+                        {(expenseData && expenseData.length > 0 && isMounted) ? (
                             <ErrorBoundary>
                                 <ResponsiveContainer width="100%" height="100%" minHeight={320}>
                                     <PieChart>

@@ -37,6 +37,9 @@ import { requestIdMiddleware } from './middleware/request-id.middleware';
 
 const app = express();
 
+// TRUST PROXY - Required for rate limiting behind API Gateway/Load Balancers
+app.set('trust proxy', 1);
+
 // REQUEST ID
 app.use(requestIdMiddleware);
 

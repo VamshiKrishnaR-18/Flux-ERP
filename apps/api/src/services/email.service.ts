@@ -6,6 +6,12 @@ export class EmailService {
   private transporter;
 
   constructor() {
+    if (!config.smtpUser || !config.smtpPass) {
+      console.warn('⚠️ SMTP credentials missing. Email service will not work.');
+      this.transporter = null;
+      return;
+    }
+
     this.transporter = nodemailer.createTransport({
       host: config.smtpHost,
       port: config.smtpPort,
@@ -18,6 +24,10 @@ export class EmailService {
   }
 
   async sendInvoice(invoice: any, client: any) {
+    if (!this.transporter) {
+      console.error("❌ Email failed: Transporter not initialized (missing credentials)");
+      return false;
+    }
     try {
       const settings = await SettingsModel.findOne({ userId: invoice.createdBy });
       const primaryColor = settings?.primaryColor || '#000';
@@ -51,6 +61,10 @@ export class EmailService {
   }
 
   async sendReminder(invoice: any, client: any) {
+    if (!this.transporter) {
+      console.error("❌ Reminder failed: Transporter not initialized (missing credentials)");
+      return false;
+    }
     try {
       const settings = await SettingsModel.findOne({ userId: invoice.createdBy });
       const primaryColor = settings?.primaryColor || '#000';
@@ -84,6 +98,10 @@ export class EmailService {
   }
 
   async sendQuote(quote: any, client: any) {
+    if (!this.transporter) {
+      console.error("❌ Quote failed: Transporter not initialized (missing credentials)");
+      return false;
+    }
     try {
       const settings = await SettingsModel.findOne({ userId: quote.createdBy });
       const primaryColor = settings?.primaryColor || '#000';
