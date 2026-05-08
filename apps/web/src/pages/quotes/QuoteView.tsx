@@ -90,6 +90,8 @@ export default function QuoteView() {
   if (isLoading || !quote) return <div className="p-10 text-center flex items-center justify-center h-screen bg-gray-50 dark:bg-slate-950 transition-colors"><div className="animate-spin w-8 h-8 border-4 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full"></div></div>;
 
   const client = quote.clientId as unknown as { name: string, email: string, phoneNumber?: string, address?: string };
+  const total = quote.total || 0;
+  const discount = quote.discount || 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6 lg:p-10 transition-colors duration-200">
@@ -217,16 +219,23 @@ export default function QuoteView() {
                    </tr>
                  </thead>
                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                   {quote.items.map((item, idx) => (
+                   {quote.items?.map((item, idx) => (
                      <tr key={idx} className="group">
                        <td className="py-6 pr-4">
                          <p className="font-bold text-gray-900 dark:text-slate-100">{item.itemName}</p>
                        </td>
                        <td className="py-6 text-center text-gray-600 dark:text-slate-400 font-medium">{item.quantity}</td>
-                       <td className="py-6 text-right text-gray-600 dark:text-slate-400 font-medium">${item.price.toFixed(2)}</td>
-                       <td className="py-6 text-right font-bold text-gray-900 dark:text-slate-100">${(item.quantity * item.price).toFixed(2)}</td>
+                       <td className="py-6 text-right text-gray-600 dark:text-slate-400 font-medium">${(item.price || 0).toFixed(2)}</td>
+                       <td className="py-6 text-right font-bold text-gray-900 dark:text-slate-100">${((item.quantity || 0) * (item.price || 0)).toFixed(2)}</td>
                      </tr>
                    ))}
+                   {(!quote.items || quote.items.length === 0) && (
+                     <tr>
+                       <td colSpan={4} className="py-10 text-center text-gray-400 dark:text-slate-500 italic font-medium">
+                         No items listed for this quote.
+                       </td>
+                     </tr>
+                   )}
                  </tbody>
                </table>
              </div>
@@ -235,15 +244,15 @@ export default function QuoteView() {
            {/* Footer Total */}
            <div className="p-10 bg-gray-50/50 dark:bg-slate-800/30 border-t border-gray-100 dark:border-slate-800 flex justify-end">
               <div className="w-full sm:w-72 space-y-3">
-                 {quote.discount > 0 && (
+                 {discount > 0 && (
                     <div className="flex justify-between text-gray-500 dark:text-slate-400 text-sm font-medium">
                        <span>Discount</span>
-                       <span className="text-red-500 dark:text-red-400">-${quote.discount.toFixed(2)}</span>
+                       <span className="text-red-500 dark:text-red-400">-${discount.toFixed(2)}</span>
                     </div>
                  )}
                  <div className="flex justify-between items-center text-2xl font-black text-gray-900 dark:text-slate-100 border-t pt-4 border-gray-200 dark:border-slate-700">
                     <span className="text-sm font-black uppercase tracking-[0.1em] text-gray-400 dark:text-slate-500">Estimated Total</span>
-                    <span>${quote.total.toFixed(2)}</span>
+                    <span>${total.toFixed(2)}</span>
                  </div>
               </div>
            </div>

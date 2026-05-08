@@ -33,18 +33,20 @@ api.interceptors.request.use((config) => {
         }
       }};
       if (url.includes('/dashboard')) return { data: { 
-        ...MOCK_DATA.stats, 
-        recentInvoices: MOCK_DATA.invoices,
-        chartData: [
-          { name: 'Jan', income: 4000, expense: 2400 },
-          { name: 'Feb', income: 3000, expense: 1398 },
-          { name: 'Mar', income: 2000, expense: 9800 },
-          { name: 'Apr', income: 2780, expense: 3908 },
-          { name: 'May', income: 1890, expense: 4800 },
-          { name: 'Jun', income: 2390, expense: 3800 },
-        ]
+        data: {
+          ...MOCK_DATA.stats, 
+          recentInvoices: MOCK_DATA.invoices,
+          chartData: [
+            { name: 'Jan', income: 4000, expense: 2400 },
+            { name: 'Feb', income: 3000, expense: 1398 },
+            { name: 'Mar', income: 2000, expense: 9800 },
+            { name: 'Apr', income: 2780, expense: 3908 },
+            { name: 'May', income: 1890, expense: 4800 },
+            { name: 'Jun', income: 2390, expense: 3800 },
+          ]
+        }
       }};
-      if (url.includes('/stats')) return { data: MOCK_DATA.stats };
+      if (url.includes('/stats')) return { data: { data: MOCK_DATA.stats } };
       
       // Handle single item views
       if (url.match(/\/invoices\/demo-[a-z0-9]+$/)) return { data: { data: MOCK_DATA.invoices[0] } };
@@ -52,15 +54,18 @@ api.interceptors.request.use((config) => {
       if (url.match(/\/clients\/demo-[a-z0-9]+$/)) return { data: { data: MOCK_DATA.clients[0] } };
       if (url.match(/\/products\/demo-[a-z0-9]+$/)) return { data: { data: MOCK_DATA.products[0] } };
 
-      if (url.includes('/clients')) return { data: MOCK_DATA.clients, pagination: { totalPages: 1 } };
-      if (url.includes('/products')) return { data: MOCK_DATA.products };
-      if (url.includes('/invoices')) return { data: MOCK_DATA.invoices, pagination: { totalPages: 1 } };
-      if (url.includes('/quotes')) return { data: MOCK_DATA.quotes, pagination: { totalPages: 1 } };
-      if (url.includes('/activity')) return { data: MOCK_DATA.activities, pagination: { totalPages: 1 } };
-      if (url.includes('/expenses')) return { data: [
-        { _id: '1', date: new Date().toISOString(), category: 'Rent', amount: 2000, description: 'Office rent', paymentMethod: 'bank_transfer' },
-        { _id: '2', date: new Date().toISOString(), category: 'Software', amount: 150, description: 'SaaS subscriptions', paymentMethod: 'credit_card' },
-      ], pagination: { totalPages: 1 } };
+      if (url.includes('/clients')) return { data: { data: MOCK_DATA.clients, pagination: { totalPages: 1 } } };
+      if (url.includes('/products')) return { data: { data: MOCK_DATA.products, pagination: { totalPages: 1 } } };
+      if (url.includes('/invoices')) return { data: { data: MOCK_DATA.invoices, pagination: { totalPages: 1 } } };
+      if (url.includes('/quotes')) return { data: { data: MOCK_DATA.quotes, pagination: { totalPages: 1 } } };
+      if (url.includes('/activity')) return { data: { data: MOCK_DATA.activities, pagination: { totalPages: 1 } } };
+      if (url.includes('/expenses')) return { data: { 
+        data: [
+          { _id: '1', date: new Date().toISOString(), category: 'Rent', amount: 2000, description: 'Office rent', paymentMethod: 'bank_transfer' },
+          { _id: '2', date: new Date().toISOString(), category: 'Software', amount: 150, description: 'SaaS subscriptions', paymentMethod: 'credit_card' },
+        ], 
+        pagination: { totalPages: 1 } 
+      } };
 
       if (url.includes('/public/invoice')) return { data: { data: MOCK_DATA.invoices[0] } };
       if (url.includes('/public/client')) return { data: { data: MOCK_DATA.clients[0], invoices: MOCK_DATA.invoices } };

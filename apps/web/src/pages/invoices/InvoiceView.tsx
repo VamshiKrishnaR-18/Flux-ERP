@@ -118,7 +118,12 @@ export default function InvoiceView() {
 
   const client = invoice.clientId as unknown as { name: string, email: string, address?: string, phoneNumber?: string };
   const amountPaid = invoice.amountPaid || 0;
-  const balanceDue = invoice.total - amountPaid;
+  const subTotal = invoice.subTotal || 0;
+  const total = invoice.total || 0;
+  const taxTotal = invoice.taxTotal || 0;
+  const taxRate = invoice.taxRate || 0;
+  const discount = invoice.discount || 0;
+  const balanceDue = total - amountPaid;
   const isPaid = invoice.status === 'paid';
 
   return (
@@ -266,19 +271,26 @@ export default function InvoiceView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {invoice.items.map((item, idx) => (
+                {invoice.items?.map((item, idx) => (
                   <tr key={idx} className="group transition-colors">
                     <td className="px-6 py-6">
                       <p className="font-bold text-gray-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{item.itemName}</p>
                       {item.description && <p className="text-xs text-gray-400 dark:text-slate-500 mt-1 font-medium">{item.description}</p>}
                     </td>
                     <td className="px-6 py-6 text-center text-gray-600 dark:text-slate-400 font-bold">{item.quantity}</td>
-                    <td className="px-6 py-6 text-right text-gray-600 dark:text-slate-400 font-bold">${item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td className="px-6 py-6 text-right text-gray-600 dark:text-slate-400 font-bold">${(item.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                     <td className="px-6 py-6 text-right font-black text-gray-900 dark:text-slate-100">
-                      ${(item.quantity * item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      ${((item.quantity || 0) * (item.price || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                 ))}
+                {(!invoice.items || invoice.items.length === 0) && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-10 text-center text-gray-400 dark:text-slate-500 italic">
+                      No items found in this invoice.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -296,23 +308,23 @@ export default function InvoiceView() {
             <div className="w-full md:w-80 space-y-4">
                <div className="flex justify-between text-gray-500 dark:text-slate-400 font-medium">
                  <span>Subtotal</span>
-                 <span className="text-gray-900 dark:text-slate-200 font-bold">${invoice.subTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                 <span className="text-gray-900 dark:text-slate-200 font-bold">${subTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                </div>
-               {invoice.taxTotal > 0 && (
+               {taxTotal > 0 && (
                  <div className="flex justify-between text-gray-500 dark:text-slate-400 font-medium">
-                   <span>Tax ({invoice.taxRate}%)</span>
-                   <span className="text-gray-900 dark:text-slate-200 font-bold">+${invoice.taxTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                   <span>Tax ({taxRate}%)</span>
+                   <span className="text-gray-900 dark:text-slate-200 font-bold">+${taxTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                  </div>
                )}
-               {invoice.discount > 0 && (
+               {discount > 0 && (
                  <div className="flex justify-between text-gray-600">
                    <span>Discount</span>
-                   <span>-${invoice.discount.toFixed(2)}</span>
+                   <span>-${discount.toFixed(2)}</span>
                  </div>
                )}
                <div className="flex justify-between text-gray-900 dark:text-slate-100 font-bold text-xl pt-3 border-t border-gray-200 dark:border-slate-800">
                  <span>Total</span>
-                 <span>${invoice.total.toFixed(2)}</span>
+                 <span>${total.toFixed(2)}</span>
                </div>
                <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium pt-2">
                  <span>Amount Paid</span>

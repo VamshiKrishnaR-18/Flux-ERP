@@ -58,10 +58,62 @@ export const MOCK_DATA = {
     { _id: 'demo-p11', name: 'Content Strategy', price: 95, sku: 'SRV-CNT', description: 'Marketing and content planning' }
   ],
   invoices: [
-    { _id: 'demo-i1', number: 1, invoicePrefix: 'INV-', clientId: { _id: 'demo-c1', name: 'Acme Corp' }, total: 1500.00, status: 'paid', date: '2024-03-01T10:00:00Z', expiredDate: '2024-03-31T10:00:00Z' },
-    { _id: 'demo-i2', number: 2, invoicePrefix: 'INV-', clientId: { _id: 'demo-c2', name: 'Global Tech' }, total: 2400.00, status: 'sent', date: '2024-03-05T10:00:00Z', expiredDate: '2024-04-05T10:00:00Z' },
-    { _id: 'demo-i3', number: 3, invoicePrefix: 'INV-', clientId: { _id: 'demo-c3', name: 'Stark Industries' }, total: 5000.00, status: 'overdue', date: '2024-02-15T10:00:00Z', expiredDate: '2024-03-15T10:00:00Z' },
-    { _id: 'demo-i4', number: 4, invoicePrefix: 'INV-', clientId: { _id: 'demo-c1', name: 'Acme Corp' }, total: 850.50, status: 'draft', date: '2024-04-01T10:00:00Z', expiredDate: '2024-05-01T10:00:00Z' },
+    { 
+      _id: 'demo-i1', 
+      number: 1, 
+      invoicePrefix: 'INV-', 
+      clientId: { _id: 'demo-c1', name: 'Acme Corp', email: 'billing@acme.com', address: '123 Acme Way, Silicon Valley, CA' }, 
+      total: 1500.00, 
+      subTotal: 1500.00,
+      taxTotal: 0,
+      taxRate: 0,
+      discount: 0,
+      status: 'paid', 
+      date: '2024-03-01T10:00:00Z', 
+      expiredDate: '2024-03-31T10:00:00Z',
+      items: [
+        { itemName: 'Web Development', quantity: 10, price: 150, description: 'Backend API implementation' }
+      ],
+      amountPaid: 1500.00,
+      notes: 'Thank you for your business!'
+    },
+    { 
+      _id: 'demo-i2', 
+      number: 2, 
+      invoicePrefix: 'INV-', 
+      clientId: { _id: 'demo-c2', name: 'Global Tech', email: 'accounts@globaltech.io', address: '45 Tech Plaza, London, UK' }, 
+      total: 2400.00, 
+      subTotal: 2400.00,
+      taxTotal: 0,
+      taxRate: 0,
+      discount: 0,
+      status: 'sent', 
+      date: '2024-03-05T10:00:00Z', 
+      expiredDate: '2024-04-05T10:00:00Z',
+      items: [
+        { itemName: 'UI/UX Design', quantity: 20, price: 120, description: 'Dashboard redesign' }
+      ],
+      amountPaid: 0,
+    },
+    { 
+      _id: 'demo-i3', 
+      number: 3, 
+      invoicePrefix: 'INV-', 
+      clientId: { _id: 'demo-c3', name: 'Stark Industries', email: 'pepper@stark.com', address: '890 Fifth Avenue, Manhattan, NY' }, 
+      total: 5000.00, 
+      subTotal: 5000.00,
+      taxTotal: 0,
+      taxRate: 0,
+      discount: 0,
+      status: 'overdue', 
+      date: '2024-02-15T10:00:00Z', 
+      expiredDate: '2024-03-15T10:00:00Z',
+      items: [
+        { itemName: 'Cloud Hosting', quantity: 100, price: 50, description: 'Annual managed hosting' }
+      ],
+      amountPaid: 0,
+    },
+    { _id: 'demo-i4', number: 4, invoicePrefix: 'INV-', clientId: { _id: 'demo-c1', name: 'Acme Corp' }, total: 850.50, status: 'draft', date: '2024-04-01T10:00:00Z', expiredDate: '2024-05-01T10:00:00Z', items: [{ itemName: 'Consulting', quantity: 5, price: 170.1 }], subTotal: 850.5, taxTotal: 0, discount: 0 },
     { _id: 'demo-i5', number: 5, invoicePrefix: 'INV-', clientId: { _id: 'demo-c2', name: 'Global Tech' }, total: 1200.00, status: 'paid', date: '2024-01-20T10:00:00Z', expiredDate: '2024-02-20T10:00:00Z' },
     { _id: 'demo-i6', number: 6, invoicePrefix: 'INV-', clientId: { _id: 'demo-c5', name: 'LexCorp' }, total: 3200.00, status: 'sent', date: '2024-03-10T10:00:00Z', expiredDate: '2024-04-10T10:00:00Z' },
     { _id: 'demo-i7', number: 7, invoicePrefix: 'INV-', clientId: { _id: 'demo-c6', name: 'Umbrella Corp' }, total: 4500.00, status: 'paid', date: '2024-02-28T10:00:00Z', expiredDate: '2024-03-28T10:00:00Z' },
@@ -140,10 +192,50 @@ export const MOCK_DATA = {
     { _id: 'demo-i80', number: 80, invoicePrefix: 'INV-', clientId: { _id: 'demo-c7', name: 'Cyberdyne Systems' }, total: 9500.00, status: 'paid', date: '2024-02-12T10:00:00Z', expiredDate: '2024-03-12T10:00:00Z' },
   ],
   quotes: [
-    { _id: 'demo-q1', title: 'New Website Project', clientName: 'Acme Corp', clientId: { name: 'Acme Corp' }, total: 4500.00, status: 'draft', date: '2024-03-10T10:00:00Z', expiredDate: '2024-04-10T10:00:00Z' },
-    { _id: 'demo-q2', title: 'App Redesign', clientName: 'Global Tech', clientId: { name: 'Global Tech' }, total: 3200.00, status: 'sent', date: '2024-03-12T10:00:00Z', expiredDate: '2024-04-12T10:00:00Z' },
-    { _id: 'demo-q3', title: 'SEO Optimization', clientName: 'Stark Industries', clientId: { name: 'Stark Industries' }, total: 1500.00, status: 'accepted', date: '2024-02-20T10:00:00Z', expiredDate: '2024-03-20T10:00:00Z' },
-    { _id: 'demo-q4', title: 'E-commerce Platform', clientName: 'Oscorp Industries', clientId: { name: 'Oscorp Industries' }, total: 12500.00, status: 'sent', date: '2024-03-18T10:00:00Z', expiredDate: '2024-04-18T10:00:00Z' },
+    { 
+      _id: 'demo-q1', 
+      title: 'New Website Project', 
+      clientName: 'Acme Corp', 
+      clientId: { _id: 'demo-c1', name: 'Acme Corp', email: 'billing@acme.com', address: '123 Acme Way, Silicon Valley, CA' }, 
+      total: 4500.00, 
+      status: 'draft', 
+      date: '2024-03-10T10:00:00Z', 
+      expiredDate: '2024-04-10T10:00:00Z',
+      items: [
+        { itemName: 'Web Development', quantity: 30, price: 150 }
+      ],
+      discount: 0
+    },
+    { 
+      _id: 'demo-q2', 
+      title: 'App Redesign', 
+      clientName: 'Global Tech', 
+      clientId: { _id: 'demo-c2', name: 'Global Tech', email: 'accounts@globaltech.io', address: '45 Tech Plaza, London, UK' }, 
+      total: 3200.00, 
+      status: 'sent', 
+      date: '2024-03-12T10:00:00Z', 
+      expiredDate: '2024-04-12T10:00:00Z',
+      items: [
+        { itemName: 'UI/UX Design', quantity: 20, price: 120 },
+        { itemName: 'Prototyping', quantity: 10, price: 80 }
+      ],
+      discount: 0
+    },
+    { 
+      _id: 'demo-q3', 
+      title: 'SEO Optimization', 
+      clientName: 'Stark Industries', 
+      clientId: { _id: 'demo-c3', name: 'Stark Industries', email: 'pepper@stark.com', address: '890 Fifth Avenue, Manhattan, NY' }, 
+      total: 1500.00, 
+      status: 'accepted', 
+      date: '2024-02-20T10:00:00Z', 
+      expiredDate: '2024-03-20T10:00:00Z',
+      items: [
+        { itemName: 'SEO Audit', quantity: 1, price: 1500 }
+      ],
+      discount: 0
+    },
+    { _id: 'demo-q4', title: 'E-commerce Platform', clientName: 'Oscorp Industries', clientId: { name: 'Oscorp Industries' }, total: 12500.00, status: 'sent', date: '2024-03-18T10:00:00Z', expiredDate: '2024-04-18T10:00:00Z', items: [{ itemName: 'E-commerce Dev', quantity: 1, price: 12500 }], discount: 0 },
     { _id: 'demo-q5', title: 'Security Consultation', clientName: 'Cyberdyne Systems', clientId: { name: 'Cyberdyne Systems' }, total: 5000.00, status: 'accepted', date: '2024-03-05T10:00:00Z', expiredDate: '2024-04-05T10:00:00Z' },
     { _id: 'demo-q6', title: 'Brand Identity', clientName: 'Hooli', clientId: { name: 'Hooli' }, total: 2500.00, status: 'declined', date: '2024-02-10T10:00:00Z', expiredDate: '2024-03-10T10:00:00Z' },
     { _id: 'demo-q7', title: 'Cloud Migration', clientName: 'Tyrell Corp', clientId: { name: 'Tyrell Corp' }, total: 18000.00, status: 'sent', date: '2024-03-25T10:00:00Z', expiredDate: '2024-04-25T10:00:00Z' },
