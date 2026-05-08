@@ -35,4 +35,18 @@ router.get('/', (req: Request, res: Response) => {
   return successResponse(res, healthData, 'Service Healthy');
 });
 
+/**
+ * @swagger
+ * /health/status:
+ *   get:
+ *     summary: Simple status check (DB independent)
+ *     tags: [System]
+ */
+router.get('/status', (req: Request, res: Response) => {
+  return successResponse(res, { 
+    status: 'online', 
+    timestamp: new Date().toISOString() 
+  }, 'API is reachable');
+});
+
 export default router;

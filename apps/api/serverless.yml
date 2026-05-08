@@ -15,7 +15,14 @@ provider:
     CORS_ORIGIN: 'https://flux-erp-web.vercel.app'
 
 build:
-  esbuild: false
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: true
+    target: 'node20'
+    packager: 'npm'
+    exclude:
+      - '@aws-sdk/*'
 
 functions:
   api:
@@ -30,13 +37,3 @@ functions:
 
 plugins:
   - serverless-offline
-  - serverless-esbuild 
-
-custom:
-  esbuild:
-    bundle: true
-    minify: true
-    sourcemap: true
-    target: 'node20'
-    packager: 'npm'
-    exclude: ['aws-sdk']
