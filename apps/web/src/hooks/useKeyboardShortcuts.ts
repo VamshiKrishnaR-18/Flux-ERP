@@ -15,7 +15,7 @@ export function useKeyboardShortcuts(shortcuts: ShortcutMap) {
                       activeElement instanceof HTMLTextAreaElement ||
                       (activeElement as HTMLElement)?.isContentEditable;
 
-      const key = event.key.toLowerCase();
+      const key = (event?.key || '').toLowerCase();
       const ctrlOrCmd = event.ctrlKey || event.metaKey;
       const shift = event.shiftKey;
 

@@ -25,7 +25,7 @@ const statusStyles: Record<string, string> = {
 };
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className }) => {
-  const normalizedStatus = status.toLowerCase();
+  const normalizedStatus = (status || '').toLowerCase();
   const style = statusStyles[normalizedStatus] || 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700';
 
   return (
