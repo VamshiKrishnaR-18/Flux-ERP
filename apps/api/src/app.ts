@@ -27,7 +27,6 @@ import activityRoutes from './routes/activity.routes';
 import currencyRoutes from './routes/currency.routes';
 import uploadRoutes from './routes/upload.routes';
 import userRoutes from './routes/user.routes';
-import aiRoutes from './routes/ai.routes';
 
 // Middleware
 import { authMiddleware } from './middleware/auth.middleware';
@@ -50,8 +49,9 @@ app.use(cors({
       'http://localhost:5173',
       'http://localhost:3000',
       'http://localhost:5174',
+      'https://flux-erp-web.vercel.app',
       ...(config.corsOrigin || []),
-      /\.vercel\.app$/
+      /^https:\/\/.*\.vercel\.app$/
     ];
 
     const isAllowed = allowedOrigins.some(rule => {
@@ -111,7 +111,7 @@ app.use(hpp() as unknown as RequestHandler);
 // RATE LIMITING
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  limit: 100, 
+  limit: 100,
   message: "Too many requests, please try again later."
 });
 app.use(limiter as unknown as RequestHandler);
@@ -128,7 +128,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Swagger Docs
-app.use('/api-docs', ...(swaggerUi.serve as unknown as RequestHandler[]), swaggerUi.setup(swaggerSpec) as unknown as RequestHandler); 
+app.use('/api-docs', ...(swaggerUi.serve as unknown as RequestHandler[]), swaggerUi.setup(swaggerSpec) as unknown as RequestHandler);
 
 // API V1 Router
 const apiV1 = express.Router();
@@ -138,7 +138,7 @@ apiV1.use('/health', healthRoutes);
 
 // Public Routes
 apiV1.use('/auth', authRoutes);
-apiV1.use('/public', publicRoutes); 
+apiV1.use('/public', publicRoutes);
 
 // Protected Routes
 apiV1.use('/clients', authMiddleware as unknown as RequestHandler, clientRoutes);
@@ -148,40 +148,39 @@ apiV1.use('/products', authMiddleware as unknown as RequestHandler, productRoute
 apiV1.use('/quotes', authMiddleware as unknown as RequestHandler, quoteRoutes);
 
 // ADMIN & ANALYTICS ROUTES
-apiV1.use('/expenses', 
-  authMiddleware as unknown as RequestHandler, 
-  requireAdmin as unknown as RequestHandler, 
+apiV1.use('/expenses',
+  authMiddleware as unknown as RequestHandler,
+  requireAdmin as unknown as RequestHandler,
   expenseRoutes
 );
 
-apiV1.use('/reports', 
-  authMiddleware as unknown as RequestHandler, 
-  requireAdmin as unknown as RequestHandler, 
+apiV1.use('/reports',
+  authMiddleware as unknown as RequestHandler,
+  requireAdmin as unknown as RequestHandler,
   reportsRoutes
 );
 
-apiV1.use('/activity', 
-  authMiddleware as unknown as RequestHandler, 
+apiV1.use('/activity',
+  authMiddleware as unknown as RequestHandler,
   activityRoutes
 );
 
-apiV1.use('/currency', 
-  authMiddleware as unknown as RequestHandler, 
+apiV1.use('/currency',
+  authMiddleware as unknown as RequestHandler,
   currencyRoutes
 );
 
-apiV1.use('/settings', 
-  authMiddleware as unknown as RequestHandler, 
+apiV1.use('/settings',
+  authMiddleware as unknown as RequestHandler,
   settingsRoutes
 );
 
-apiV1.use('/upload', 
-  authMiddleware as unknown as RequestHandler, 
+apiV1.use('/upload',
+  authMiddleware as unknown as RequestHandler,
   uploadRoutes
 );
 
 apiV1.use('/users', userRoutes);
-apiV1.use('/ai', authMiddleware as unknown as RequestHandler, aiRoutes);
 
 // Mount API V1
 app.use('/api/v1', apiV1);
