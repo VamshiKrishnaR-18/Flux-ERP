@@ -298,15 +298,15 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </div>
-                <div className="h-80 w-full min-h-[320px]"> 
+                <div className="h-80 w-full min-h-[320px] relative"> 
                     {loading ? (
                       <Skeleton className="w-full h-full rounded-2xl" />
-                    ) : isMounted && (
+                    ) : isMounted && stats ? (
                         <ErrorBoundary>
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minHeight={320}>
                                 <AreaChart 
                                     className="cursor-pointer"
-                                    data={stats?.chartData || []} 
+                                    data={stats.chartData || []} 
                                     margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                                     onClick={(data) => {
                                         if (data && data.activeLabel) {
@@ -377,7 +377,7 @@ export default function Dashboard() {
                                 </AreaChart>
                             </ResponsiveContainer>
                         </ErrorBoundary>
-                    )}
+                    ) : null}
                 </div>
             </div>
           )}
@@ -461,7 +461,8 @@ export default function Dashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50 dark:divide-slate-800/50">
-                                {(stats?.recentInvoices || []).slice(0, 5).map((inv: Invoice) => (
+                                {stats?.recentInvoices && stats.recentInvoices.length > 0 ? (
+                                  stats.recentInvoices.slice(0, 5).map((inv: Invoice) => (
                                     <tr key={inv._id} className="group hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-all cursor-pointer" onClick={() => navigate(`/invoices/${inv._id}`)}>
                                         <td className="py-5 pl-2 font-bold text-gray-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">#{inv.number}</td>
                                         <td className="py-5">
@@ -484,7 +485,14 @@ export default function Dashboard() {
                                             <StatusBadge status={inv.status} />
                                         </td>
                                     </tr>
-                                ))}
+                                  ))
+                                ) : (
+                                  <tr>
+                                    <td colSpan={5} className="py-12 text-center text-gray-400 dark:text-slate-500 font-medium italic">
+                                      No recent invoices found
+                                    </td>
+                                  </tr>
+                                )}
                             </tbody>
                         </table>
                         {(!stats?.recentInvoices || stats.recentInvoices.length === 0) && (
@@ -517,7 +525,8 @@ export default function Dashboard() {
                       </>
                     ) : (
                       <>
-                        {topClients.slice(0, 5).map((c, i) => (
+                        {topClients && topClients.length > 0 ? (
+                          topClients.slice(0, 5).map((c, i) => (
                             <div 
                                 key={c.clientId} 
                                 onClick={() => navigate(`/clients/${c.clientId}`)}
@@ -546,12 +555,11 @@ export default function Dashboard() {
                                     )}
                                 </div>
                             </div>
-                        ))}
-                        
-                        {topClients.length === 0 && (
-                             <div className="text-center py-12 bg-gray-50/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-slate-700">
-                                <p className="text-gray-400 dark:text-slate-500 text-sm font-medium">No client data yet.</p>
-                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-12 bg-gray-50/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-slate-700">
+                              <p className="text-gray-400 dark:text-slate-500 text-sm font-medium">No client data yet.</p>
+                          </div>
                         )}
                       </>
                     )}
@@ -636,9 +644,10 @@ function AgingRow({ label, bucket, color }: { label: string; bucket?: { amount: 
 }
 
 function getInitials(name?: string) {
-    if (!name) return '??';
+    if (!name || name.trim() === '') return '??';
     return name
         .split(' ')
+        .filter(n => n && n.length > 0)
         .map(n => n[0])
         .slice(0, 2)
         .join('')

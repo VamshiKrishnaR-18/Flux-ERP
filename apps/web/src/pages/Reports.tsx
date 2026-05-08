@@ -111,10 +111,10 @@ export default function Reports() {
                 
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 transition-colors">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-8 tracking-tight">Monthly Revenue vs Profit</h3>
-                    <div className="h-80 w-full min-h-[320px]">
-                        {isMounted && (
+                    <div className="h-80 w-full min-h-[320px] relative">
+                        {isMounted && revenueData && revenueData.length > 0 ? (
                             <ErrorBoundary>
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minHeight={320}>
                                     <BarChart data={revenueData}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#1e293b' : '#f3f4f6'} />
                                         <XAxis 
@@ -154,17 +154,17 @@ export default function Reports() {
                                     </BarChart>
                                 </ResponsiveContainer>
                             </ErrorBoundary>
-                        )}
+                        ) : null}
                     </div>
                 </div>
 
                 {/* Expense Breakdown */}
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 transition-colors">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-8 tracking-tight">Expense Breakdown</h3>
-                    <div className="h-80 flex items-center justify-center w-full min-h-[320px]">
-                        {expenseData.length > 0 && isMounted ? (
+                    <div className="h-80 flex items-center justify-center w-full min-h-[320px] relative">
+                        {expenseData && expenseData.length > 0 && isMounted ? (
                             <ErrorBoundary>
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minHeight={320}>
                                     <PieChart>
                                         <Pie
                                             data={expenseData}
@@ -203,9 +203,7 @@ export default function Reports() {
                                     </PieChart>
                                 </ResponsiveContainer>
                             </ErrorBoundary>
-                        ) : (
-                            <div className="text-gray-400 dark:text-slate-600 italic">No expense data available</div>
-                        )}
+                        ) : null}
                     </div>
                 </div>
             </div>
