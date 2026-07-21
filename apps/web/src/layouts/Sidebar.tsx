@@ -2,18 +2,16 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, FileText, Package, 
   Receipt, Settings, LogOut, FileCode, PieChart, Activity,
-  Sun, Moon, ShieldCheck, ShieldAlert
+  Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
-import { useDemoMode } from '../context/DemoModeContext';
 
 export default function Sidebar() {
   const { logout, user } = useAuth(); 
   const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
-  const { isDemoMode, toggleDemoMode } = useDemoMode();
 
   const LINKS = [
     { to: '/dashboard', label: t('sidebar.dashboard'), icon: LayoutDashboard },
@@ -38,6 +36,9 @@ export default function Sidebar() {
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Flux ERP
           </h1>
+          <span className="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30">
+            Demo
+          </span>
         </div>
         
         <span className="text-[10px] uppercase font-black text-gray-400 dark:text-slate-500 tracking-[0.2em] block ml-11">
@@ -65,26 +66,6 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-gray-100 dark:border-slate-800 space-y-2">
-        <button 
-          onClick={toggleDemoMode}
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl w-full transition-all font-medium ${
-            isDemoMode 
-              ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20' 
-              : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'
-          }`}
-        >
-          {isDemoMode ? (
-            <>
-              <ShieldCheck className="w-5 h-5" />
-              <span>Demo Mode ON</span>
-            </>
-          ) : (
-            <>
-              <ShieldAlert className="w-5 h-5" />
-              <span>Normal Mode</span>
-            </>
-          )}
-        </button>
         <button 
           onClick={toggleTheme}
           className="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-xl w-full transition-colors font-medium"

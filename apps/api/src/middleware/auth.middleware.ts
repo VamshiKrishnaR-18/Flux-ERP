@@ -1,6 +1,4 @@
-import { Request, Response, NextFunction, RequestHandler } from "express";
-import { createClerkClient } from "@clerk/clerk-sdk-node";
-import { config } from '../config/env';
+import { RequestHandler } from "express";
 import { logger } from '../utils/logger';
 import { UserModel } from '../models/user.model';
 import { ClientModel } from '../models/client.model';
@@ -9,16 +7,12 @@ import { InvoiceModel } from '../models/invoice.model';
 import { SettingsModel } from '../models/settings.model';
 import { ExpenseModel } from '../models/expense.model';
 import { QuoteModel } from '../models/quote.model';
+import { ActivityLogModel } from '../models/activity.model';
 import bcrypt from 'bcryptjs';
 
-const clerkClient = createClerkClient({ secretKey: config.clerkSecretKey });
+let seedPromise: Promise<void> | null = null;
 
-// Seed demo data for a user
 const seedDemoData = async (userId: string) => {
-  // Check if user already has data
-  const existingClients = await ClientModel.countDocuments({ userId });
-  if (existingClients > 0) return;
-
   // Create settings
   await SettingsModel.create({
     userId,
@@ -74,7 +68,7 @@ const seedDemoData = async (userId: string) => {
   const products = await ProductModel.create(scaledProducts);
 
   // Create invoices
-  const invoices = [];
+  const invoiceData = [];
   const INVOICE_COUNT = 30;
 
   for (let i = 0; i < INVOICE_COUNT; i++) {
@@ -92,7 +86,7 @@ const seedDemoData = async (userId: string) => {
 
     const date = new Date(Date.now() - Math.floor(Math.random() * 180) * 24 * 60 * 60 * 1000);
 
-    invoices.push({
+    invoiceData.push({
       createdBy: userId,
       number: 10001 + i,
       year: 2024,
@@ -110,11 +104,11 @@ const seedDemoData = async (userId: string) => {
       status: Math.random() > 0.3 ? 'paid' : (Math.random() > 0.5 ? 'pending' : 'overdue')
     });
   }
-  await InvoiceModel.create(invoices);
+  const invoices = await InvoiceModel.create(invoiceData);
 
   // Create expenses
   const expenseCategories = ['Operational', 'Marketing', 'Software', 'Travel', 'Contractors', 'Office Supplies'];
-  const expenses = [];
+  const expenseData = [];
   const EXPENSE_COUNT = 40;
 
   for (let i = 0; i < EXPENSE_COUNT; i++) {
@@ -122,7 +116,7 @@ const seedDemoData = async (userId: string) => {
     const date = new Date(Date.now() - Math.floor(Math.random() * 180) * 24 * 60 * 60 * 1000);
     const amount = Math.floor(Math.random() * 2000) + 50;
 
-    expenses.push({
+    expenseData.push({
       createdBy: userId,
       description: `${category} Expense #${i + 1}`,
       amount,
@@ -130,10 +124,10 @@ const seedDemoData = async (userId: string) => {
       category
     });
   }
-  await ExpenseModel.create(expenses);
+  const expenses = await ExpenseModel.create(expenseData);
 
   // Create quotes
-  const quotes = [];
+  const quoteData = [];
   const QUOTE_COUNT = 20;
 
   for (let i = 0; i < QUOTE_COUNT; i++) {
@@ -142,7 +136,7 @@ const seedDemoData = async (userId: string) => {
     const q = Math.floor(Math.random() * 10) + 1;
     const total = product.price * q;
 
-    quotes.push({
+    quoteData.push({
       createdBy: userId,
       number: 5000 + i,
       title: `Project Quote for ${client.name}`,
@@ -159,85 +153,111 @@ const seedDemoData = async (userId: string) => {
       status: ['draft', 'sent', 'accepted', 'rejected'][Math.floor(Math.random() * 4)]
     });
   }
-  await QuoteModel.create(quotes);
+  const quotes = await QuoteModel.create(quoteData);
+
+  // Create activity logs
+  const activities = [];
+  const ACTIVITY_COUNT = 30;
+  const actions = ['created', 'updated', 'sent', 'paid'];
+  const resourceTypes = ['Invoice', 'Quote', 'Client', 'Product', 'Expense'];
+
+  for (let i = 0; i < ACTIVITY_COUNT; i++) {
+    const action = actions[Math.floor(Math.random() * actions.length)]!;
+    const resourceType = resourceTypes[Math.floor(Math.random() * resourceTypes.length)]!;
+    const date = new Date(Date.now() - Math.floor(Math.random() * 180) * 24 * 60 * 60 * 1000);
+
+    let resourceName = '';
+    let resourceId = '';
+
+    if (resourceType === 'Invoice') {
+      const invoice = invoices[Math.floor(Math.random() * invoices.length)]!;
+      resourceName = `Invoice #${invoice.number}`;
+      resourceId = invoice._id.toString();
+    } else if (resourceType === 'Quote') {
+      const quote = quotes[Math.floor(Math.random() * quotes.length)]!;
+      resourceName = quote.title;
+      resourceId = quote._id.toString();
+    } else if (resourceType === 'Client') {
+      const client = clients[Math.floor(Math.random() * clients.length)]!;
+      resourceName = client.name;
+      resourceId = client._id.toString();
+    } else if (resourceType === 'Product') {
+      const product = products[Math.floor(Math.random() * products.length)]!;
+      resourceName = product.name;
+      resourceId = product._id.toString();
+    } else if (resourceType === 'Expense') {
+      const expense = expenses[Math.floor(Math.random() * expenses.length)]!;
+      resourceName = expense.description;
+      resourceId = expense._id.toString();
+    }
+
+    activities.push({
+      userId,
+      action,
+      resourceType,
+      resourceId,
+      resourceName,
+      details: [`${action} ${resourceType.toLowerCase()}`],
+      at: date,
+    });
+  }
+
+  await ActivityLogModel.create(activities);
 
   logger.info('Seeded demo data');
 };
 
-export const authMiddleware: RequestHandler = async (req, res, next) => {
-  // Check for demo mode header
-  const isDemoMode = req.headers['x-demo-mode'] === 'true';
+const ensureDemoDataSeeded = async (userId: string) => {
+  const hasData = await ClientModel.exists({ userId });
+  if (hasData) return;
 
-  if (isDemoMode) {
-    try {
-      // Find or create demo user
-      let demoUser = await UserModel.findOne({ email: 'demo@example.com' });
-      
-      if (!demoUser) {
-        const hashedPassword = await bcrypt.hash('password123', 10);
-        demoUser = await UserModel.create({
-          name: 'Demo User',
-          email: 'demo@example.com',
-          password: hashedPassword,
-          role: 'admin'
-        });
-        logger.info('Created demo user');
+  if (!seedPromise) {
+    seedPromise = (async () => {
+      const stillEmpty = !(await ClientModel.exists({ userId }));
+      if (stillEmpty) {
+        await seedDemoData(userId);
       }
-      
-      // Seed demo data if needed
-      await seedDemoData(demoUser._id.toString());
-      
-      req.user = {
-        id: demoUser._id.toString(),
-        role: demoUser.role,
-        email: demoUser.email,
-      };
-      
-      return next();
-    } catch (error: any) {
-      logger.error('Demo Mode Authentication Error:', {
-        message: error.message
-      });
-      res.status(500).json({ 
-        success: false, 
-        message: "Demo mode error"
-      });
-      return;
-    }
+    })().finally(() => {
+      seedPromise = null;
+    });
   }
 
-  // Normal Clerk auth for non-demo mode
-  let token;
+  await seedPromise;
+};
 
-  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-    token = req.headers.authorization.split(" ")[1];
-  } else if (req.cookies.__session) {
-    token = req.cookies.__session;
-  }
-
-  if (!token) {
-    res.status(401).json({ success: false, message: "Access Denied: No Token" });
-    return;
-  }
-
+export const authMiddleware: RequestHandler = async (req, res, next) => {
   try {
-    const sessionClaims = await clerkClient.verifyToken(token);
+    // Find or create demo user
+    let demoUser = await UserModel.findOne({ email: 'demo@example.com' });
+    
+    if (!demoUser) {
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      demoUser = await UserModel.create({
+        name: 'Demo User',
+        email: 'demo@example.com',
+        password: hashedPassword,
+        role: 'admin'
+      });
+      logger.info('Created demo user');
+    }
+    
+    await ensureDemoDataSeeded(demoUser._id.toString());
     
     req.user = {
-      id: sessionClaims.sub,
-      role: (sessionClaims as any).role || 'user',
-      email: (sessionClaims as any).email,
+      id: demoUser._id.toString(),
+      role: demoUser.role,
+      email: demoUser.email,
     };
     
-    next();
+    return next();
   } catch (error: any) {
     logger.error('Authentication Error:', {
-      message: error.message,
-      code: error.code
+      message: error.message
     });
-    res.status(403).json({ 
+    res.status(500).json({ 
       success: false, 
-      message: "Invalid Token"
+      message: "Authentication error"
     });
+    return;
   }
 };

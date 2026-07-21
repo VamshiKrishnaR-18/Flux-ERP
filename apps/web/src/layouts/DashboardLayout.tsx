@@ -5,8 +5,8 @@ import Sidebar from './Sidebar';
 import { useDebounce } from '../hooks/useDebounce';
 import { api } from '../lib/axios';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { useDemoMode } from '../context/DemoModeContext';
 import { AIChatbot } from '../components/AIChatbot';
+import { DemoModeBanner } from '../components/DemoModeBanner';
 
 type SearchResults = {
   clients: Array<{ _id: string; name: string; email?: string; phoneNumber?: string }>;
@@ -16,7 +16,6 @@ type SearchResults = {
 
 export const Layout = () => {
   const navigate = useNavigate();
-  const { isDemoMode } = useDemoMode();
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,12 +82,8 @@ export const Layout = () => {
 
       {/* Main Content Area (Scrollable) */}
       <div className="flex-1 ml-64 overflow-auto">
-        {isDemoMode && (
-          <div className="bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest py-1 text-center sticky top-0 z-30">
-            Demo Mode Active &bull; Data is simulated and will reset on page reload
-          </div>
-        )}
-        <div className={`sticky ${isDemoMode ? 'top-[20px]' : 'top-0'} z-20 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 transition-colors duration-200`}>
+        <DemoModeBanner />
+        <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 transition-colors duration-200">
           <div className="px-6 py-4">
             <div className="max-w-7xl mx-auto">
               <div ref={searchRef} className="relative">

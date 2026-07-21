@@ -1,10 +1,9 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, BarChart2, Users, FileText, Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useDemoMode } from '../context/DemoModeContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function Landing() {
-  const { toggleDemoMode } = useDemoMode();
+  const navigate = useNavigate();
 
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
@@ -21,7 +20,7 @@ export default function Landing() {
   };
 
   const handleExploreDemo = () => {
-    toggleDemoMode(); // This will set demo mode to true and reload the page
+    navigate('/dashboard');
   };
 
   return (
@@ -46,14 +45,11 @@ export default function Landing() {
               <p className="text-xl text-gray-600 mb-10 leading-relaxed">
                 Portfolio ERP/CRM covering clients, invoices, quotes, expenses, products, dashboards, and reports. Built to demonstrate a complete workflow, data modeling, and UI polish.
               </p>
-	              <div className="flex flex-col sm:flex-row justify-center gap-4">
+	              <div className="flex justify-center">
                 <button onClick={handleExploreDemo} className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 md:text-xl shadow-lg shadow-blue-600/30 transition-all hover:scale-105">
                   Explore Demo <ArrowRight className="ml-2 h-5 w-5" />
-	                </button>
-	                <Link to="/login" className="inline-flex items-center justify-center px-8 py-4 border border-gray-300 text-lg font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 md:text-xl transition-all hover:scale-105">
-	                  Sign in
-	                </Link>
-	              </div>
+                </button>
+              </div>
             </motion.div>
             
             <motion.div 
@@ -217,7 +213,7 @@ export default function Landing() {
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
               <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">Backend</h3>
               <div className="flex flex-wrap gap-2">
-                {["Node 24", "Express", "Serverless", "JWT Auth", "Mongoose"].map((item) => (
+                {["Node 24", "Express", "JWT Auth", "Mongoose", "MongoDB"].map((item) => (
                   <span key={item} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-medium text-gray-700">
                     {item}
                   </span>
@@ -227,7 +223,7 @@ export default function Landing() {
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
               <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wide">Infrastructure</h3>
               <div className="flex flex-wrap gap-2">
-                {["AWS Lambda", "API Gateway", "MongoDB Atlas"].map((item) => (
+                {["Vercel (Frontend)", "Render (Backend)", "MongoDB Atlas"].map((item) => (
                   <span key={item} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-xs font-medium text-gray-700">
                     {item}
                   </span>

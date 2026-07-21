@@ -18,10 +18,7 @@ export default function LandingLayout({ children }: { children: ReactNode }) {
 	              <a href="#about" className="text-gray-600 hover:text-blue-600 transition-colors">About</a>
 	            </div>
             <div className="flex items-center space-x-4">
-              <Link to="/login" className="text-gray-600 hover:text-blue-600 font-medium">
-                Log in
-              </Link>
-              <Link to="/register" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20">
+              <Link to="/dashboard" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20">
                 Get Started
               </Link>
             </div>

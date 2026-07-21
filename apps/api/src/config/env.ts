@@ -6,18 +6,16 @@ dotenv.config();
 const isTest = process.env.NODE_ENV === 'test';
 
 const envSchema = z.object({
-  PORT: z.coerce.number().default(3000),
-  MONGO_URI: z.string().min(1, "MONGO_URI is required").default(isTest ? 'mongodb://localhost:27017/test' : ''),
+  PORT: z.coerce.number().default(3001),
+  MONGO_URI: z.string().min(1, "MONGO_URI is required").default(isTest ? 'mongodb://localhost:27017/test' : 'mongodb://127.0.0.1:27017/flux-erp'),
   JWT_SECRET: z.string().optional(),
-  CLERK_PUBLISHABLE_KEY: z.string().optional(),
-  CLERK_SECRET_KEY: z.string().min(1, "CLERK_SECRET_KEY is required").default(isTest ? 'test_clerk_secret' : ''),
   
   JWT_EXPIRES_IN: z.string().default('1d').transform(val => val.trim() === '' ? '1d' : val),
   COOKIE_EXPIRES_IN_HOURS: z.coerce.number().default(24),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CORS_ORIGIN: z
     .string()
-    .default('http://localhost:5173,http://localhost:5174')
+    .default('http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177')
     .transform((value) => value.split(',').map((origin) => origin.trim()).filter(Boolean)),
   FRONTEND_URL: z.string().url().default('http://localhost:5173'),
   SMTP_HOST: z.string().default('smtp.ethereal.email'),
@@ -34,10 +32,7 @@ if (!parsedEnv.success) {
   const errorMsg = `❌ Invalid environment variables: ${JSON.stringify(parsedEnv.error.format())}`;
   console.error(errorMsg);
   
-  // In production/lambda, we don't want to crash the process immediately if we can help it
-  // but for critical keys, it's better to fail fast than to have mysterious errors.
   if (process.env.NODE_ENV === 'production') {
-    // Log specifically for CloudWatch
     console.log('CRITICAL_ENV_ERROR:', errorMsg);
   } else {
     process.exit(1);
@@ -47,11 +42,9 @@ if (!parsedEnv.success) {
 export const env = parsedEnv.success ? parsedEnv.data : ({} as any);
 
 export const config = {
-  port: env.PORT || 3000,
+  port: env.PORT || 3001,
   mongoUri: env.MONGO_URI || '',
   jwtSecret: env.JWT_SECRET || 'fallback_secret',
-  clerkSecretKey: env.CLERK_SECRET_KEY || '',
-  clerkPublishableKey: env.CLERK_PUBLISHABLE_KEY || '',
   jwtExpiresIn: env.JWT_EXPIRES_IN || '1d',
   cookieExpiresInHours: env.COOKIE_EXPIRES_IN_HOURS || 24,
   nodeEnv: (env.NODE_ENV as any) || 'development',

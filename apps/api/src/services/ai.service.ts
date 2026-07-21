@@ -39,6 +39,14 @@ class AIService {
   }
 
   async generateFinancialInsights(data: any) {
+    if (!this.groq) {
+      return `
+- Your **revenue trend is ${data.revenueTrend}%**, which is ${data.revenueTrend >= 0 ? 'positive' : 'negative'}. Consider ${data.revenueTrend >= 0 ? 'scaling' : 'adjusting'} your offerings.
+- You have **${data.pendingInvoices} pending invoices** with an overdue amount of **$${data.overdueAmount}**. Follow up with clients soon.
+- Your net profit is **$${data.netProfit}**. Review expenses to optimize margins further.
+`;
+    }
+
     const systemPrompt = `
       You are an expert financial advisor for an ERP system called Flux-ERP. 
       Your goal is to provide concise, actionable, and professional insights based on the provided business data.
@@ -60,7 +68,7 @@ class AIService {
       - Growth Trend: ${data.revenueTrend}%
       
       Recent Activities:
-      ${data.recentActivities?.map((a: any) => `- ${a.details}`).join('\n')}
+      ${data.recentActivities?.map((a: any) => `- ${a.resourceName || a.resourceType} ${a.action}${a.details?.length > 0 ? `: ${a.details.join(' ')}` : ''}`).join('\n')}
 
       Please provide 3-4 key insights or recommendations for the business owner.
     `;
@@ -68,6 +76,10 @@ class AIService {
     return this.getChatCompletion(systemPrompt, userPrompt);
   }
   async getChatWithContext(userPrompt: string, contextData: any) {
+    if (!this.groq) {
+      return "AI features are currently unavailable (GROQ_API_KEY not set). Please check your configuration or use the manual reporting tools.";
+    }
+
     const systemPrompt = `
       You are the Flux-ERP AI Assistant. You have access to the following business data:
       ${JSON.stringify(contextData)}
