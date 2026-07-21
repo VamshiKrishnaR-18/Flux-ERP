@@ -2,18 +2,16 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useClerk } from '@clerk/clerk-react';
 import { Lock } from 'lucide-react';
+import { useDemoMode } from '../context/DemoModeContext';
 
-export function SessionExpiryModal() {
+function ClerkSessionExpiryModal() {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
   const { openSignIn } = useClerk();
 
   useEffect(() => {
     const handleExpiry = () => setIsOpen(true);
-    
-    
     window.addEventListener('session-expired', handleExpiry);
-    
     
     return () => window.removeEventListener('session-expired', handleExpiry);
   }, []);
@@ -54,4 +52,12 @@ export function SessionExpiryModal() {
       </div>
     </div>
   );
+}
+
+export function SessionExpiryModal() {
+  const { isDemoMode } = useDemoMode();
+
+  if (isDemoMode) return null;
+
+  return <ClerkSessionExpiryModal />;
 }

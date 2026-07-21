@@ -1,10 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ClerkProvider } from '@clerk/clerk-react';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { DemoModeProvider } from './context/DemoModeContext';
+import { DemoModeProvider, useDemoMode } from './context/DemoModeContext';
 import { SessionExpiryModal } from './components/SessionExpiryModal';
 import {Layout as DashboardLayout} from './layouts/DashboardLayout';
 import PublicLayout from './layouts/PublicLayout';
@@ -35,17 +35,25 @@ import ActivityLogs from './pages/ActivityLogs';
 
 import { dark } from '@clerk/themes';
 import { useTheme } from './context/ThemeContext';
+import { type ReactNode, useEffect } from 'react';
 
 const queryClient = new QueryClient();
 
 const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-if (!CLERK_PUBLISHABLE_KEY) {
-  throw new Error("Missing Publishable Key");
-}
-
-function AppContent() {
+// Component that conditionally wraps with ClerkProvider
+function AppWrapper({ children }: { children: ReactNode }) {
+  const { isDemoMode } = useDemoMode();
   const { theme } = useTheme();
+
+  if (isDemoMode) {
+    return <>{children}</>;
+  }
+
+  // Only throw error if we're not in demo mode and key is missing
+  if (!CLERK_PUBLISHABLE_KEY) {
+    throw new Error("Missing Publishable Key");
+  }
 
   return (
     <ClerkProvider 
@@ -55,16 +63,37 @@ function AppContent() {
         baseTheme: theme === 'dark' ? dark : undefined,
       }}
     >
+      {children}
+    </ClerkProvider>
+  );
+}
+
+function AppContent() {
+  const { theme } = useTheme();
+  const { isDemoMode } = useDemoMode();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (isDemoMode && location.pathname === '/') {
+      navigate('/dashboard');
+    }
+  }, [isDemoMode, location.pathname, navigate]);
+
+  return (
+    <AppWrapper>
       <AuthProvider>
         <SessionExpiryModal />
         <AppRoutes />
         <Toaster position="top-right" richColors theme={theme} />
       </AuthProvider>
-    </ClerkProvider>
+    </AppWrapper>
   );
 }
 
 function AppRoutes() {
+  const { isDemoMode } = useDemoMode();
+
   return (
     <Routes>
       <Route element={<LandingLayout><Landing /></LandingLayout>} path="/" />
@@ -76,7 +105,7 @@ function AppRoutes() {
         <Route path="/portal/:token" element={<ClientPortalPublic />} />
       </Route>
 
-      <Route element={<ProtectedLayout />}>
+      <Route element={isDemoMode ? <Outlet /> : <ProtectedLayout />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           

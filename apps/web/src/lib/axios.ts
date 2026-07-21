@@ -130,7 +130,7 @@ api.interceptors.request.use((config) => {
       return Promise.reject({
         isMock: true,
         response: {
-          data: mockData,
+          ...mockData,
           status: 200,
           statusText: 'OK',
           headers: {},

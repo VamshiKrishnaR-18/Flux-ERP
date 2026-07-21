@@ -8,29 +8,36 @@ type SortConfig = {
 export const useSortableData = <T>(items: T[], config: SortConfig | null = null) => {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(config);
 
+
   const sortedItems = useMemo(() => {
-    const sortableItems = [...items];
-    if (sortConfig !== null) {
-      sortableItems.sort((a: T, b: T) => {
-        
-        const getValue = (obj: T, path: string) => {
-           return path.split('.').reduce((o: unknown, i) => (o ? (o as Record<string, unknown>)[i] : null), obj);
-        };
+  const sortableItems = Array.isArray(items) ? [...items] : [];
 
-        const aValue = getValue(a, sortConfig.key) as string | number;
-        const bValue = getValue(b, sortConfig.key) as string | number;
+  if (sortConfig !== null) {
+    sortableItems.sort((a: T, b: T) => {
+      const getValue = (obj: T, path: string) => {
+        return path
+          .split(".")
+          .reduce(
+            (o: unknown, i) => (o ? (o as Record<string, unknown>)[i] : null),
+            obj
+          );
+      };
 
-        if (aValue < bValue) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-    return sortableItems;
-  }, [items, sortConfig]);
+      const aValue = getValue(a, sortConfig.key) as string | number;
+      const bValue = getValue(b, sortConfig.key) as string | number;
+
+      if (aValue < bValue) {
+        return sortConfig.direction === "ascending" ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === "ascending" ? 1 : -1;
+      }
+      return 0;
+    });
+  }
+
+  return sortableItems;
+}, [items, sortConfig]);
 
   const requestSort = (key: string) => {
     let direction: 'ascending' | 'descending' = 'ascending';

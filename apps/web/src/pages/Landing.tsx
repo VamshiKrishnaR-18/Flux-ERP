@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, BarChart2, Users, FileText, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useDemoMode } from '../context/DemoModeContext';
 
 export default function Landing() {
+  const { toggleDemoMode } = useDemoMode();
+
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
@@ -15,6 +18,10 @@ export default function Landing() {
         staggerChildren: 0.1
       }
     }
+  };
+
+  const handleExploreDemo = () => {
+    toggleDemoMode(); // This will set demo mode to true and reload the page
   };
 
   return (
@@ -40,9 +47,9 @@ export default function Landing() {
                 Portfolio ERP/CRM covering clients, invoices, quotes, expenses, products, dashboards, and reports. Built to demonstrate a complete workflow, data modeling, and UI polish.
               </p>
 	              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link to="/login" className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 md:text-xl shadow-lg shadow-blue-600/30 transition-all hover:scale-105">
+                <button onClick={handleExploreDemo} className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 md:text-xl shadow-lg shadow-blue-600/30 transition-all hover:scale-105">
                   Explore Demo <ArrowRight className="ml-2 h-5 w-5" />
-	                </Link>
+	                </button>
 	                <Link to="/login" className="inline-flex items-center justify-center px-8 py-4 border border-gray-300 text-lg font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 md:text-xl transition-all hover:scale-105">
 	                  Sign in
 	                </Link>
@@ -249,9 +256,9 @@ export default function Landing() {
 	            <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto relative z-10">
               This is a showcase application highlighting architecture and implementation decisions across the stack.
 	            </p>
-            <Link to="/login" className="relative z-10 inline-block bg-white text-blue-600 font-bold py-4 px-10 rounded-lg shadow-lg hover:bg-gray-50 transition-colors transform hover:-translate-y-1">
+            <button onClick={handleExploreDemo} className="relative z-10 inline-block bg-white text-blue-600 font-bold py-4 px-10 rounded-lg shadow-lg hover:bg-gray-50 transition-colors transform hover:-translate-y-1">
               View Demo
-	            </Link>
+	            </button>
           </div>
         </div>
       </section>

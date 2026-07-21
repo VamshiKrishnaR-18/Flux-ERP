@@ -37,7 +37,9 @@ export function useDashboard() {
     const fetchStats = async () => {
       try {
         const response = await api.get(`/dashboard?t=${Date.now()}`);
-        setStats(response.data.data);
+        const payload = response.data.data;
+
+        setStats(payload.data ?? payload);
       } catch {
         toast.error("Failed to load dashboard data");
       } finally {
