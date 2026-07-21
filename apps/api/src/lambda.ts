@@ -44,6 +44,26 @@ const connectToDatabase = async () => {
 };
 
 // 2. THE HANDLER
+// Helper to get CORS headers for any response
+const getCorsHeaders = (event: any) => {
+  const origin = event.headers?.origin || event.headers?.Origin;
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:5174',
+    'https://flux-erp-web.vercel.app',
+  ];
+  const isOriginAllowed = allowedOrigins.includes(origin) || origin?.endsWith('.vercel.app');
+  
+  return {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': isOriginAllowed ? origin : 'https://flux-erp-web.vercel.app',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Demo-Mode',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+  };
+};
+
 export const handler: APIGatewayProxyHandler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false;
 
@@ -53,6 +73,15 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
   const requestId = event.requestContext?.requestId || context.awsRequestId;
   
   console.log(`Lambda Event: ${method} ${path} [RequestId: ${requestId}]`);
+
+  // Handle OPTIONS preflight requests immediately (to ensure CORS headers are present)
+  if (method === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      body: '',
+      headers: getCorsHeaders(event),
+    };
+  }
 
   try {
     // 1. Ensure Database Connection
@@ -66,7 +95,7 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
           success: false, 
           message: 'Service Unavailable: Database connection failed'
         }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: getCorsHeaders(event),
       };
     }
 
@@ -87,7 +116,7 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
         message: 'Internal Server Error',
         error: error.message
       }),
-      headers: { 'Content-Type': 'application/json' }
+      headers: getCorsHeaders(event),
     };
   }
 };
