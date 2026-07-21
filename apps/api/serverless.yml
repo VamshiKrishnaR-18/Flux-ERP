@@ -34,35 +34,11 @@ functions:
       - http:
           path: /
           method: ANY
-          cors:
-            origins:
-              - 'https://flux-erp-web.vercel.app'
-              - 'http://localhost:5173'
-              - 'http://localhost:3000'
-            headers:
-              - Content-Type
-              - Authorization
-              - X-Requested-With
-              - Accept
-              - Origin
-              - X-Demo-Mode
-            allowCredentials: true
+          cors: true
       - http:
           path: /{proxy+}
           method: ANY
-          cors:
-            origins:
-              - 'https://flux-erp-web.vercel.app'
-              - 'http://localhost:5173'
-              - 'http://localhost:3000'
-            headers:
-              - Content-Type
-              - Authorization
-              - X-Requested-With
-              - Accept
-              - Origin
-              - X-Demo-Mode
-            allowCredentials: true
+          cors: true
 
 plugins:
   - serverless-offline
