@@ -35,7 +35,7 @@ import ActivityLogs from './pages/ActivityLogs';
 
 import { dark } from '@clerk/themes';
 import { useTheme } from './context/ThemeContext';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 const queryClient = new QueryClient();
 
@@ -73,18 +73,17 @@ function AppContent() {
   const { isDemoMode } = useDemoMode();
   const navigate = useNavigate();
   const location = useLocation();
-  const [hasNavigatedToDashboard, setHasNavigatedToDashboard] = useState(false);
 
   useEffect(() => {
-    if (isDemoMode && location.pathname === '/' && !hasNavigatedToDashboard) {
-      navigate('/dashboard');
-      setHasNavigatedToDashboard(true);
+    // Check if we need to redirect because we just enabled demo mode
+    if (isDemoMode && location.pathname === '/') {
+      const needsRedirect = localStorage.getItem('demo-mode-redirect-needed');
+      if (needsRedirect === 'true') {
+        localStorage.removeItem('demo-mode-redirect-needed');
+        navigate('/dashboard');
+      }
     }
-    // If we leave demo mode, reset the flag
-    if (!isDemoMode) {
-      setHasNavigatedToDashboard(false);
-    }
-  }, [isDemoMode, location.pathname, navigate, hasNavigatedToDashboard]);
+  }, [isDemoMode, location.pathname, navigate]);
 
   return (
     <AppWrapper>

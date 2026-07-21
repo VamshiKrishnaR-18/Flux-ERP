@@ -17,6 +17,9 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
     setIsDemoMode((prev) => {
       const next = !prev;
       localStorage.setItem('demo-mode', String(next));
+      if (next) {
+        localStorage.setItem('demo-mode-redirect-needed', 'true');
+      }
       // Reload the page to ensure all interceptors and data are reset correctly
       window.location.reload();
       return next;
