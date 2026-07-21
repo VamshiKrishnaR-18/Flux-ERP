@@ -35,7 +35,7 @@ import ActivityLogs from './pages/ActivityLogs';
 
 import { dark } from '@clerk/themes';
 import { useTheme } from './context/ThemeContext';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 const queryClient = new QueryClient();
 
@@ -73,12 +73,18 @@ function AppContent() {
   const { isDemoMode } = useDemoMode();
   const navigate = useNavigate();
   const location = useLocation();
+  const [hasNavigatedToDashboard, setHasNavigatedToDashboard] = useState(false);
 
   useEffect(() => {
-    if (isDemoMode && location.pathname === '/') {
+    if (isDemoMode && location.pathname === '/' && !hasNavigatedToDashboard) {
       navigate('/dashboard');
+      setHasNavigatedToDashboard(true);
     }
-  }, [isDemoMode, location.pathname, navigate]);
+    // If we leave demo mode, reset the flag
+    if (!isDemoMode) {
+      setHasNavigatedToDashboard(false);
+    }
+  }, [isDemoMode, location.pathname, navigate, hasNavigatedToDashboard]);
 
   return (
     <AppWrapper>
