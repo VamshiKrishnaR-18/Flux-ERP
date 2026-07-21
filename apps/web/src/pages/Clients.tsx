@@ -108,6 +108,7 @@ export default function Clients() {
           onSuccess={() => {
             setIsModalOpen(false);
             setEditingClient(null);
+            setPage(1);
           }}
           client={editingClient}
         />

@@ -143,7 +143,7 @@ export default function InvoiceList() {
   
 
   const invoices = invoicesData?.data ?? [];
-  const totalPages = invoicesData?.data?.pagination?.totalPages ?? 1;
+  const totalPages = invoicesData?.pagination?.totalPages ?? 1;
 
   const handleExportCsv = async () => {
     setIsExporting(true);

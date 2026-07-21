@@ -18,9 +18,6 @@ export function useClients() {
       const res = await api.get(
         `/clients?page=${page}&limit=10&search=${debouncedSearch}`,
       );
-      console.log("FULL RESPONSE:", res);
-      console.log("RES.DATA:", res.data);
-      console.log("RES.DATA.DATA:", res.data.data);
       return res.data;
     },
   });

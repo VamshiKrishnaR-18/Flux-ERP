@@ -60,7 +60,10 @@ export default function Products() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    onSuccess: () => toast.success("Product added")
+    onSuccess: () => {
+      setPage(1);
+      toast.success("Product added");
+    }
   });
 
   const updateMutation = useMutation({

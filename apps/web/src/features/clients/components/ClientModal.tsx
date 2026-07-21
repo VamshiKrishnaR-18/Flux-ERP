@@ -5,6 +5,7 @@ import { ClientSchema, type ClientDTO } from '@erp/types';
 import { api } from '../../../lib/axios';
 import { X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Client } from '../types';
 
 interface ClientModalProps {
@@ -15,6 +16,7 @@ interface ClientModalProps {
 }
 
 export function ClientModal({ isOpen, onClose, onSuccess, client }: ClientModalProps) {
+  const queryClient = useQueryClient();
   const firstInputRef = useRef<HTMLInputElement>(null);
   
   const { 
@@ -68,6 +70,7 @@ export function ClientModal({ isOpen, onClose, onSuccess, client }: ClientModalP
         await api.post('/clients', data);
         toast.success('Client created successfully');
       }
+      await queryClient.invalidateQueries({ queryKey: ['clients'] });
       onSuccess();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };

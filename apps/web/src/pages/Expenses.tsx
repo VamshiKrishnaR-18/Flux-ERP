@@ -107,7 +107,6 @@ export default function Expenses() {
     e.preventDefault();
     try {
       await api.post('/expenses', { ...formData, amount: Number(formData.amount) });
-      fetchExpenses(); // Reload
       setShowModal(false);
       setFormData({ 
         description: '', 
@@ -116,6 +115,10 @@ export default function Expenses() {
         category: 'Operational',
         attachments: [] 
       });
+      setPage(1);
+      const res = await api.get(`/expenses?page=1&limit=${LIMIT}&search=${debouncedSearch}`);
+      setExpenses(res.data.data);
+      setTotalPages(res.data.pagination?.totalPages || 1);
       toast.success('Expense recorded');
     } catch { toast.error('Failed to add expense'); }
   };
