@@ -24,6 +24,7 @@ process.on('uncaughtException', (err) => {
 
 const connectToDatabase = async () => {
   if (conn === null) {
+    logger.info('config.mongoUri:', config.mongoUri ? 'set (length ' + config.mongoUri.length + ')' : 'NOT SET');
     if (!config.mongoUri || config.mongoUri === '') {
       logger.error('CRITICAL: MONGO_URI is not defined in environment variables.');
       throw new Error('Database configuration missing');
@@ -88,12 +89,13 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
     try {
       await connectToDatabase();
     } catch (dbError: any) {
-      logger.error('Database Connection Error in Handler:', dbError.message);
+      logger.error('Database Connection Error in Handler:', dbError);
       return {
         statusCode: 503,
         body: JSON.stringify({ 
           success: false, 
-          message: 'Service Unavailable: Database connection failed'
+          message: 'Service Unavailable: Database connection failed',
+          error: dbError.message
         }),
         headers: getCorsHeaders(event),
       };
