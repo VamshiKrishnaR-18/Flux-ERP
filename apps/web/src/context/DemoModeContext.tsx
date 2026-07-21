@@ -18,10 +18,12 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
       const next = !prev;
       localStorage.setItem('demo-mode', String(next));
       if (next) {
-        localStorage.setItem('demo-mode-redirect-needed', 'true');
+        // Directly navigate to /dashboard and reload the page
+        window.location.href = '/dashboard';
+      } else {
+        // If turning off demo mode, just reload the current page
+        window.location.reload();
       }
-      // Reload the page to ensure all interceptors and data are reset correctly
-      window.location.reload();
       return next;
     });
   };

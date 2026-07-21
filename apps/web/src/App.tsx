@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ClerkProvider } from '@clerk/clerk-react';
@@ -35,7 +35,7 @@ import ActivityLogs from './pages/ActivityLogs';
 
 import { dark } from '@clerk/themes';
 import { useTheme } from './context/ThemeContext';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode } from 'react';
 
 const queryClient = new QueryClient();
 
@@ -70,20 +70,6 @@ function AppWrapper({ children }: { children: ReactNode }) {
 
 function AppContent() {
   const { theme } = useTheme();
-  const { isDemoMode } = useDemoMode();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    // Check if we need to redirect because we just enabled demo mode
-    if (isDemoMode && location.pathname === '/') {
-      const needsRedirect = localStorage.getItem('demo-mode-redirect-needed');
-      if (needsRedirect === 'true') {
-        localStorage.removeItem('demo-mode-redirect-needed');
-        navigate('/dashboard');
-      }
-    }
-  }, [isDemoMode, location.pathname, navigate]);
 
   return (
     <AppWrapper>
