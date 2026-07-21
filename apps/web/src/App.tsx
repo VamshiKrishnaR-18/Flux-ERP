@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ClerkProvider } from '@clerk/clerk-react';
@@ -35,7 +35,7 @@ import ActivityLogs from './pages/ActivityLogs';
 
 import { dark } from '@clerk/themes';
 import { useTheme } from './context/ThemeContext';
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 const queryClient = new QueryClient();
 
@@ -70,6 +70,15 @@ function AppWrapper({ children }: { children: ReactNode }) {
 
 function AppContent() {
   const { theme } = useTheme();
+  const { isDemoMode } = useDemoMode();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (isDemoMode && location.pathname === '/') {
+      navigate('/dashboard');
+    }
+  }, [isDemoMode, location.pathname, navigate]);
 
   return (
     <AppWrapper>

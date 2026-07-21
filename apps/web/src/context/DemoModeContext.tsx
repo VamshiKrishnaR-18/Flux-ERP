@@ -17,13 +17,8 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
     setIsDemoMode((prev) => {
       const next = !prev;
       localStorage.setItem('demo-mode', String(next));
-      if (next) {
-        // Directly navigate to /dashboard and reload the page
-        window.location.href = '/dashboard';
-      } else {
-        // If turning off demo mode, just reload the current page
-        window.location.reload();
-      }
+      // Reload the page to ensure all interceptors and data are reset correctly
+      window.location.reload();
       return next;
     });
   };
